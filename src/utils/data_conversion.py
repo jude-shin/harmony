@@ -1,3 +1,5 @@
+import json
+import logging
 from config.constants import Games
 
 # label: what the tensorflow model will spit out
@@ -32,7 +34,7 @@ def label_to_json(label : str) -> str:
         raise TypeError("label_to_json expected a [str] but got [" + type(label) + "]")
 
     # look up the json object in the deckdrafterprod and return the raw object 
-    return jsonify({
+    return json.dumps({
         # "confidence": float(confidence),
         "name": CARD_NAMES[result_index],
         "_id": "", 
@@ -45,14 +47,31 @@ def label_to_json(label : str) -> str:
 # given a json string (that is raw from the deckdrafterprod), and a Game enum
 # return a unified json object with the following information:
 def reformat_json(json_string : str, t : Games) -> str:
+    if not isinstance(json_string, str):
+        raise TypeError("reformat_json expected a json [str] but got [" + type(json_string) + "]")
+    if not isinstance(t, Games):
+        raise TypeError("reformat_json  expected a [Games] enum but got [" + type(t) + "]")
+
+    formatted_json_string = json.dumps({});
+    data = json.loads(json_string)
+
     # switch case on the type to determine what format the tcg player is in
     # based on that fill in the new json object with the corrected fields
-    if t == Games.MTG:
-        return "we found mtg"
-    elif t == Games.LORCANA:
-        return "we found lorcana"
-    elif t == Games.POKEMON:
-        return "we found pokemon"
-    else: 
-        print("something went wrong")
-        return ""
+    try: 
+        if t == Games.LORCANA:
+            formatted_json_string = json.dumps({
+                'name': data['productName'],
+                '_id': data['_id'],
+                'image_url': data['images']['large'],
+                'tcgplayer_id': data['tcgplayer_productId'], 
+                'price': data['price'],
+                })
+        # elif t == Games.MTG:
+        # elif t == Games.POKEMON:
+        else: raise ValueError()
+    except KeyError:
+        logging.warning('key not found... returning empty json object')
+    except ValueError:
+        logging.warning('Game Type' + t + 'not supported')
+    finally:
+        return formatted_json_string
