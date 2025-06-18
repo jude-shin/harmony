@@ -1,0 +1,12 @@
+tensorflow[and-cuda]
+numpy
+pandas
+requests
+Pillow
+scikit-learn
+keras-tuner
+opencv-python
+Flask
+jsonify
+requests
+
