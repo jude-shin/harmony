@@ -17,5 +17,4 @@ if [ -f "requirements.txt" ]; then
 else
     echo "[WARNING] requirements.txt not found! Skipping dependency installation."
 fi
-
 python ./src/testing_main.py 
