@@ -1,37 +1,43 @@
 import json
 import logging
-from config.constants import Games
+from config.constants import GAMES
 
 # label: what the tensorflow model will spit out
 # _id: tcg/deckdrafterprod unique _id
 #   allows us to get more information about the card
 
 
-# given a label (string)
+# given a label (string), and a Game type
 # return the _id (string) that is associated with that label
-def label_to_id(label : str) -> str:
+def label_to_id(label : str, g : GAMES) -> str:
     if not isinstance(label, str):
         raise TypeError("label_to_id expected a [str] but got [" + type(label) + "]")
+    if not isinstance(g, GAMES):
+        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
 
     json = label_to_json(label)
 
     # extract only the _id from the json object
     return ""
 
-# given an _id (string)
+# given an _id (string), and a Game type
 # return the label (string) that is associated with that _id
-def id_to_label(_id : str) -> str:
+def id_to_label(_id : str, g : GAMES) -> str:
     if not isinstance(_id, str):
         raise TypeError("id_to_label expected a [str] but got [" + type(_id) + "]")
+    if not isinstance(g, GAMES):
+        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
 
     # look up the variable
     return ""
 
-# given a label (string)
+# given a label (string), and a Game type
 # return a json object with certain fields
-def label_to_json(label : str) -> str:
+def label_to_json(label : str, g : GAMES) -> str:
     if not isinstance(label, str):
         raise TypeError("label_to_json expected a [str] but got [" + type(label) + "]")
+    if not isinstance(g, GAMES):
+        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
 
     # look up the json object in the deckdrafterprod and return the raw object 
     return json.dumps({
@@ -44,21 +50,19 @@ def label_to_json(label : str) -> str:
         })
 
 
-# given a json string (that is raw from the deckdrafterprod), and a Game enum
+# given a json string (that is raw from the deckdrafterprod), and a Game type
 # return a unified json object with the following information:
-def reformat_json(json_string : str, t : Games) -> str:
+def reformat_json(json_string : str, g : GAMES) -> str:
     if not isinstance(json_string, str):
         raise TypeError("reformat_json expected a json [str] but got [" + type(json_string) + "]")
-    if not isinstance(t, Games):
-        raise TypeError("reformat_json  expected a [Games] enum but got [" + type(t) + "]")
+    if not isinstance(g, GAMES):
+        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
 
     formatted_json_string = json.dumps({});
     data = json.loads(json_string)
 
-    # switch case on the type to determine what format the tcg player is in
-    # based on that fill in the new json object with the corrected fields
     try: 
-        if t == Games.LORCANA:
+        if g == GAMES.LORCANA:
             formatted_json_string = json.dumps({
                 'name': data['productName'],
                 '_id': data['_id'],
@@ -66,12 +70,12 @@ def reformat_json(json_string : str, t : Games) -> str:
                 'tcgplayer_id': data['tcgplayer_productId'], 
                 'price': data['price'],
                 })
-        # elif t == Games.MTG:
-        # elif t == Games.POKEMON:
+        # elif g == GAMES.MTG:
+        # elif g == GAMES.POKEMON:
         else: raise ValueError()
     except KeyError:
         logging.warning('key not found... returning empty json object')
     except ValueError:
-        logging.warning('Game Type' + t + 'not supported')
+        logging.warning('Game Type' + g + 'not supported')
     finally:
         return formatted_json_string

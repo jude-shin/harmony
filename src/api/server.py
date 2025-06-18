@@ -6,12 +6,13 @@ from pathlib import Path
 
 from utils.data_conversion import label_to_json
 from config.paths import MODELS_PATH
+from config.constants import GAMES 
 
 import os
 
 app = Flask(__name__)
 
-MODEL_PATH = MODELS_PATH / 'lorcana' / 'model.keras'
+MODEL_PATH = MODELS_PATH / GAMES.LORCANA.value / 'model.keras'
 model = tf.keras.models.load_model(MODEL_PATH)
 
 def preprocess_image(image, img_width, img_height):
@@ -37,11 +38,12 @@ def predict():
         result_index = np.argmax(prediction)
         confidence = prediction[0][result_index]
 
-        json = label_to_json(prediciton)
-        # append the confidence to the json
-
-        return json 
-
+        data = json.loads(label_to_json(prediciton))
+        data.append({'confidence': float(confidence)})
+        
+        return json.dumps(data)
+        
+        # do not worry about this for now
         # if confidence < threshold:
         #     return jsonify({
         #         'message': 'Model predicted the image as unknown.',
