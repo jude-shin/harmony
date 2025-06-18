@@ -1,0 +1,26 @@
+services:
+  # 4-A) TensorFlow micro-service
+  mlservice:
+    build: ./service
+    expose:
+      - "5000"                     # reachable *inside* the compose network only
+    networks: [card-stack]
+
+  # 4-B) Your existing Node API (placeholder)
+  api:
+    image: node:20-alpine          # swap for your own Dockerfile later
+    working_dir: /app
+    volumes:
+      - ./node-api:/app            # assumes code lives here
+    command: ["npm","run","dev"]   # or whatever you use
+    environment:
+      ML_API_URL: http://mlservice:5000/predict
+    ports:
+      - "3100:3000"                # public HTTP port
+    depends_on: [mlservice]
+    networks: [card-stack]
+
+networks:
+  card-stack:
+    driver: bridge
+

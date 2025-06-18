@@ -1,4 +1,4 @@
-from api import start_server 
+from api.app import start_server 
 from utils.data_conversion import reformat_json 
 from config.constants import GAMES 
 

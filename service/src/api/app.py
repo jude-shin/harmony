@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import tensorflow as tf
+import json
 import numpy as np
 from PIL import Image
 from pathlib import Path
@@ -34,11 +35,11 @@ def predict():
         image = Image.open(file.stream)
         processed_image = preprocess_image(image, img_width, img_height)
 
-        prediction = model.predict(processed_image)
-        result_index = np.argmax(prediction)
-        confidence = prediction[0][result_index]
+        pred = model.predict(processed_image)
+        result_index = np.argmax(pred)
+        confidence = pred[0][result_index]
 
-        data = json.loads(label_to_json(prediciton))
+        data = json.loads(label_to_json(pred))
         data.append({'confidence': float(confidence)})
         
         return json.dumps(data)

@@ -1,0 +1,8 @@
+**/__pycache__/
+**/node_modules/
+**/.venv/
+.git
+.github
+.idea
+*.log
+
