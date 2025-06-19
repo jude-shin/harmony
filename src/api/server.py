@@ -24,8 +24,8 @@ MODEL_DIR = Path(os.getenv("MODEL_DIR"), GAME)
 MODEL_PATH = MODEL_DIR / "model.keras"
 PORT = int(os.getenv("PORT", 8000))
 
-IMG_HEIGHT = 224 
-IMG_WIDTH = 224
+IMG_HEIGHT = 437 
+IMG_WIDTH = 313 
 DEFAULT_THRESHOLD = float(os.getenv("THRESHOLD", 0.60))
 
 # --------------------------------------------------------------------------- #
@@ -81,11 +81,18 @@ async def predict(
             f"!= actual {pil_image.size} for file {image.filename}"
             )
 
-    batch = preprocess_image(pil_image)  # adapt if needs target size
-    # probs = model.predict(batch, verbose=False)[0]
-    # idx = int(np.argmax(probs))
-    idx = 2
+    batch = preprocess_image(pil_image)  
+    print("\nbatch: ", batch)
+
+    probs = model.predict(batch, verbose=True)[0]
+    print("\nprobs: ", probs)
+
+    idx = int(np.argmax(probs))
+    print("\nidx: ", idx)
+
     confidence = float(probs[idx])
+    print("\nconfidence: ", confidence)
+
     
     label_json = json.loads(label_to_json(idx))
 
