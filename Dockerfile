@@ -1,4 +1,10 @@
 # syntax=docker/dockerfile:1.7
+
+########################
+# 0. CUDA GPU          #
+########################
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
 ########################
 # 1. Base image layer  #
 ########################

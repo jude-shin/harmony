@@ -8,7 +8,6 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
-# from flask import Flask, jsonify, request
 import uvicorn
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
@@ -40,10 +39,10 @@ app = FastAPI(
 
 
 
-# try:
-#     model = tf.keras.models.load_model(MODEL_PATH)
-# except (IOError, ValueError) as exc:
-#     raise SystemExit(f"Could not load model at {MODEL_PATH}: {exc}") from exc
+try:
+    model = tf.keras.models.load_model(MODEL_PATH)
+except (IOError, ValueError) as exc:
+    raise SystemExit(f"Could not load model at {MODEL_PATH}: {exc}") from exc
 
 
 def preprocess_image(img: Image.Image) -> np.ndarray:
@@ -67,35 +66,6 @@ async def predict(game: str, body: PredictRequest):
         return {"label": "SomeCard", "confidence": 0.97}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-
-# @app.post("/predict")
-# def predict() -> tuple[dict, int]:
-#     if "image" not in request.files:
-#         return jsonify(error="image file missing"), 400
-# 
-#     threshold = float(request.form.get("threshold", DEFAULT_THRESHOLD))
-# 
-#     # Load & preprocess ------------------------------------------------------ #
-#     try:
-#         pil_image = Image.open(request.files["image"].stream).convert("RGB")
-#         batch = preprocess_image(pil_image)
-#     except Exception as exc:  # noqa: BLE001
-#         return jsonify(error=f"invalid image: {exc}"), 400
-# 
-#     # Inference -------------------------------------------------------------- #
-#     probs = model.predict(batch, verbose=False)[0]  # shape: (num_labels,)
-#     idx = int(np.argmax(probs))
-#     confidence = float(probs[idx])
-# 
-#     # Payload ---------------------------------------------------------------- #
-#     label_json = json.loads(label_to_json(idx))  # <- pass the index, not full vector
-#     payload = {
-#         "prediction": label_json,
-#         "confidence": confidence,
-#         "threshold_exceeded": confidence >= threshold,
-#     }
-#     return jsonify(payload), 200
-
 
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
