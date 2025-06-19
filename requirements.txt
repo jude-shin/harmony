@@ -1,14 +1,16 @@
 tensorflow[and-cuda]
 numpy
 pandas
-requests
 pillow
 scikit-learn
 keras-tuner
 opencv-python
-flask
-jsonify
+
 requests
 gunicorn
 uvicorn
+fastapi
 
+
+flask
+jsonify
