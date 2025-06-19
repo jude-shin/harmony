@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  card-id:
+    build: .
+    image: card-id-service:dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/models:ro
+      - ./data:/data:ro
+    environment:
+      - MODEL_DIR=/models
+      - PORT=8000
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2g
+

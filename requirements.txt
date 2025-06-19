@@ -2,11 +2,12 @@ tensorflow[and-cuda]
 numpy
 pandas
 requests
-Pillow
+pillow
 scikit-learn
 keras-tuner
 opencv-python
-Flask
+flask
 jsonify
 requests
+gunicorn
 
