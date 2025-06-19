@@ -10,6 +10,7 @@ requests
 gunicorn
 uvicorn
 fastapi
+python-multipart
 
 
 flask

@@ -51,6 +51,5 @@ COPY src/harmony_config /app/src/harmony_config
 
 EXPOSE ${PORT}
 
-# Use gunicorn for production.  Adjust workers based on CPU cores.
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--bind", "0.0.0.0:8000", "--workers", "2"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--workers", "1", "--preload", "--bind", "0.0.0.0:8000", "--timeout", "120"]
 
