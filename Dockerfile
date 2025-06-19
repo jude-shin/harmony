@@ -7,8 +7,12 @@ WORKDIR /app
 
 # Install OS deps only once
 RUN apt-get update && \
-			apt-get install -y --no-install-recommends build-essential && \
-			rm -rf /var/lib/apt/lists/*
+			apt-get install -y --no-install-recommends \
+				build-essential \
+				libgl1 \
+				libglib2.0-0 \
+				curl \
+			&& rm -rf /var/lib/apt/lists/*
 
 ########################
 # 2. Python deps layer #
@@ -37,7 +41,7 @@ COPY --from=deps /usr/local/bin /usr/local/bin
 COPY src/api /app/src/api
 COPY src/inference /app/src/inference
 COPY src/utils /app/src/utils
-COPY src/config /app/src/config
+COPY src/harmony_config /app/src/harmony_config
 
 EXPOSE ${PORT}
 

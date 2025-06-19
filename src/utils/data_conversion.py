@@ -1,6 +1,6 @@
 import json
 import logging
-from config.constants import GAMES
+from harmony_config.structs import GAMES
 
 # label: what the tensorflow model will spit out
 # _id: tcg/deckdrafterprod unique _id
@@ -31,7 +31,7 @@ def id_to_label(_id : str, g : GAMES) -> str:
     # look up the variable
     return ""
 
-# given a label (string), and a Game type
+# given a label (string), and a Game type, and a path to the deckdrafterprod json file
 # return a json object with certain fields
 def label_to_json(label : str, g : GAMES) -> str:
     if not isinstance(label, str):

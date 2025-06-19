@@ -1,5 +1,3 @@
-# src/config/paths.py
-
 import os
 from pathlib import Path
 

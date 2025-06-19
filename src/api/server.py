@@ -1,16 +1,3 @@
-"""
-src/api/server.py
-Flask micro‑service for card identification.
-
-Environment
------------
-MODEL_DIR   Absolute path to directory that contains a single `model.keras`
-LABEL_FILE  Absolute path to CSV/JSON file used by `label_to_json`
-PORT        Port to serve on (default 5000)
-THRESHOLD   Default confidence threshold (0.6 if unset)
-
-Author: you
-"""
 from __future__ import annotations
 
 import json
@@ -22,18 +9,19 @@ import tensorflow as tf
 from flask import Flask, jsonify, request
 from PIL import Image
 
-from config.constants import GAMES
-from config.paths import MODELS_PATH
+from harmony_config.structs import GAMES
 from utils.data_conversion import label_to_json
 
 # --------------------------------------------------------------------------- #
 # Configuration
 # --------------------------------------------------------------------------- #
-GAME = os.getenv("GAME", GAMES.LORCANA.value)  # e.g. "mtg", "pokemon"
-MODEL_DIR = Path(os.getenv("MODEL_DIR", MODELS_PATH / GAME))
+# consider putting this in the config file
+GAME = GAMES.LORCANA.value
+MODEL_DIR = Path(os.getenv("MODEL_DIR"), GAME)
+
 MODEL_PATH = MODEL_DIR / "model.keras"
 DEFAULT_THRESHOLD = float(os.getenv("THRESHOLD", 0.60))
-PORT = int(os.getenv("PORT", 5000))
+PORT = int(os.getenv("PORT", 8000))
 
 IMG_HEIGHT = 224  # update if your model expects something else
 IMG_WIDTH = 224
@@ -43,10 +31,11 @@ IMG_WIDTH = 224
 # --------------------------------------------------------------------------- #
 app = Flask(__name__)
 
-try:
-    model = tf.keras.models.load_model(MODEL_PATH)
-except (IOError, ValueError) as exc:
-    raise SystemExit(f"Could not load model at {MODEL_PATH}: {exc}") from exc
+
+# try:
+#     model = tf.keras.models.load_model(MODEL_PATH)
+# except (IOError, ValueError) as exc:
+#     raise SystemExit(f"Could not load model at {MODEL_PATH}: {exc}") from exc
 
 
 def preprocess_image(img: Image.Image) -> np.ndarray:

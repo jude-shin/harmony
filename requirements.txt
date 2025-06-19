@@ -10,4 +10,5 @@ flask
 jsonify
 requests
 gunicorn
+uvicorn
 
