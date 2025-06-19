@@ -36,9 +36,6 @@ app = FastAPI(
         version="1.0.0",
         )
 
-
-
-
 try:
     model = tf.keras.models.load_model(MODEL_PATH)
 except (IOError, ValueError) as exc:
