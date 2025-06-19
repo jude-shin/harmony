@@ -1,11 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
 ########################
-# 0. CUDA GPU          #
-########################
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
-
-########################
 # 1. Base image layer  #
 ########################
 FROM python:3.11-slim AS base
@@ -19,9 +14,14 @@ RUN apt-get update && \
 				libglib2.0-0 \
 				curl \
 			&& rm -rf /var/lib/apt/lists/*
+			
+########################
+# 2. CUDA GPU          #
+########################
+FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 
 ########################
-# 2. Python deps layer #
+# 3. Python deps layer #
 ########################
 FROM base AS deps
 
@@ -30,7 +30,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 ########################
-# 3. Runtime layer     #
+# 4. Runtime layer     #
 ########################
 FROM base AS runtime
 ENV PYTHONUNBUFFERED=1\
