@@ -1,6 +1,13 @@
 import json
 import logging
+import os 
+import pandas as pd
+import json
+from pathlib import Path
+
 from harmony_config.structs import GAMES
+
+DATA_DIR = os.getenv("DATA_DIR")
 
 # label: what the tensorflow model will spit out
 # _id: tcg/deckdrafterprod unique _id
@@ -31,23 +38,36 @@ def id_to_label(_id : str, g : GAMES) -> str:
     # look up the variable
     return ""
 
-# given a label (string), and a Game type, and a path to the deckdrafterprod json file
+# given a label (string), and a Game type 
 # return a json object with certain fields
 def label_to_json(label : str, g : GAMES) -> str:
-    if not isinstance(label, str):
-        raise TypeError("label_to_json expected a [str] but got [" + type(label) + "]")
-    if not isinstance(g, GAMES):
-        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
+    # if not isinstance(label, int):
+    #     raise TypeError("label_to_json expected a [int] but got [" + type(label) + "]")
+    # if not isinstance(g, GAMES):
+    #     raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
+        
+    # master-labels.csv (for label -> _id)
+    master_labels_path = Path(DATA_DIR, g.value, "master_labels.csv")
+    master_labels = pd.read_csv(master_labels_path)
 
-    # look up the json object in the deckdrafterprod and return the raw object 
-    return json.dumps({
-        # "confidence": float(confidence),
-        "name": CARD_NAMES[result_index],
-        "_id": "", 
-        "image_url": PUBLIC_IMAGE_URLS[result_index],
-        "tcgplayer_id": TCGPLAYER_IDS[result_index],
-        "price": float(LATEST_PRICES[result_index]),
-        })
+    predicted_id = master_labels[master_labels['label'] == label]['_id'].iloc[0]
+
+    # deckdrafterprod.json (for _id -> various information)
+    deckdrafterprod_path = Path(DATA_DIR, g.value, "deckdrafterprod.json")
+    with open(deckdrafterprod_path, 'r') as deckdrafterprod_file:
+        deckdrafterprod = json.load(deckdrafterprod_file)
+    
+    card_obj = {}
+    for obj in deckdrafterprod:
+        if str(obj['_id']) == str(predicted_id):
+            logging.warning('object with {_id} FOUND!')
+            card_obj = obj
+    if card_obj == {}:
+        logging.warning('object with {_id} not found... returning empty json object')
+
+    # returns the raw object without any filtering of the fields 
+    # each field name can be different based on the game, so we must process it
+    return json.dumps(card_obj)
 
 
 # given a json string (that is raw from the deckdrafterprod), and a Game type
@@ -55,8 +75,8 @@ def label_to_json(label : str, g : GAMES) -> str:
 def reformat_json(json_string : str, g : GAMES) -> str:
     if not isinstance(json_string, str):
         raise TypeError("reformat_json expected a json [str] but got [" + type(json_string) + "]")
-    if not isinstance(g, GAMES):
-        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
+    # if not isinstance(g, GAMES):
+    #     raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
 
     formatted_json_string = json.dumps({});
     data = json.loads(json_string)

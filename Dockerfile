@@ -31,6 +31,7 @@ COPY --from=deps /usr/local /usr/local
 COPY src/api /app/src/api
 COPY src/inference /app/src/inference
 COPY src/utils /app/src/utils
+COPY src/helper /app/src/helper
 COPY src/harmony_config /app/src/harmony_config
 
 EXPOSE ${PORT}

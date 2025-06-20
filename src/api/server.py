@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
 from harmony_config.structs import GAMES
 from utils.data_conversion import label_to_json
+from helper.image_processing import get_tensor_from_image
 
 # --------------------------------------------------------------------------- #
 # Configuration
@@ -61,8 +62,8 @@ async def predict(
         game: str,
         image: UploadFile = File(..., description="JPEG scan from client"),
         card_index: int = Form(-1, description="Ground-truth index, or -1 if unknown"),
-        img_width: int = Form(..., description="Original client image width in pixels"),
-        img_height: int = Form(..., description="Original client image height in pixels"),
+        img_width: int = Form(..., description="Original client image width in pixels"), #TODO : no need for this
+        img_height: int = Form(..., description="Original client image height in pixels"), #TODO : no need for this
         threshold: float = Form(
             DEFAULT_THRESHOLD,
             description="Confidence threshold sent by the client",
@@ -74,27 +75,29 @@ async def predict(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"invalid image: {exc}")
 
-    if (img_width, img_height) != pil_image.size:
-        # Log or warn; we won’t hard-fail because cropping/resizing may follow
-        print(
-            f"[WARN] Client size ({img_width}×{img_height}) "
-            f"!= actual {pil_image.size} for file {image.filename}"
-            )
+    # if (img_width, img_height) != pil_image.size:
+    #     # Log or warn; we won’t hard-fail because cropping/resizing may follow
+    #     print(
+    #         f"[WARN] Client size ({img_width}×{img_height}) "
+    #         f"!= actual {pil_image.size} for file {image.filename}"
+    #         )
 
-    batch = preprocess_image(pil_image)  
-    print("\nbatch: ", batch)
 
-    probs = model.predict(batch, verbose=True)[0]
-    print("\nprobs: ", probs)
+    _, model_img_width, model_img_height, _ = model.input_shape
 
-    idx = int(np.argmax(probs))
-    print("\nidx: ", idx)
+    img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
 
-    confidence = float(probs[idx])
+    img_tensor = np.expand_dims(img_tensor, axis=0)
+    prediction = model.predict(img_tensor)
+
+    prediction, confidence = np.argmax(
+        prediction), prediction[0, np.argmax(prediction)]
+
     print("\nconfidence: ", confidence)
+    print("\nprediction: ", prediction)
 
     
-    label_json = json.loads(label_to_json(idx))
+    label_json = json.loads(label_to_json(prediction, GAMES.LORCANA))
 
     # payload = {
     #     "prediction": label_json,
