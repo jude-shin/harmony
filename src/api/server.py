@@ -97,7 +97,7 @@ async def predict(
     print("\nprediction: ", prediction)
 
     
-    raw_json = label_to_json(prediction, GAMES.LORCANA)
+    raw_json = label_to_json(int(prediction), GAMES.LORCANA)
     formatted_json = format_json(raw_json, GAMES.LORCANA)
 
 

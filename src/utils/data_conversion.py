@@ -2,6 +2,7 @@ import json
 import logging
 import os 
 import pandas as pd
+import numpy as np 
 import json
 from pathlib import Path
 
@@ -17,10 +18,10 @@ DATA_DIR = os.getenv("DATA_DIR")
 # given a label (string), and a Game type
 # return the _id (string) that is associated with that label
 def label_to_id(label : str, g : GAMES) -> str:
-    if not isinstance(label, str):
-        raise TypeError("label_to_id expected a [str] but got [" + type(label) + "]")
+    if not isinstance(label, int):
+        raise TypeError("[label_to_id] expected a [int] but got: ", label)
     if not isinstance(g, GAMES):
-        raise TypeError("label_to_id expected a [GAMES] enum but got [" + type(g) + "]")
+        raise TypeError("[label_to_id] expected a [GAMES] enum but got: ", g)
 
     json = label_to_json(label)
 
@@ -31,21 +32,21 @@ def label_to_id(label : str, g : GAMES) -> str:
 # return the label (string) that is associated with that _id
 def id_to_label(_id : str, g : GAMES) -> str:
     if not isinstance(_id, str):
-        raise TypeError("id_to_label expected a [str] but got [" + type(_id) + "]")
+        raise TypeError("[id_to_label] expected a [str] but got: ", _id)
     if not isinstance(g, GAMES):
-        raise TypeError("id_to_label expected a [GAMES] enum but got [" + type(g) + "]")
+        raise TypeError("[id_to_label] expected a [GAMES] enum but got: ", g)
 
     # look up the variable
     return ""
 
 # given a label (string), and a Game type 
 # return a json string with certain fields
-def label_to_json(label : str, g : GAMES) -> str:
-    # if not isinstance(label, int):
-    #     raise TypeError("label_to_json expected a [int] but got [" + type(label) + "]")
-    # if not isinstance(g, GAMES):
-    #     raise TypeError("label_to_json expected a [GAMES] enum but got [" + type(g) + "]")
-        
+def label_to_json(label : int, g : GAMES) -> str:
+    if not isinstance(label, int):
+        raise TypeError("[label_to_json] expected a [int] but got: ", label)
+    if not isinstance(g, GAMES):
+        raise TypeError("[label_to_json] expected a [GAMES] enum but got: ", g)
+         
     # master-labels.csv (for label -> _id)
     master_labels_path = Path(DATA_DIR, g.value, "master_labels.csv")
     master_labels = pd.read_csv(master_labels_path)
@@ -73,10 +74,10 @@ def label_to_json(label : str, g : GAMES) -> str:
 # given a json string (that is raw from the deckdrafterprod), and a Game type
 # return a unified json string with the following information:
 def format_json(json_string : str, g : GAMES) -> str:
-    # if not isinstance(json_string, str):
-    #     raise TypeError("format_json expected a json [str] but got: ", json_string)
-    # if not isinstance(g, GAMES):
-    #     raise TypeError("format_json expected a [GAMES] enum but got: ", g)
+    if not isinstance(json_string, str):
+        raise TypeError("[format_json] expected a json [str] but got: ", json_string)
+    if not isinstance(g, GAMES):
+        raise TypeError("[format_json] expected a [GAMES] enum but got: ", g)
 
     formatted_json_string = json.dumps({});
     data = json.loads(json_string)
@@ -95,7 +96,7 @@ def format_json(json_string : str, g : GAMES) -> str:
         # elif g == GAMES.MTG:
         # elif g == GAMES.POKEMON:
         else: raise ValueError()
-    except KeyError:
+    except KeyErro:
         logging.warning('[format_json] key not found... returning empty json object')
     except ValueError:
         logging.warning('Game Type' + g + 'not supported')
