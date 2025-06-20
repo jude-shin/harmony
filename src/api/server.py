@@ -23,8 +23,6 @@ MODEL_DIR = Path(os.getenv("MODEL_DIR"), GAME)
 MODEL_PATH = MODEL_DIR / "model.keras"
 PORT = int(os.getenv("PORT", 5000))
 
-DEFAULT_THRESHOLD = float(os.getenv("THRESHOLD", 0.60))
-
 # App & model initialisation
 app = FastAPI(
         title="Harmony ML API",
@@ -46,11 +44,6 @@ async def ping() -> dict[str, str]:
 async def predict(
         game: str,
         image: UploadFile = File(..., description="JPEG scan from client"),
-        card_index: int = Form(-1, description="Ground-truth index, or -1 if unknown"),
-        threshold: float = Form(
-            DEFAULT_THRESHOLD,
-            description="Confidence threshold sent by the client",
-            ),
         ):
 
     try:
