@@ -6,7 +6,7 @@ import numpy as np
 import json
 from pathlib import Path
 
-from harmony_config.structs import GAMES
+from harmony_config.productLines import PRODUCTLINES 
 
 DATA_DIR = os.getenv("DATA_DIR")
 
@@ -17,11 +17,11 @@ DATA_DIR = os.getenv("DATA_DIR")
 
 # given a label (string), and a Game type
 # return the _id (string) that is associated with that label
-def label_to_id(label : str, g : GAMES) -> str:
+def label_to_id(label : str, g : PRODUCTLINES) -> str:
     if not isinstance(label, int):
         raise TypeError("[label_to_id] expected a [int] but got: ", label)
-    if not isinstance(g, GAMES):
-        raise TypeError("[label_to_id] expected a [GAMES] enum but got: ", g)
+    if not isinstance(g, PRODUCTLINES):
+        raise TypeError("[label_to_id] expected a [PRODUCTLINES] enum but got: ", g)
 
     json = label_to_json(label)
 
@@ -30,22 +30,22 @@ def label_to_id(label : str, g : GAMES) -> str:
 
 # given an _id (string), and a Game type
 # return the label (string) that is associated with that _id
-def id_to_label(_id : str, g : GAMES) -> str:
+def id_to_label(_id : str, g : PRODUCTLINES) -> str:
     if not isinstance(_id, str):
         raise TypeError("[id_to_label] expected a [str] but got: ", _id)
-    if not isinstance(g, GAMES):
-        raise TypeError("[id_to_label] expected a [GAMES] enum but got: ", g)
+    if not isinstance(g, PRODUCTLINES):
+        raise TypeError("[id_to_label] expected a [PRODUCTLINES] enum but got: ", g)
 
     # look up the variable
     return ""
 
 # given a label (string), and a Game type 
 # return a json string with certain fields
-def label_to_json(label : int, g : GAMES) -> str:
+def label_to_json(label : int, g : PRODUCTLINES) -> str:
     if not isinstance(label, int):
         raise TypeError("[label_to_json] expected a [int] but got: ", label)
-    if not isinstance(g, GAMES):
-        raise TypeError("[label_to_json] expected a [GAMES] enum but got: ", g)
+    if not isinstance(g, PRODUCTLINES):
+        raise TypeError("[label_to_json] expected a [PRODUCTLINES] enum but got: ", g)
          
     # master-labels.csv (for label -> _id)
     master_labels_path = Path(DATA_DIR, g.value, "master_labels.csv")
@@ -73,17 +73,17 @@ def label_to_json(label : int, g : GAMES) -> str:
 
 # given a json string (that is raw from the deckdrafterprod), and a Game type
 # return a unified json string with the following information:
-def format_json(json_string : str, g : GAMES) -> str:
+def format_json(json_string : str, g : PRODUCTLINES) -> str:
     if not isinstance(json_string, str):
         raise TypeError("[format_json] expected a json [str] but got: ", json_string)
-    if not isinstance(g, GAMES):
-        raise TypeError("[format_json] expected a [GAMES] enum but got: ", g)
+    if not isinstance(g, PRODUCTLINES):
+        raise TypeError("[format_json] expected a [PRODUCTLINES] enum but got: ", g)
 
     formatted_json_string = json.dumps({});
     data = json.loads(json_string)
 
     try: 
-        if g == GAMES.LORCANA:
+        if g == PRODUCTLINES.LORCANA:
             formatted_json_string = json.dumps({
                 'name': data['productName'],
                 '_id': data['_id'],
@@ -93,8 +93,8 @@ def format_json(json_string : str, g : GAMES) -> str:
                 # maybe take an average? or get the lowest one?
                 'price': data['listings'][0]['price'],
                 }, indent=4)
-        # elif g == GAMES.MTG:
-        # elif g == GAMES.POKEMON:
+        # elif g == PRODUCTLINES.MTG:
+        # elif g == PRODUCTLINES.POKEMON:
         else: raise ValueError()
     except KeyErro:
         logging.warning('[format_json] key not found... returning empty json object')

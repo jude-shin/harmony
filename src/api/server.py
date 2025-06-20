@@ -12,13 +12,13 @@ import uvicorn
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
-from harmony_config.structs import GAMES
+from harmony_config.productLines import PRODUCTLINES, string_to_productLine
 from utils.data_conversion import label_to_json, format_json 
 from helper.image_processing import get_tensor_from_image
 
 # Configuration
-GAME = GAMES.LORCANA.value
-MODEL_DIR = Path(os.getenv("MODEL_DIR"), GAME)
+PRODUCTLINE = PRODUCTLINES.LORCANA.value
+MODEL_DIR = Path(os.getenv("MODEL_DIR"), PRODUCTLINE)
 
 MODEL_PATH = MODEL_DIR / "model.keras"
 PORT = int(os.getenv("PORT", 5000))
@@ -40,10 +40,10 @@ except (IOError, ValueError) as exc:
 async def ping() -> dict[str, str]:
     return {"ping": "pong"}
 
-@app.post("/predict/{game}")
+@app.post("/predict")
 async def predict(
-        game: str,
-        image: UploadFile = File(..., description="JPEG scan from client"),
+        productLineString: str = Form(..., description="productLine name (e.g., locrana, mtg)"),
+        image: UploadFile = File(..., description="image scan from client"),
         ):
 
     try:
@@ -64,8 +64,10 @@ async def predict(
     print("\nconfidence: ", confidence)
     print("\nprediction: ", prediction)
 
-    raw_json = label_to_json(int(prediction), GAMES.LORCANA)
-    formatted_json = format_json(raw_json, GAMES.LORCANA)
+    productLine = string_to_productLine(productLineString)
+
+    raw_json = label_to_json(int(prediction), productLine)
+    formatted_json = format_json(raw_json, productLine)
 
     return json.loads(formatted_json)
 
