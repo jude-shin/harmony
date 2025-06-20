@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/src \
     MODEL_DIR=/models \
     DATA_DIR=/data \
-    PORT=8000
+    PORT=5000
 
 # OS deps + Python + fresh pip
 RUN apt-get update && \
@@ -36,5 +36,5 @@ COPY src/harmony_config /app/src/harmony_config
 
 EXPOSE ${PORT}
 
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--workers", "1", "--bind", "0.0.0.0:8000", "--timeout", "120"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--workers", "1", "--bind", "0.0.0.0:5000", "--timeout", "120"]
 

@@ -16,22 +16,16 @@ from harmony_config.structs import GAMES
 from utils.data_conversion import label_to_json, format_json 
 from helper.image_processing import get_tensor_from_image
 
-# --------------------------------------------------------------------------- #
 # Configuration
-# --------------------------------------------------------------------------- #
 GAME = GAMES.LORCANA.value
 MODEL_DIR = Path(os.getenv("MODEL_DIR"), GAME)
 
 MODEL_PATH = MODEL_DIR / "model.keras"
-PORT = int(os.getenv("PORT", 8000))
+PORT = int(os.getenv("PORT", 5000))
 
-IMG_HEIGHT = 437 
-IMG_WIDTH = 313 
 DEFAULT_THRESHOLD = float(os.getenv("THRESHOLD", 0.60))
 
-# --------------------------------------------------------------------------- #
 # App & model initialisation
-# --------------------------------------------------------------------------- #
 app = FastAPI(
         title="Harmony ML API",
         version="1.0.0",
@@ -43,16 +37,7 @@ except (IOError, ValueError) as exc:
     raise SystemExit(f"Could not load model at {MODEL_PATH}: {exc}") from exc
 
 
-def preprocess_image(img: Image.Image) -> np.ndarray:
-    """Resize → scale to [0,1] → add batch dimension."""
-    img = img.resize((IMG_WIDTH, IMG_HEIGHT))
-    arr = np.asarray(img, dtype="float32") / 255.0
-    return np.expand_dims(arr, axis=0)
-
-
-# --------------------------------------------------------------------------- #
 # Routes
-# --------------------------------------------------------------------------- #
 @app.get("/ping", summary="Health-check")
 async def ping() -> dict[str, str]:
     return {"ping": "pong"}
@@ -62,8 +47,6 @@ async def predict(
         game: str,
         image: UploadFile = File(..., description="JPEG scan from client"),
         card_index: int = Form(-1, description="Ground-truth index, or -1 if unknown"),
-        img_width: int = Form(..., description="Original client image width in pixels"), #TODO : no need for this
-        img_height: int = Form(..., description="Original client image height in pixels"), #TODO : no need for this
         threshold: float = Form(
             DEFAULT_THRESHOLD,
             description="Confidence threshold sent by the client",
@@ -74,14 +57,6 @@ async def predict(
         pil_image = Image.open(image.file).convert("RGB")
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"invalid image: {exc}")
-
-    # if (img_width, img_height) != pil_image.size:
-    #     # Log or warn; we won’t hard-fail because cropping/resizing may follow
-    #     print(
-    #         f"[WARN] Client size ({img_width}×{img_height}) "
-    #         f"!= actual {pil_image.size} for file {image.filename}"
-    #         )
-
 
     _, model_img_width, model_img_height, _ = model.input_shape
 
@@ -96,10 +71,8 @@ async def predict(
     print("\nconfidence: ", confidence)
     print("\nprediction: ", prediction)
 
-    
     raw_json = label_to_json(int(prediction), GAMES.LORCANA)
     formatted_json = format_json(raw_json, GAMES.LORCANA)
-
 
     return json.loads(formatted_json)
 
@@ -107,6 +80,6 @@ async def predict(
 
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    uvicorn.run("src.api.server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.api.server:app", host="0.0.0.0", port=5000, reload=True)
 
 
