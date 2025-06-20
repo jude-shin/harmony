@@ -35,5 +35,5 @@ COPY src/harmony_config /app/src/harmony_config
 
 EXPOSE ${PORT}
 
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--workers", "1", "--preload", "--bind", "0.0.0.0:8000", "--timeout", "120"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--workers", "1", "--bind", "0.0.0.0:8000", "--timeout", "120"]
 
