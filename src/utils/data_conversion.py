@@ -20,7 +20,7 @@ def label_to_id(label : str, g : GAMES) -> str:
     if not isinstance(label, str):
         raise TypeError("label_to_id expected a [str] but got [" + type(label) + "]")
     if not isinstance(g, GAMES):
-        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
+        raise TypeError("label_to_id expected a [GAMES] enum but got [" + type(g) + "]")
 
     json = label_to_json(label)
 
@@ -33,18 +33,18 @@ def id_to_label(_id : str, g : GAMES) -> str:
     if not isinstance(_id, str):
         raise TypeError("id_to_label expected a [str] but got [" + type(_id) + "]")
     if not isinstance(g, GAMES):
-        raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
+        raise TypeError("id_to_label expected a [GAMES] enum but got [" + type(g) + "]")
 
     # look up the variable
     return ""
 
 # given a label (string), and a Game type 
-# return a json object with certain fields
+# return a json string with certain fields
 def label_to_json(label : str, g : GAMES) -> str:
     # if not isinstance(label, int):
     #     raise TypeError("label_to_json expected a [int] but got [" + type(label) + "]")
     # if not isinstance(g, GAMES):
-    #     raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
+    #     raise TypeError("label_to_json expected a [GAMES] enum but got [" + type(g) + "]")
         
     # master-labels.csv (for label -> _id)
     master_labels_path = Path(DATA_DIR, g.value, "master_labels.csv")
@@ -60,10 +60,10 @@ def label_to_json(label : str, g : GAMES) -> str:
     card_obj = {}
     for obj in deckdrafterprod:
         if str(obj['_id']) == str(predicted_id):
-            logging.warning('object with {_id} FOUND!')
+            logging.info('object with {_id} FOUND!')
             card_obj = obj
     if card_obj == {}:
-        logging.warning('object with {_id} not found... returning empty json object')
+        logging.warning(f'[label_to_json] object with {_id} not found... returning empty json object')
 
     # returns the raw object without any filtering of the fields 
     # each field name can be different based on the game, so we must process it
@@ -71,12 +71,12 @@ def label_to_json(label : str, g : GAMES) -> str:
 
 
 # given a json string (that is raw from the deckdrafterprod), and a Game type
-# return a unified json object with the following information:
-def reformat_json(json_string : str, g : GAMES) -> str:
-    if not isinstance(json_string, str):
-        raise TypeError("reformat_json expected a json [str] but got [" + type(json_string) + "]")
+# return a unified json string with the following information:
+def format_json(json_string : str, g : GAMES) -> str:
+    # if not isinstance(json_string, str):
+    #     raise TypeError("format_json expected a json [str] but got: ", json_string)
     # if not isinstance(g, GAMES):
-    #     raise TypeError("reformat_json  expected a [GAMES] enum but got [" + type(g) + "]")
+    #     raise TypeError("format_json expected a [GAMES] enum but got: ", g)
 
     formatted_json_string = json.dumps({});
     data = json.loads(json_string)
@@ -88,13 +88,15 @@ def reformat_json(json_string : str, g : GAMES) -> str:
                 '_id': data['_id'],
                 'image_url': data['images']['large'],
                 'tcgplayer_id': data['tcgplayer_productId'], 
-                'price': data['price'],
-                })
+                # TODO: this gives the first price that it finds in the listings
+                # maybe take an average? or get the lowest one?
+                'price': data['listings'][0]['price'],
+                }, indent=4)
         # elif g == GAMES.MTG:
         # elif g == GAMES.POKEMON:
         else: raise ValueError()
     except KeyError:
-        logging.warning('key not found... returning empty json object')
+        logging.warning('[format_json] key not found... returning empty json object')
     except ValueError:
         logging.warning('Game Type' + g + 'not supported')
     finally:

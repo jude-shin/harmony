@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
 from harmony_config.structs import GAMES
-from utils.data_conversion import label_to_json
+from utils.data_conversion import label_to_json, format_json 
 from helper.image_processing import get_tensor_from_image
 
 # --------------------------------------------------------------------------- #
@@ -97,17 +97,11 @@ async def predict(
     print("\nprediction: ", prediction)
 
     
-    label_json = json.loads(label_to_json(prediction, GAMES.LORCANA))
+    raw_json = label_to_json(prediction, GAMES.LORCANA)
+    formatted_json = format_json(raw_json, GAMES.LORCANA)
 
-    # payload = {
-    #     "prediction": label_json,
-    #     "confidence": confidence,
-    #     "threshold_exceeded": confidence >= threshold,
-    #     # do more here please
-    # }
-    # return payload
 
-    return label_json
+    return json.loads(formatted_json)
 
 
 
