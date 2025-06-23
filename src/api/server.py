@@ -18,7 +18,7 @@ from helper.image_processing import get_tensor_from_image
 
 # Configuration
 PRODUCTLINE = PRODUCTLINES.LORCANA.value
-MODEL_DIR = Path(os.getenv("MODEL_DIR"), PRODUCTLINE)
+MODEL_DIR = Path(os.getenv("MODEL_DIR"), PRODUCTLINE) # change to os.path.join
 
 MODEL_PATH = MODEL_DIR / "model.keras"
 PORT = int(os.getenv("PORT", 5000))
