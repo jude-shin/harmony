@@ -18,8 +18,9 @@ RUN apt-get update && \
 
 # Dependencies stage
 FROM base AS deps
-COPY requirements.txt .
-RUN python3.11 -m pip install --no-cache-dir -r requirements.txt
+COPY requirements/base.txt .
+# COPY requirements/api.txt .
+RUN python3.11 -m pip install --no-cache-dir -r base.txt # api.txt
 
 # Runtime stage
 FROM base AS runtime
@@ -27,12 +28,12 @@ FROM base AS runtime
 # Bring in everything pip put under /usr/local (binaries + wheels)
 COPY --from=deps /usr/local /usr/local
 
-# Your source tree
-COPY src/api /app/src/api
-COPY src/inference /app/src/inference
-COPY src/utils /app/src/utils
-COPY src/helper /app/src/helper
+# Your source tree (honestly could just copy the whole source tree to be lazy)
 COPY src/harmony_config /app/src/harmony_config
+COPY src/utils /app/src/utils
+# TODO : eventually merge this helper file into the utils folder
+COPY src/helper /app/src/helper 
+COPY src/api /app/src/api
 
 EXPOSE ${PORT}
 

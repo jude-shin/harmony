@@ -1,7 +1,8 @@
 services:
-  card-id:
-    build: .
-    image: card-id-service:dev
+  api:
+    build: 
+      context: .
+      dockerfile: docker/api/Dockerfile
     ports:
       - "5000:5000"
     volumes:
@@ -22,4 +23,4 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
+    container_name: api
