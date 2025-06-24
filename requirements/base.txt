@@ -1,14 +1,9 @@
-tensorflow[and-cuda]
+typeguard
 numpy
 pandas
 pillow
+
+tensorflow[and-cuda]
 scikit-learn
 keras-tuner
 opencv-python
-requests
-gunicorn
-uvicorn
-fastapi
-python-multipart
-flask
-jsonify

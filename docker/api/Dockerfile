@@ -19,8 +19,8 @@ RUN apt-get update && \
 # Dependencies stage
 FROM base AS deps
 COPY requirements/base.txt .
-# COPY requirements/api.txt .
-RUN python3.11 -m pip install --no-cache-dir -r base.txt # api.txt
+COPY requirements/api.txt .
+RUN python3.11 -m pip install --no-cache-dir -r base.txt -r api.txt
 
 # Runtime stage
 FROM base AS runtime
