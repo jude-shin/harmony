@@ -44,6 +44,9 @@ def identify(image: Image.Image, model_no: int, pl: PLS) -> str:
     Returns: 
         str: the most confident label of the image (from the master layer)
     '''
+
+    logging.info('Model Number: %d', model_no)
+
     model = get_model(model_no, pl)
 
     best_prediction_label = evaluate(image, model_no, model)
