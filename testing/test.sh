@@ -1,4 +1,4 @@
 curl -X POST \
-     -F "image=@$HOME/harmony/testing/1.png" \
-     -F "product_line_string=lorcana" \
+     -F "image=@$HOME/harmony/testing/pokemon.png" \
+     -F "product_line_string=pokemon" \
      https://ai.storepass.co/predict
