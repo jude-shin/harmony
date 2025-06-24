@@ -91,12 +91,11 @@ def format_json(json_string : str, g : PRODUCTLINES) -> str:
     Returns:
         str: formatted json object
     '''
-    formatted_json_string = json.dumps({})
-    data = json.loads(json_string)
-
     try: 
+        fomatted_json = {}
+        data = json.loads(json_string)
         if g == PRODUCTLINES.LORCANA:
-            formatted_json_string = json.dumps({
+            formatted_json = {
                 'name': data['productName'],
                 '_id': data['_id'],
                 'image_url': data['images']['large'],
@@ -104,13 +103,13 @@ def format_json(json_string : str, g : PRODUCTLINES) -> str:
                 # TODO: this gives the first price that it finds in the listings
                 # maybe take an average? or get the lowest one?
                 'price': data['listings'][0]['price'],
-                }, indent=4)
+                }
         # elif g == PRODUCTLINES.MTG:
         # elif g == PRODUCTLINES.POKEMON:
         else: raise ValueError()
+        return json.dumps(formatted_json)
     except KeyError:
         logging.warning('[format_json] key not found... returning empty json object')
+        return json.dumps({})
     except ValueError:
         logging.warning('Game Type' + g + 'not supported')
-    finally:
-        return formatted_json_string
