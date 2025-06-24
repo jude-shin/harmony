@@ -61,9 +61,14 @@ async def predict(
 
     product_line = string_to_product_line(product_line_string)
 
-    best_prediction = identify(pil_image, 0, product_line)
+    best_prediction = identify(pil_image, 'm0', product_line)
+
+
 
     raw_json = label_to_json(int(best_prediction), product_line)
+
+    
+
     formatted_json = format_json(raw_json, product_line)
 
     return json.loads(formatted_json)
