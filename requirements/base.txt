@@ -2,6 +2,8 @@ typeguard
 numpy
 pandas
 pillow
+toml
+
 
 tensorflow[and-cuda]
 scikit-learn
