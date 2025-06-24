@@ -1,4 +1,3 @@
-from .evaluation import identify 
+from .evaluate import identify 
 
 __all__ = ['identify']
-
