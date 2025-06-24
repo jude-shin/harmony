@@ -10,42 +10,51 @@ from harmony_config.productLines import PRODUCTLINES
 DATA_DIR = os.getenv("DATA_DIR")
 
 # label: what the tensorflow model will spit out
-# _id: tcg/deckdrafterprod unique _id
+# _id: deckdrafterprod unique _id
 #   allows us to get more information about the card
 
 
-# given a label (string), and a Game type
-# return the _id (string) that is associated with that label
-def label_to_id(label : str, g : PRODUCTLINES) -> str:
-    if not isinstance(label, int):
-        raise TypeError("[label_to_id] expected a [int] but got: ", label)
-    if not isinstance(g, PRODUCTLINES):
-        raise TypeError("[label_to_id] expected a [PRODUCTLINES] enum but got: ", g)
+def label_to_id(label : int, g : PRODUCTLINES) -> str:
+    '''
+    Convert a given label to the deckdrafterprod _id based on the master_labels.toml
 
-    json = label_to_json(label)
+    Args:
+        label (str): what the tensorflow model will spit out
+        pl (PRODUCTLINES): The producteLine we are working with.
+    Returns:
+        str: _id that is associated with that label
+    '''
+    json = label_to_json(label, g)
 
     # extract only the _id from the json object
     return ""
 
-# given an _id (string), and a Game type
-# return the label (string) that is associated with that _id
 def id_to_label(_id : str, g : PRODUCTLINES) -> str:
-    if not isinstance(_id, str):
-        raise TypeError("[id_to_label] expected a [str] but got: ", _id)
-    if not isinstance(g, PRODUCTLINES):
-        raise TypeError("[id_to_label] expected a [PRODUCTLINES] enum but got: ", g)
+    '''
+    Convert a given deckdrafterprod _id to the label based on the master_labels.toml
 
+    Args:
+        _id (str): deckdrafterprod _id 
+        pl (PRODUCTLINES): The producteLine we are working with.
+    Returns:
+        str: what the tensorflow model will spit out
+    '''
+    
     # look up the variable
     return ""
 
-# given a label (string), and a Game type 
-# return a json string with certain fields
+# TODO: make return type a dict as well?
 def label_to_json(label : int, g : PRODUCTLINES) -> str:
-    if not isinstance(label, int):
-        raise TypeError("[label_to_json] expected a [int] but got: ", label)
-    if not isinstance(g, PRODUCTLINES):
-        raise TypeError("[label_to_json] expected a [PRODUCTLINES] enum but got: ", g)
-         
+    '''
+    Look up which json object has the particular label based on the master_labels.toml
+
+    Args:
+        label (str): what the tensorflow model will spit out
+        pl (PRODUCTLINES): The producteLine we are working with.
+    Returns:
+        str: json entry that is associated with that label
+    '''
+
     # master-labels.csv (for label -> _id)
     master_labels_path = Path(DATA_DIR, g.value, "master_labels.csv")
     master_labels = pd.read_csv(master_labels_path)
@@ -56,7 +65,7 @@ def label_to_json(label : int, g : PRODUCTLINES) -> str:
     deckdrafterprod_path = Path(DATA_DIR, g.value, "deckdrafterprod.json")
     with open(deckdrafterprod_path, 'r') as deckdrafterprod_file:
         deckdrafterprod = json.load(deckdrafterprod_file)
-    
+ 
     card_obj = {}
     for obj in deckdrafterprod:
         if str(obj['_id']) == str(predicted_id):
@@ -70,15 +79,19 @@ def label_to_json(label : int, g : PRODUCTLINES) -> str:
     return json.dumps(card_obj)
 
 
-# given a json string (that is raw from the deckdrafterprod), and a Game type
-# return a unified json string with the following information:
+# TODO: make json_string a dict type? (we don't need to keep converting it and stuff)
+# TODO: make return type a dict as well?
 def format_json(json_string : str, g : PRODUCTLINES) -> str:
-    if not isinstance(json_string, str):
-        raise TypeError("[format_json] expected a json [str] but got: ", json_string)
-    if not isinstance(g, PRODUCTLINES):
-        raise TypeError("[format_json] expected a [PRODUCTLINES] enum but got: ", g)
+    '''
+    Formats the raw json object (see label_to_json) with infomation the api is looking for 
 
-    formatted_json_string = json.dumps({});
+    Args:
+        json_string (str): Json object string that is 
+        pl (PRODUCTLINES): The producteLine we are working with.
+    Returns:
+        str: formatted json object
+    '''
+    formatted_json_string = json.dumps({})
     data = json.loads(json_string)
 
     try: 
@@ -95,7 +108,7 @@ def format_json(json_string : str, g : PRODUCTLINES) -> str:
         # elif g == PRODUCTLINES.MTG:
         # elif g == PRODUCTLINES.POKEMON:
         else: raise ValueError()
-    except KeyErro:
+    except KeyError:
         logging.warning('[format_json] key not found... returning empty json object')
     except ValueError:
         logging.warning('Game Type' + g + 'not supported')

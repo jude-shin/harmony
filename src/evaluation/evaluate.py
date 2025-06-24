@@ -40,7 +40,7 @@ def evaluate(image: Image.Image, model_no: int, pl: PLS) -> str:
         pl (PRODUCTLINES): The producteLine we are working with.
         model_no (int): unique identifier for which (sub)model we are using for evaluation
     Returns: 
-        str: _id of the image (based on the tcgplayer deckdrafterprod)
+        str: _id of the image (based on the deckdrafterprod)
     '''
     if model_no == 0:
         # validate everything to make sure we aren't going to run into an error
