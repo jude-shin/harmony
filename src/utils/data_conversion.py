@@ -1,4 +1,8 @@
-import json, logging, os, typeguard
+import json
+import logging
+import os
+import typeguard
+import toml
 
 import pandas as pd
 import numpy as np 
@@ -60,10 +64,14 @@ def label_to_json(label : int, g : PLS) -> str:
     if DATA_DIR is None:
         logging.error('[label_to_json] DATA_DIR env var not set')
         return ''
-    master_labels_path = Path(DATA_DIR, g.value, 'master_labels.csv')
-    master_labels = pd.read_csv(master_labels_path)
+    master_labels_path = os.path.join(DATA_DIR, g.value, 'master_labels.toml')
+    # master_labels = pd.read_csv(master_labels_path)
+    with open(master_labels_path, 'r') as f:
+        master_labels = toml.load(f)
 
-    predicted_id = master_labels[master_labels['label'] == label]['_id'].iloc[0]
+    predicted_id = master_labels[str(label)]
+
+    print('PREDICTED ID: ' + predicted_id)
 
     # deckdrafterprod.json (for _id -> various information)
     deckdrafterprod_path = Path(DATA_DIR, g.value, 'deckdrafterprod.json')
@@ -95,6 +103,7 @@ def format_json(json_string : str, g : PLS) -> str:
     Returns:
         str: formatted json object
     '''
+    # TODO : I think this should go into the data definitions section...
     try:
         formatted_json = {}
         data = json.loads(json_string)
@@ -108,13 +117,23 @@ def format_json(json_string : str, g : PLS) -> str:
                 # maybe take an average? or get the lowest one?
                 'price': data['listings'][0]['price'],
                 }
-        # elif g == PRODUCTLINES.MTG:
-        # elif g == PRODUCTLINES.POKEMON:
+        elif g == PLS.POKEMON:
+            formatted_json = {
+                'name': data['name'],
+                '_id': data['_id'],
+                'image_url': data['images']['large'],
+                'tcgplayer_id': data['tcgplayer_productId'], 
+                # TODO: this gives the first price that it finds in the listings
+                # maybe take an average? or get the lowest one?
+                'price': data['listings'][0]['price'],
+                }
+
+        # elif g == PLS.MTG:
         else: raise ValueError()
         return json.dumps(formatted_json)
-    except KeyError:
-        logging.warning('[format_json] key not found... returning empty json object')
+    except KeyError as e:
+        logging.warning(f'[format_json] key not found... returning empty json object.\nError: {e}')
         return json.dumps({})
-    except ValueError:
-        logging.warning('Game Type %s not supported', g.value)
+    except ValueError as e:
+        logging.warning(f'Game Type {g.value} not supported.\nError: {e}')
         return json.dumps({})

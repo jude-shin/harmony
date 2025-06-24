@@ -33,44 +33,42 @@ from tensorflow.keras import models
 #     # TODO : this code will be the one that is throwing assertion errors
 #     logging.warning('[validate_outputs] not implemented yet. checking nothing...')
 
-def identify(image: Image.Image, model_no: int, pl: PLS) -> str:
+def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
     '''
     Identifies a card with multiple models, giving the most confident output
 
     Args:
         image: (Image.Image): The image of the card that is to be identified,
-        model_no (int): unique identifier for which (sub)model we are using for evaluation
+        label_no (int): TODO FINISH THIS DEF
         pl (PRODUCTLINES): The product_line we are working with.
     Returns: 
         str: the most confident label of the image (from the master layer)
     '''
     
+    # model_name = 'm' + str(label_no)
 
-    # logging.debug('Model Number: %d', model_no)
-    print('\nMODEL NUMBER: %d' % model_no)
-
-    model = get_model(model_no, pl)
-
-    best_prediction_label = evaluate(image, model_no, model)
+    model = get_model(model_name, pl)
+    best_prediction_label = evaluate(image, model)
     print('\nBEST MODEL PREDICTION: %s' % best_prediction_label)
 
-    if model_no == 0:
+    # TODO : check the config.toml to see if the model name is a "master model" (if it is, then we can toss it in here)
+    if model_name == 'm0':
         # the best prediction should be the output of the model
-        next_model_no = int(best_prediction_label)
+        labels_to_model_names = get_model_config(model_name, pl)
+        next_label_name = labels_to_model_names[best_prediction_label]
 
         # the output of this evaluation is going to feed into iteself with a recursive call
-        return identify(image, next_model_no, pl)
+        return identify(image, next_label_name, pl)
 
     # the output is going to be the real deal (_id)
     return best_prediction_label
 
-def evaluate(image: Image.Image, model_no: int, model: models.Model) -> str:
+def evaluate(image: Image.Image, model: models.Model) -> str:
     '''
     Feed the model the inputs, and get the most confident direct output (no interpretation of the output) 
 
     Args:
         image: (Image.Image): The image of the card that is to be identified,
-        model_no (int): unique identifier for which (sub)model we are using for evaluation
         pl (PRODUCTLINES): The product_line we are working with.
         model (models.Model): the model that is going to do the work
     Returns: 
@@ -85,7 +83,6 @@ def evaluate(image: Image.Image, model_no: int, model: models.Model) -> str:
     best_prediction_label, confidence = np.argmax(
         prediction_labels), prediction_labels[0, np.argmax(prediction_labels)]
 
-    logging.info('model no: %s', model_no)
     logging.info('confidence: %s', confidence)
     logging.info('best_prediction: %s', best_prediction_label)
 
@@ -94,23 +91,57 @@ def evaluate(image: Image.Image, model_no: int, model: models.Model) -> str:
 
 
 # TODO: toss this in a utils package if it gets reused later
-def get_model(model_no: int, pl: PLS) -> models.Model:
+def get_model(model_name: str, pl: PLS) -> models.Model:
     '''
     Gets the tensorflow model.
     Args:
         pl (PRODUCTLINES): The product_line we are working with.
-        model_no (int): unique identifier for which (sub)model we are using for evaluation
+        model_name (string): unique identifier for which (sub)model we are using for evaluation
+            ex) in the model "m12.keras", the model_name is "m12"
+            ex) in the labels toml "m0_labels.toml", the model_name is "m0"
     Returns:
         models.Model: the trained tensorflow model
     '''
     try:
-        model_name: str = 'm' + str(model_no) + '.keras'
+        model_path = model_name + '.keras'
         model_dir = os.getenv('MODEL_DIR')
+
         if model_dir is None:
             logging.error('[get_model] MODEL_DIR env var not set')
             return None
-        model_path = os.path.join(model_dir, pl.value, model_name)
-        return models.load_model(model_path)
+        full_model_path = os.path.join(model_dir, pl.value, model_path)
+        return models.load_model(full_model_path)
     except Exception as e:
         logging.error('[get_model] unexpected error %s', e)
         return None
+
+
+# TODO: toss this in a utils package if it gets reused later
+def get_model_config(model_name: str, pl: PLS) -> dict:
+    '''
+    Gets the tensorflow model.
+    Args:
+        pl (PRODUCTLINES): The product_line we are working with.
+        model_name (string): unique identifier for which (sub)model we are using for evaluation
+            ex) in the model "m12.keras", the model_name is "m12"
+            ex) in the labels toml "m0_labels.toml", the model_name is "m0"
+    Returns:
+        dict: the dictonary of labels to model_names 
+    '''
+    try:
+        toml_path = model_name + '_labels.toml'
+        data_dir = os.getenv('DATA_DIR')
+
+        if data_dir is None:
+            logging.error('[get_model_config] DATA_DIR env var not set')
+            return None
+
+        full_toml_path = os.path.join(data_dir, pl.value, toml_path)
+
+        with open(full_toml_path, 'r') as f:
+            return toml.load(f)
+
+    except Exception as e:
+        logging.error('[get_model] unexpected error %s', e)
+        return None
+
