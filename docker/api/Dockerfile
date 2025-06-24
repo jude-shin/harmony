@@ -29,11 +29,12 @@ FROM base AS runtime
 COPY --from=deps /usr/local /usr/local
 
 # Your source tree (honestly could just copy the whole source tree to be lazy)
-COPY src/harmony_config /app/src/harmony_config
-COPY src/utils /app/src/utils
-# TODO : eventually merge this helper file into the utils folder
-COPY src/helper /app/src/helper 
-COPY src/api /app/src/api
+COPY src/ /app/src
+# COPY src/harmony_config /app/src/harmony_config
+# COPY src/utils /app/src/utils
+# # TODO : eventually merge this helper file into the utils folder
+# COPY src/helper /app/src/helper 
+# COPY src/api /app/src/api
 
 EXPOSE ${PORT}
 
