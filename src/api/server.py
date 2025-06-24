@@ -19,31 +19,31 @@ from helper.image_processing import get_tensor_from_image
 
 # Configuration
 PRODUCTLINE = PRODUCTLINES.LORCANA.value
-MODEL_DIR = Path(os.getenv("MODEL_DIR"), PRODUCTLINE) # change to os.path.join
+MODEL_DIR = Path(os.getenv('MODEL_DIR'), PRODUCTLINE) # change to os.path.join
 
-MODEL_PATH = MODEL_DIR / "model.keras"
+MODEL_PATH = MODEL_DIR / 'model.keras'
 
 # App & model initialisation
 app = FastAPI(
-        title="Harmony ML API",
-        version="1.0.0",
+        title='Harmony ML API',
+        version='1.0.0',
         )
 
 try:
     model = tf.keras.models.load_model(MODEL_PATH)
 except (IOError, ValueError) as exc:
-    raise SystemExit(f"Could not load model at {MODEL_PATH}: {exc}") from exc
+    raise SystemExit(f'Could not load model at {MODEL_PATH}: {exc}') from exc
 
 
 # Routes
-@app.get("/ping", summary="Health-check")
+@app.get('/ping', summary='Health-check')
 async def ping() -> dict[str, str]:
-    return {"ping": "pong"}
+    return {'ping': 'pong'}
 
-@app.post("/predict")
+@app.post('/predict')
 async def predict(
-        product_line_string: str = Form(..., description="productLine name (e.g., locrana, mtg)"),
-        image: UploadFile = File(..., description="image scan from client"),
+        product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+        image: UploadFile = File(..., description='image scan from client'),
         ):
 
     product_line = string_to_product_line(product_line_string)
@@ -51,9 +51,9 @@ async def predict(
 
 
     try:
-        pil_image = Image.open(image.file).convert("RGB")
+        pil_image = Image.open(image.file).convert('RGB')
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=f"invalid image: {exc}")
+        raise HTTPException(status_code=400, detail=f'invalid image: {exc}')
 
     _, model_img_width, model_img_height, _ = model.input_shape
 
@@ -65,8 +65,8 @@ async def predict(
     prediction, confidence = np.argmax(
         prediction), prediction[0, np.argmax(prediction)]
 
-    logging.info("confidence: %s", confidence)
-    logging.info("prediction: %s", prediction)
+    logging.info('confidence: %s', confidence)
+    logging.info('prediction: %s', prediction)
 
     raw_json = label_to_json(int(prediction), product_line)
     formatted_json = format_json(raw_json, product_line)
@@ -77,6 +77,6 @@ async def predict(
 # helpers 
 
 # ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    uvicorn.run("src.api.server:app", host="0.0.0.0", port=5000, reload=True)
+if __name__ == '__main__':
+    uvicorn.run('src.api.server:app', host='0.0.0.0', port=5000, reload=True)
 
