@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import logging 
+import typeguard
 from pathlib import Path
 from PIL import Image
 
@@ -14,8 +15,9 @@ from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
 from harmony_config.product_lines import PRODUCTLINES, string_to_product_line
-from utils.data_conversion import label_to_json, format_json 
+from utils.data_conversion import label_to_json, format_json
 from helper.image_processing import get_tensor_from_image
+from evaluation.evaluate import identify 
 
 # Configuration
 PRODUCTLINE = PRODUCTLINES.LORCANA.value
@@ -45,36 +47,26 @@ async def predict(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
         image: UploadFile = File(..., description='image scan from client'),
         ):
+    # TODO : add some kind of validation to make sure that the file structure is good, and all the imputs and outputs check out
 
-    product_line = string_to_product_line(product_line_string)
+    # TODO : return the top 3 or top 5 predictions in order (instead of just the biggest one)
 
-
-
+    # get information prepared
+    # image
+    # product_line
     try:
         pil_image = Image.open(image.file).convert('RGB')
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f'invalid image: {exc}')
 
-    _, model_img_width, model_img_height, _ = model.input_shape
+    product_line = string_to_product_line(product_line_string)
 
-    img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
+    best_prediction = identify(pil_image, 0, product_line)
 
-    img_tensor = np.expand_dims(img_tensor, axis=0)
-    prediction = model.predict(img_tensor)
-
-    prediction, confidence = np.argmax(
-        prediction), prediction[0, np.argmax(prediction)]
-
-    logging.info('confidence: %s', confidence)
-    logging.info('prediction: %s', prediction)
-
-    raw_json = label_to_json(int(prediction), product_line)
+    raw_json = label_to_json(int(best_prediction), product_line)
     formatted_json = format_json(raw_json, product_line)
 
     return json.loads(formatted_json)
-
-# ---------------------------------------------------------------------------
-# helpers 
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
