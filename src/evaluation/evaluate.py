@@ -6,8 +6,8 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
-from harmony_config.productLines import PRODUCTLINES as PLS
-from harmony_config.productLines import string_to_productLine
+from harmony_config.product_lines import PRODUCTLINES as PLS
+from harmony_config.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, format_json
 from helper.image_processing import get_tensor_from_image
 
@@ -24,7 +24,7 @@ def validate_outputs(pl: PLS) -> bool:
       config.toml (outputs value)
 
     Args:
-        pl (PRODUCTLINES): The producteLine we are working with.
+        pl (PRODUCTLINES): The product_line we are working with.
     Returns:
         bool: Whether all of the checks passed or not
     '''
@@ -37,7 +37,7 @@ def evaluate(image: Image.Image, model_no: int, pl: PLS) -> str:
 
     Args:
         image: (Image.Image): The image of the card that is to be identified,
-        pl (PRODUCTLINES): The producteLine we are working with.
+        pl (PRODUCTLINES): The product_line we are working with.
         model_no (int): unique identifier for which (sub)model we are using for evaluation
     Returns: 
         str: _id of the image (based on the deckdrafterprod)
@@ -63,7 +63,7 @@ def get_model(model_no: int, pl: PLS) -> models.Model:
     '''
     Gets the tensorflow model.
     Args:
-        pl (PRODUCTLINES): The producteLine we are working with.
+        pl (PRODUCTLINES): The product_line we are working with.
         model_no (int): unique identifier for which (sub)model we are using for evaluation
     Returns:
         models.Model: the trained tensorflow model

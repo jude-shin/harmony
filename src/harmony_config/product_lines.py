@@ -6,15 +6,15 @@ class PRODUCTLINES(Enum):
     POKEMON = 'pokemon'
 
 # make this all lowercase before looking it up
-productLine_names = {
+product_line_names = {
         'magic: the gathering': PRODUCTLINES.MTG,
         'mtg': PRODUCTLINES.MTG,
         'lorcana': PRODUCTLINES.LORCANA,
         'pokemon': PRODUCTLINES.POKEMON,
         }
 
-def string_to_productLine(s : str) -> PRODUCTLINES:
+def string_to_product_line(s : str) -> PRODUCTLINES:
     s = s.lower()
-    return productLine_names[s]
+    return product_line_names[s]
 
 

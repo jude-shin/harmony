@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import logging 
 from pathlib import Path
 from PIL import Image
 
@@ -12,7 +13,7 @@ import uvicorn
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
-from harmony_config.productLines import PRODUCTLINES, string_to_productLine
+from harmony_config.product_lines import PRODUCTLINES, string_to_product_line
 from utils.data_conversion import label_to_json, format_json 
 from helper.image_processing import get_tensor_from_image
 
@@ -21,7 +22,6 @@ PRODUCTLINE = PRODUCTLINES.LORCANA.value
 MODEL_DIR = Path(os.getenv("MODEL_DIR"), PRODUCTLINE) # change to os.path.join
 
 MODEL_PATH = MODEL_DIR / "model.keras"
-PORT = int(os.getenv("PORT", 5000))
 
 # App & model initialisation
 app = FastAPI(
@@ -42,9 +42,13 @@ async def ping() -> dict[str, str]:
 
 @app.post("/predict")
 async def predict(
-        productLineString: str = Form(..., description="productLine name (e.g., locrana, mtg)"),
+        product_line_string: str = Form(..., description="productLine name (e.g., locrana, mtg)"),
         image: UploadFile = File(..., description="image scan from client"),
         ):
+
+    product_line = string_to_product_line(product_line_string)
+
+
 
     try:
         pil_image = Image.open(image.file).convert("RGB")
@@ -61,20 +65,18 @@ async def predict(
     prediction, confidence = np.argmax(
         prediction), prediction[0, np.argmax(prediction)]
 
-    print("\nconfidence: ", confidence)
-    print("\nprediction: ", prediction)
+    logging.info("confidence: %s", confidence)
+    logging.info("prediction: %s", prediction)
 
-    productLine = string_to_productLine(productLineString)
-
-    raw_json = label_to_json(int(prediction), productLine)
-    formatted_json = format_json(raw_json, productLine)
+    raw_json = label_to_json(int(prediction), product_line)
+    formatted_json = format_json(raw_json, product_line)
 
     return json.loads(formatted_json)
 
+# ---------------------------------------------------------------------------
+# helpers 
 
-
-# --------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     uvicorn.run("src.api.server:app", host="0.0.0.0", port=5000, reload=True)
-
 
