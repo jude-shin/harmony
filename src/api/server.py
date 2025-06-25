@@ -20,10 +20,10 @@ from helper.image_processing import get_tensor_from_image
 from evaluation.evaluate import identify 
 
 # Configuration
-PRODUCTLINE = PRODUCTLINES.LORCANA.value
-MODEL_DIR = Path(os.getenv('MODEL_DIR'), PRODUCTLINE) # change to os.path.join
+# PRODUCTLINE = PRODUCTLINES.LORCANA.value
+# MODEL_DIR = Path(os.getenv('MODEL_DIR'), PRODUCTLINE) # change to os.path.join
 
-MODEL_PATH = MODEL_DIR / 'model.keras'
+# MODEL_PATH = MODEL_DIR / 'model.keras'
 
 # App & model initialisation
 app = FastAPI(
@@ -31,11 +31,11 @@ app = FastAPI(
         version='1.0.0',
         )
 
-try:
-    model = tf.keras.models.load_model(MODEL_PATH)
-except (IOError, ValueError) as exc:
-    raise SystemExit(f'Could not load model at {MODEL_PATH}: {exc}') from exc
-
+# try:
+#     model = tf.keras.models.load_model(MODEL_PATH)
+# except (IOError, ValueError) as exc:
+#     raise SystemExit(f'Could not load model at {MODEL_PATH}: {exc}') from exc
+# 
 
 # Routes
 @app.get('/ping', summary='Health-check')
@@ -63,12 +63,7 @@ async def predict(
 
     best_prediction = identify(pil_image, 'm0', product_line)
 
-
-
     raw_json = label_to_json(int(best_prediction), product_line)
-
-    
-
     formatted_json = format_json(raw_json, product_line)
 
     return json.loads(formatted_json)
