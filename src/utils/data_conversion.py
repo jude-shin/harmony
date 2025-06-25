@@ -30,7 +30,7 @@ def label_to_id(label : int, pl : PLS) -> str:
     '''
     json = label_to_json(label, pl)
 
-    # extract only the _id from the json object
+    # extract only the _id from the json str 
     return ''
 
 def id_to_label(_id : str, pl : PLS) -> str:
@@ -50,7 +50,7 @@ def id_to_label(_id : str, pl : PLS) -> str:
 # TODO: make return type a dict as well?
 def label_to_json(label : int, pl : PLS) -> str:
     '''
-    Look up which json object has the particular label based on the master_labels.toml
+    Look up which json str has the particular label based on the master_labels.toml
 
     Args:
         label (str): what the tensorflow model will spit out
@@ -60,18 +60,16 @@ def label_to_json(label : int, pl : PLS) -> str:
     '''
 
     # master-labels.csv (for label -> _id)
-
     if DATA_DIR is None:
-        logging.error('[label_to_json] DATA_DIR env var not set')
+        logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
         return ''
     master_labels_path = os.path.join(DATA_DIR, pl.value, 'master_labels.toml')
-    # master_labels = pd.read_csv(master_labels_path)
     with open(master_labels_path, 'r') as f:
         master_labels = toml.load(f)
 
     predicted_id = master_labels[str(label)]
 
-    print('PREDICTED ID: ' + predicted_id)
+    logging.info(' Label: %d -> _id: %s', label, predicted_id)
 
     # deckdrafterprod.json (for _id -> various information)
     deckdrafterprod_path = Path(DATA_DIR, pl.value, 'deckdrafterprod.json')
@@ -81,12 +79,12 @@ def label_to_json(label : int, pl : PLS) -> str:
     card_obj = {}
     for obj in deckdrafterprod:
         if str(obj['_id']) == str(predicted_id):
-            logging.info('object with {_id} FOUND!')
+            logging.info(' Json object with _id: %s found in deckdrafterprod')
             card_obj = obj
     if card_obj == {}:
-        logging.warning(f'[label_to_json] object with {str(predicted_id)} not found... returning empty json object')
+        logging.warning(' [label_to_json] object with %s not found. Returning empty json str', predicted_id)
 
-    # returns the raw object without any filtering of the fields 
+    # returns the raw json str without any filtering of the fields 
     # each field name can be different based on the game, so we must process it
     return json.dumps(card_obj)
 
@@ -98,12 +96,13 @@ def format_json(json_string : str, pl : PLS) -> str:
     Formats the raw json object (see label_to_json) with infomation the api is looking for 
 
     Args:
-        json_string (str): Json object string that is 
+        json_string (str): Json str that is 
         pl (PRODUCTLINES): The producteLine we are working with.
     Returns:
-        str: formatted json object
+        str: formatted json str 
     '''
     # TODO : I think this should go into the data definitions section...
+    # TODO : we also don't need all this information. we only need the _id, we may get to trash this entire function
     try:
         formatted_json = {}
         data = json.loads(json_string)
@@ -134,8 +133,8 @@ def format_json(json_string : str, pl : PLS) -> str:
         else: raise ValueError()
         return json.dumps(formatted_json)
     except KeyError as e:
-        logging.warning(f'[format_json] key not found... returning empty json object.\nError: {e}')
+        logging.warning(' [format_json] key not found. Returning empty json str. Error: %s', e)
         return json.dumps({})
     except ValueError as e:
-        logging.warning(f'Game Type {pl.value} not supported.\nError: {e}')
+        logging.warning(' [format_json] PRODUCTLINE %s not supported. Returning empty json str. Error: %s', pl.value, e)
         return json.dumps({})

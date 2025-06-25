@@ -19,23 +19,13 @@ from utils.data_conversion import label_to_json, format_json
 from helper.image_processing import get_tensor_from_image
 from evaluation.evaluate import identify 
 
-# Configuration
-# PRODUCTLINE = PRODUCTLINES.LORCANA.value
-# MODEL_DIR = Path(os.getenv('MODEL_DIR'), PRODUCTLINE) # change to os.path.join
 
-# MODEL_PATH = MODEL_DIR / 'model.keras'
+logging.getLogger().setLevel(0)
 
-# App & model initialisation
 app = FastAPI(
         title='Harmony ML API',
         version='1.0.0',
         )
-
-# try:
-#     model = tf.keras.models.load_model(MODEL_PATH)
-# except (IOError, ValueError) as exc:
-#     raise SystemExit(f'Could not load model at {MODEL_PATH}: {exc}') from exc
-# 
 
 # Routes
 @app.get('/ping', summary='Health-check')
@@ -51,9 +41,6 @@ async def predict(
 
     # TODO : return the top 3 or top 5 predictions in order (instead of just the biggest one)
 
-    # get information prepared
-    # image
-    # product_line
     try:
         pil_image = Image.open(image.file).convert('RGB')
     except Exception as exc:  # noqa: BLE001

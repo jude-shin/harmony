@@ -17,11 +17,9 @@ from helper.image_processing import get_tensor_from_image
 
 from tensorflow.keras import models
 
-logging.getLogger().setLevel(0) # debug is level 10
-
 def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
     '''
-    Identifies a card with multiple models, giving the most confident output
+    Identifies a card with multiple models, giving the most confident output.
 
     Args:
         image: (Image.Image): The image of the card that is to be identified,
@@ -33,7 +31,7 @@ def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
 
     model = get_model(model_name, pl)
     best_prediction_label = evaluate(image, model)
-    logging.info('Model [%s] best prediction: %s', model_name, best_prediction_label)
+    logging.info(' Model [%s] best prediction: %s.', model_name, best_prediction_label)
 
     model_config_dict = get_model_config(pl)
 
@@ -43,11 +41,11 @@ def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
         next_label_name = labels_to_model_names_dict [best_prediction_label]
 
         # the output of this evaluation is going to feed into iteself with a recursive call
-        logging.info('Model [%s] not is_final. Deferring to submodel; identifying the same image...', model_name)
+        logging.info(' Model [%s] not is_final. Deferring to submodel [%s]; identifying the same image recursively.', model_name, next_label_name)
         return identify(image, next_label_name, pl)
 
     # the output is going to be the real deal (_id)
-    logging.info('Successfully identified image as: %s', model_name)
+    logging.info(' Successfully identified image as: %s.', model_name)
     return best_prediction_label
 
 
@@ -56,7 +54,7 @@ def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
 def evaluate(image: Image.Image, model: models.Model) -> str:
     # TODO add the confidence
     '''
-    Feed the model the inputs, and get the most confident direct output (no interpretation of the output) 
+    Feed the model the inputs, and get the most confident direct output (no interpretation of the output).
 
     Args:
         image: (Image.Image): The image of the card that is to be identified,
@@ -75,8 +73,8 @@ def evaluate(image: Image.Image, model: models.Model) -> str:
     best_prediction_label, confidence = np.argmax(
         prediction_labels), prediction_labels[0, np.argmax(prediction_labels)]
 
-    logging.info('confidence: %s', confidence)
-    logging.info('best_prediction: %s', best_prediction_label)
+    # logging.info('confidence: %s', confidence)
+    # logging.info('best_prediction: %s', best_prediction_label)
 
     return str(best_prediction_label)
 
@@ -100,12 +98,12 @@ def get_model(model_name: str, pl: PLS) -> models.Model:
         model_dir = os.getenv('MODEL_DIR')
 
         if model_dir is None:
-            logging.error('[get_model] MODEL_DIR env var not set. Returning None.')
+            logging.error(' [get_model] MODEL_DIR env var not set. Returning None.')
             return None
         full_model_path = os.path.join(model_dir, pl.value, model_path)
         return models.load_model(full_model_path)
     except Exception as e:
-        logging.error('[get_model] unexpected error %s. Returning None.', e)
+        logging.error(' [get_model] unexpected error %s. Returning None.', e)
         return None
 
 
@@ -127,7 +125,7 @@ def get_model_labels(model_name: str, pl: PLS) -> dict:
         data_dir = os.getenv('DATA_DIR')
 
         if data_dir is None:
-            logging.error('[get_model_labels] DATA_DIR env var not set. Returning an empty dict.')
+            logging.error(' [get_model_labels] DATA_DIR env var not set. Returning an empty dict.')
             return {}
 
         full_toml_path = os.path.join(data_dir, pl.value, toml_path)
@@ -136,7 +134,7 @@ def get_model_labels(model_name: str, pl: PLS) -> dict:
             return toml.load(f)
 
     except Exception as e:
-        logging.error('[get_model_labels] unexpected error %s. Returning an empty dict.', e)
+        logging.error(' [get_model_labels] unexpected error %s. Returning an empty dict.', e)
         return {}
 
 # TODO: toss this in a utils package if it gets reused later
@@ -154,7 +152,7 @@ def get_model_config(pl: PLS) -> dict:
         data_dir = os.getenv('MODEL_DIR')
 
         if data_dir is None:
-            logging.error('[get_model_config] DATA_DIR env var not set. Returning an empty dict.')
+            logging.error(' [get_model_config] DATA_DIR env var not set. Returning an empty dict.')
             return {}
 
         full_toml_path = os.path.join(data_dir, pl.value, toml_path)
@@ -163,5 +161,5 @@ def get_model_config(pl: PLS) -> dict:
             return toml.load(f)
 
     except Exception as e:
-        logging.error('[get_model_config] unexpected error %s. Returning an empty dict.', e)
+        logging.error(' [get_model_config] unexpected error %s. Returning an empty dict.', e)
         return {}
