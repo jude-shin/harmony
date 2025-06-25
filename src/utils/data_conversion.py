@@ -9,7 +9,7 @@ import numpy as np
 
 from pathlib import Path
 
-from harmony_config.product_lines import PRODUCTLINES as PLS
+from data_defs.product_lines import PRODUCTLINES as PLS
 
 DATA_DIR = os.getenv('DATA_DIR')
 
