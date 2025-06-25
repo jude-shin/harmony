@@ -4,15 +4,12 @@ import logging
 import os
 import typeguard
 
-from pathlib import Path
 from PIL import Image
 
 import numpy as np
 import tensorflow as tf
 
-from harmony_config.product_lines import PRODUCTLINES as PLS
-from harmony_config.product_lines import string_to_product_line
-from utils.data_conversion import label_to_json, format_json
+from data_defs.product_lines import PRODUCTLINES as PLS
 from helper.image_processing import get_tensor_from_image
 
 from tensorflow.keras import models

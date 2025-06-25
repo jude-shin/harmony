@@ -1,23 +1,17 @@
 from __future__ import annotations
 
 import json
-import os
 import logging 
 import typeguard
-from pathlib import Path
 from PIL import Image
 
-import numpy as np
-import tensorflow as tf
-
 import uvicorn
-from pydantic import BaseModel
+# from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
-from harmony_config.product_lines import PRODUCTLINES, string_to_product_line
+from data_defs.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, format_json
-from helper.image_processing import get_tensor_from_image
-from evaluation.evaluate import identify 
+from evaluation.evaluate import identify
 
 
 logging.getLogger().setLevel(0)
