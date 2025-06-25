@@ -17,21 +17,7 @@ from helper.image_processing import get_tensor_from_image
 
 from tensorflow.keras import models
 
-# # TODO finish this function
-# def validate_outputs(pl: PLS) -> bool:
-#     '''
-#     Validates the configuration files in the model directory, making sure the following are correct:
-#       model outputs layer?
-#       length of the #_labels.toml
-#       config.toml (outputs value)
-# 
-#     Args:
-#         pl (PRODUCTLINES): The product_line we are working with.
-#     Returns:
-#     '''
-# 
-#     # TODO : this code will be the one that is throwing assertion errors
-#     logging.warning('[validate_outputs] not implemented yet. checking nothing...')
+logging.getLogger().setLevel(0) # debug is level 10
 
 def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
     '''
@@ -44,13 +30,11 @@ def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
     Returns: 
         str: the most confident label of the image (from the master layer)
     '''
-    
+
     model = get_model(model_name, pl)
     best_prediction_label = evaluate(image, model)
-    print('\nBEST MODEL PREDICTION: %s' % best_prediction_label)
+    logging.info('Model [%s] best prediction: %s', model_name, best_prediction_label)
 
-    # TODO : check the config.toml to see if the model name is a "master model" (if it is, then we can toss it in here)
-    
     model_config_dict = get_model_config(pl)
 
     if not model_config_dict[model_name]['is_final']:
@@ -59,12 +43,18 @@ def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
         next_label_name = labels_to_model_names_dict [best_prediction_label]
 
         # the output of this evaluation is going to feed into iteself with a recursive call
+        logging.info('Model [%s] not is_final. Deferring to submodel; identifying the same image...', model_name)
         return identify(image, next_label_name, pl)
 
     # the output is going to be the real deal (_id)
+    logging.info('Successfully identified image as: %s', model_name)
     return best_prediction_label
 
+
+
+
 def evaluate(image: Image.Image, model: models.Model) -> str:
+    # TODO add the confidence
     '''
     Feed the model the inputs, and get the most confident direct output (no interpretation of the output) 
 
@@ -73,7 +63,8 @@ def evaluate(image: Image.Image, model: models.Model) -> str:
         pl (PRODUCTLINES): The product_line we are working with.
         model (models.Model): the model that is going to do the work
     Returns: 
-        # str: the most confident output from the given model 
+        str: most confident output from the given model 
+        float: highest confidence
     '''
     _, model_img_width, model_img_height, _ = model.input_shape
 
@@ -95,6 +86,7 @@ def evaluate(image: Image.Image, model: models.Model) -> str:
 def get_model(model_name: str, pl: PLS) -> models.Model:
     '''
     Gets the tensorflow model.
+
     Args:
         pl (PRODUCTLINES): The product_line we are working with.
         model_name (string): unique identifier for which (sub)model we are using for evaluation
@@ -108,19 +100,20 @@ def get_model(model_name: str, pl: PLS) -> models.Model:
         model_dir = os.getenv('MODEL_DIR')
 
         if model_dir is None:
-            logging.error('[get_model] MODEL_DIR env var not set')
+            logging.error('[get_model] MODEL_DIR env var not set. Returning None.')
             return None
         full_model_path = os.path.join(model_dir, pl.value, model_path)
         return models.load_model(full_model_path)
     except Exception as e:
-        logging.error('[get_model] unexpected error %s', e)
+        logging.error('[get_model] unexpected error %s. Returning None.', e)
         return None
 
 
 # TODO: toss this in a utils package if it gets reused later
 def get_model_labels(model_name: str, pl: PLS) -> dict:
     '''
-    Gets the tensorflow model.
+    Gets the labels to _id in a hashmap form.
+    
     Args:
         pl (PRODUCTLINES): The product_line we are working with.
         model_name (string): unique identifier for which (sub)model we are using for evaluation
@@ -134,8 +127,8 @@ def get_model_labels(model_name: str, pl: PLS) -> dict:
         data_dir = os.getenv('DATA_DIR')
 
         if data_dir is None:
-            logging.error('[get_model_labels] DATA_DIR env var not set')
-            return None
+            logging.error('[get_model_labels] DATA_DIR env var not set. Returning an empty dict.')
+            return {}
 
         full_toml_path = os.path.join(data_dir, pl.value, toml_path)
 
@@ -143,25 +136,26 @@ def get_model_labels(model_name: str, pl: PLS) -> dict:
             return toml.load(f)
 
     except Exception as e:
-        logging.error('[get_model_labels] unexpected error %s', e)
-        return None
+        logging.error('[get_model_labels] unexpected error %s. Returning an empty dict.', e)
+        return {}
 
 # TODO: toss this in a utils package if it gets reused later
 def get_model_config(pl: PLS) -> dict:
     '''
-    Gets the tensorflow model.
+    Gets the tensorflow model config.toml (shows the is_final status and no. of outputs a model has).
+    
     Args:
         pl (PRODUCTLINES): The product_line we are working with.
     Returns:
         dict: the dictonary of the toml (in dictionary form)
     '''
     try:
-        toml_path = 'config.toml' 
+        toml_path = 'config.toml'
         data_dir = os.getenv('MODEL_DIR')
 
         if data_dir is None:
-            logging.error('[get_model_labels] DATA_DIR env var not set')
-            return None
+            logging.error('[get_model_config] DATA_DIR env var not set. Returning an empty dict.')
+            return {}
 
         full_toml_path = os.path.join(data_dir, pl.value, toml_path)
 
@@ -169,5 +163,5 @@ def get_model_config(pl: PLS) -> dict:
             return toml.load(f)
 
     except Exception as e:
-        logging.error('[get_model_config] unexpected error %s', e)
-        return None
+        logging.error('[get_model_config] unexpected error %s. Returning an empty dict.', e)
+        return {}
