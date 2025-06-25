@@ -79,7 +79,7 @@ def label_to_json(label : int, pl : PLS) -> str:
     card_obj = {}
     for obj in deckdrafterprod:
         if str(obj['_id']) == str(predicted_id):
-            logging.info(' Json object with _id: %s found in deckdrafterprod')
+            logging.info(' Json object with _id: %s found in deckdrafterprod', predicted_id)
             card_obj = obj
     if card_obj == {}:
         logging.warning(' [label_to_json] object with %s not found. Returning empty json str', predicted_id)

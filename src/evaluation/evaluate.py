@@ -73,9 +73,6 @@ def evaluate(image: Image.Image, model: models.Model) -> str:
     best_prediction_label, confidence = np.argmax(
         prediction_labels), prediction_labels[0, np.argmax(prediction_labels)]
 
-    # logging.info('confidence: %s', confidence)
-    # logging.info('best_prediction: %s', best_prediction_label)
-
     return str(best_prediction_label)
 
 
