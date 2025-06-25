@@ -45,17 +45,18 @@ def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
         str: the most confident label of the image (from the master layer)
     '''
     
-    # model_name = 'm' + str(label_no)
-
     model = get_model(model_name, pl)
     best_prediction_label = evaluate(image, model)
     print('\nBEST MODEL PREDICTION: %s' % best_prediction_label)
 
     # TODO : check the config.toml to see if the model name is a "master model" (if it is, then we can toss it in here)
-    if model_name == 'm0':
+    
+    model_config_dict = get_model_config(pl)
+
+    if not model_config_dict[model_name]['is_final']:
         # the best prediction should be the output of the model
-        labels_to_model_names = get_model_config(model_name, pl)
-        next_label_name = labels_to_model_names[best_prediction_label]
+        labels_to_model_names_dict = get_model_labels(model_name, pl)
+        next_label_name = labels_to_model_names_dict [best_prediction_label]
 
         # the output of this evaluation is going to feed into iteself with a recursive call
         return identify(image, next_label_name, pl)
@@ -117,7 +118,7 @@ def get_model(model_name: str, pl: PLS) -> models.Model:
 
 
 # TODO: toss this in a utils package if it gets reused later
-def get_model_config(model_name: str, pl: PLS) -> dict:
+def get_model_labels(model_name: str, pl: PLS) -> dict:
     '''
     Gets the tensorflow model.
     Args:
@@ -133,7 +134,7 @@ def get_model_config(model_name: str, pl: PLS) -> dict:
         data_dir = os.getenv('DATA_DIR')
 
         if data_dir is None:
-            logging.error('[get_model_config] DATA_DIR env var not set')
+            logging.error('[get_model_labels] DATA_DIR env var not set')
             return None
 
         full_toml_path = os.path.join(data_dir, pl.value, toml_path)
@@ -142,6 +143,31 @@ def get_model_config(model_name: str, pl: PLS) -> dict:
             return toml.load(f)
 
     except Exception as e:
-        logging.error('[get_model] unexpected error %s', e)
+        logging.error('[get_model_labels] unexpected error %s', e)
         return None
 
+# TODO: toss this in a utils package if it gets reused later
+def get_model_config(pl: PLS) -> dict:
+    '''
+    Gets the tensorflow model.
+    Args:
+        pl (PRODUCTLINES): The product_line we are working with.
+    Returns:
+        dict: the dictonary of the toml (in dictionary form)
+    '''
+    try:
+        toml_path = 'config.toml' 
+        data_dir = os.getenv('MODEL_DIR')
+
+        if data_dir is None:
+            logging.error('[get_model_labels] DATA_DIR env var not set')
+            return None
+
+        full_toml_path = os.path.join(data_dir, pl.value, toml_path)
+
+        with open(full_toml_path, 'r') as f:
+            return toml.load(f)
+
+    except Exception as e:
+        logging.error('[get_model_config] unexpected error %s', e)
+        return None
