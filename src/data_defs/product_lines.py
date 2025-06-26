@@ -1,14 +1,14 @@
 from enum import Enum
 
 class PRODUCTLINES(Enum):
-    MTG = 'mtg'
+    # MTG = 'mtg'
     LORCANA = 'lorcana' 
     POKEMON = 'pokemon'
 
 # make this all lowercase before looking it up
 product_line_names = {
-        'magic: the gathering': PRODUCTLINES.MTG,
-        'mtg': PRODUCTLINES.MTG,
+        # 'magic: the gathering': PRODUCTLINES.MTG,
+        # 'mtg': PRODUCTLINES.MTG,
         'lorcana': PRODUCTLINES.LORCANA,
         'pokemon': PRODUCTLINES.POKEMON,
         }
