@@ -24,5 +24,3 @@ services:
               count: all
               capabilities: [gpu]
     container_name: api
-
-  model_cache_api:
