@@ -11,10 +11,15 @@ from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
 from data_defs.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, format_json
-from evaluation.evaluate import identify
-
+from evaluation.evaluate import identify, CachedModels
 
 logging.getLogger().setLevel(0)
+
+
+logging.info(' [main] STARTING Caching Tensorflow models... This may take a while... ')
+CachedModels()
+logging.info(' [main] FINISHED caching Tensorflow models!')
+
 
 app = FastAPI(
         title='Harmony ML API',
