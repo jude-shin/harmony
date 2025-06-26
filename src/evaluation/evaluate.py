@@ -11,6 +11,7 @@ import tensorflow as tf
 
 from data_defs.product_lines import PRODUCTLINES as PLS
 from helper.image_processing import get_tensor_from_image
+from utils.singleton import Singleton
 
 from tensorflow.keras import models
 
@@ -26,7 +27,7 @@ def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
         str: the most confident label of the image (from the master layer)
     '''
 
-    model = get_model(model_name, pl)
+    model = CachedModels().request_model(model_name, pl)
     best_prediction_label = evaluate(image, model)
     logging.info(' Model [%s] best prediction: %s.', model_name, best_prediction_label)
 
@@ -75,9 +76,12 @@ def evaluate(image: Image.Image, model: models.Model) -> str:
 
 
 # TODO: toss this in a utils package if it gets reused later
-def get_model(model_name: str, pl: PLS) -> models.Model:
+def cache_model(model_name: str, pl: PLS) -> models.Model:
     '''
-    Gets the tensorflow model.
+    Gets the tensorflow model. (puts it into ram).
+    This should only be called once per model at the very beginning.
+
+
 
     Args:
         pl (PRODUCTLINES): The product_line we are working with.
@@ -92,12 +96,12 @@ def get_model(model_name: str, pl: PLS) -> models.Model:
         model_dir = os.getenv('MODEL_DIR')
 
         if model_dir is None:
-            logging.error(' [get_model] MODEL_DIR env var not set. Returning None.')
+            logging.error(' [cache_model] MODEL_DIR env var not set. Returning None.')
             return None
         full_model_path = os.path.join(model_dir, pl.value, model_path)
         return models.load_model(full_model_path)
     except Exception as e:
-        logging.error(' [get_model] unexpected error %s. Returning None.', e)
+        logging.error(' [cache_model] unexpected error %s. Returning None.', e)
         return None
 
 
@@ -157,3 +161,29 @@ def get_model_config(pl: PLS) -> dict:
     except Exception as e:
         logging.error(' [get_model_config] unexpected error %s. Returning an empty dict.', e)
         return {}
+
+
+
+
+# TODO: put in the data definition class?
+class CachedModels(metaclass=Singleton):
+    def __init__(self):
+        self.cached_models = {}
+        for pl in PLS:
+            ms = {} # after moving to the data_def folder, rename this to models?
+            config_toml = get_model_config(pl)
+
+            for model_name in config_toml:
+                ms[model_name] = cache_model(model_name, pl)
+
+            self.cached_models[pl.value] = ms
+
+    def request_model(self, model_name: str, pl: PLS) -> models.Model:
+        if self.cached_models is None:
+            CachedModels()
+
+        try:
+            return self.cached_models[pl.value][model_name]
+        except KeyError as e:
+            logging.error(' [request_model] model_name or ps not loaded yet. Error: %s. Returning None', e)
+            return None
