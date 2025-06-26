@@ -9,14 +9,7 @@ import numpy as np
 
 from pathlib import Path
 
-from data_defs.product_lines import PRODUCTLINES as PLS
-
-DATA_DIR = os.getenv('DATA_DIR')
-
-# label: what the tensorflow model will spit out
-# _id: deckdrafterprod unique _id
-#   allows us to get more information about the card
-
+from utils.product_lines import PRODUCTLINES as PLS
 
 def label_to_id(label : int, pl : PLS) -> str:
     '''
@@ -47,8 +40,7 @@ def id_to_label(_id : str, pl : PLS) -> str:
     # look up the variable
     return ''
 
-# TODO: make return type a dict as well?
-def label_to_json(label : int, pl : PLS) -> str:
+def label_to_json(label : int, pl : PLS) -> dict:
     '''
     Look up which json str has the particular label based on the master_labels.toml
 
@@ -56,14 +48,14 @@ def label_to_json(label : int, pl : PLS) -> str:
         label (str): what the tensorflow model will spit out
         pl (PRODUCTLINES): The product_line we are working with.
     Returns:
-        str: json entry that is associated with that label
+        dict: json entry that is associated with that label (dict by default)
     '''
 
-    # master-labels.csv (for label -> _id)
-    if DATA_DIR is None:
+    data_dir = os.getenv('DATA_DIR')
+    if data_dir is None:
         logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
         return ''
-    master_labels_path = os.path.join(DATA_DIR, pl.value, 'master_labels.toml')
+    master_labels_path = os.path.join(data_dir, pl.value, 'master_labels.toml')
     with open(master_labels_path, 'r') as f:
         master_labels = toml.load(f)
 
@@ -72,7 +64,7 @@ def label_to_json(label : int, pl : PLS) -> str:
     logging.info(' Label: %d -> _id: %s', label, predicted_id)
 
     # deckdrafterprod.json (for _id -> various information)
-    deckdrafterprod_path = Path(DATA_DIR, pl.value, 'deckdrafterprod.json')
+    deckdrafterprod_path = Path(data_dir, pl.value, 'deckdrafterprod.json')
     with open(deckdrafterprod_path, 'r') as deckdrafterprod_file:
         deckdrafterprod = json.load(deckdrafterprod_file)
 
@@ -86,7 +78,7 @@ def label_to_json(label : int, pl : PLS) -> str:
 
     # returns the raw json str without any filtering of the fields 
     # each field name can be different based on the game, so we must process it
-    return json.dumps(card_obj)
+    return card_obj
 
 
 # TODO: make json_string a dict type? (we don't need to keep converting it and stuff)
@@ -94,6 +86,7 @@ def label_to_json(label : int, pl : PLS) -> str:
 def format_json(json_string : str, pl : PLS) -> str:
     '''
     Formats the raw json object (see label_to_json) with infomation the api is looking for 
+    DEPRECIATED (basically useless to me but ill keep it here if we want it)
 
     Args:
         json_string (str): Json str that is 
@@ -101,8 +94,7 @@ def format_json(json_string : str, pl : PLS) -> str:
     Returns:
         str: formatted json str 
     '''
-    # TODO : I think this should go into the data definitions section...
-    # TODO : we also don't need all this information. we only need the _id, we may get to trash this entire function
+
     try:
         formatted_json = {}
         data = json.loads(json_string)

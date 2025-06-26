@@ -9,7 +9,7 @@ import uvicorn
 # from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
-from data_defs.product_lines import string_to_product_line
+from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, format_json
 from evaluation.evaluate import identify, CachedModels
 
@@ -49,10 +49,14 @@ async def predict(
 
     best_prediction = identify(pil_image, 'm0', product_line)
 
-    raw_json = label_to_json(int(best_prediction), product_line)
-    formatted_json = format_json(raw_json, product_line)
+    json_prediction_obj = label_to_json(int(best_prediction), product_line)
+    # formatted_json = format_json(raw_json, product_line)
+    # return json.loads(formatted_json)
 
-    return json.loads(formatted_json)
+    # formatted_json = json.dumps(json_prediction_obj)
+    # TODO: this is going to spit out the wrong information.... it is just a fat object
+    return json_prediction_obj
+
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
