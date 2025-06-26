@@ -1,3 +1,3 @@
-from .evaluate import identify 
+from .evaluate import identify, CachedModels
 
-__all__ = ['identify']
+__all__ = ['identify', 'CachedModels']

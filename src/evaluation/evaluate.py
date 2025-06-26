@@ -179,11 +179,7 @@ class CachedModels(metaclass=Singleton):
             self.cached_models[pl.value] = ms
 
     def request_model(self, model_name: str, pl: PLS) -> models.Model:
-        if self.cached_models is None:
-            CachedModels()
-
         try:
             return self.cached_models[pl.value][model_name]
         except KeyError as e:
-            logging.error(' [request_model] model_name or ps not loaded yet. Error: %s. Returning None', e)
-            return None
+            logging.error(' [request_model] model_name or ps not loaded yet. Error: %s.', e)

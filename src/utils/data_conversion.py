@@ -110,23 +110,21 @@ def format_json(json_string : str, pl : PLS) -> str:
             formatted_json = {
                 'name': data['productName'],
                 '_id': data['_id'],
-                'image_url': data['images']['large'],
+                # 'image_url': data['images']['large'],
                 'tcgplayer_id': data['tcgplayer_productId'], 
-                # TODO: this gives the first price that it finds in the listings
                 # maybe take an average? or get the lowest one?
                 # 'price': data['listings'][0]['price'],
-                'price': data['medianPrice'],
+                # 'price': data['medianPrice'],
                 }
         elif pl == PLS.POKEMON:
             formatted_json = {
                 'name': data['name'],
                 '_id': data['_id'],
-                'image_url': data['images']['large'],
+                # 'image_url': data['images']['large'],
                 'tcgplayer_id': data['tcgplayer_productId'], 
-                # TODO: this gives the first price that it finds in the listings
                 # maybe take an average? or get the lowest one?
                 # 'price': data['listings'][0]['price'],
-                'price': data['medianPrice'],
+                # 'price': data['medianPrice'],
                 }
 
         # elif pl == PLS.MTG:
