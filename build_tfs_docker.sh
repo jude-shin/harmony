@@ -1,14 +1,13 @@
-# docker run -p 8501:8501 \
-#   --mount type=bind,source=/path/to/my_model/,target=/models/my_model \
-#   -e MODEL_NAME=my_model -t tensorflow/serving
-# 
+#!/bin/bash
+
+docker run -it \
+	--rm \
+	-p 8605:8605 \
+	-v "$(pwd)/saved_models/lorcana/:/models/lorcana/" tensorflow/serving \
+	--model_config_file=/models/lorcana/tfs.config \
+	--model_config_file_poll_wait_seconds=60 \
+	--rest_api_port=8605
 
 
-# docker run -p 8501:8501 \
-# 	--mount type=bind,source=/home/jude/harmony/models/lorcana/,target=/models/harmony/lorcana \
-# 	-e MODEL_NAME=/harmony/lorcana -t tensorflow/serving
 
 
-
-
-docker run -it -v /home/jude/harmony/saved_models/lorcana:/models/lorcana -p 8605:8605 --entrypoint /bin/bash tensorflow/servin
