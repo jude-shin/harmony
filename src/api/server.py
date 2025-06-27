@@ -52,10 +52,9 @@ async def predict(
     # instread, create a post request to the docker containers that
     # best_prediction = identify(pil_image, 'm0', product_line)
     url = 'http://tfs-lorcana:8605/v1/models/m0:predict'
-    response = requests.post(url, json={'instances': [pil_image]})
+    response = requests.post(url, json={'instances': pil_image})
 
     return response.json()
-    
     
     # translation
     # json_prediction_obj = label_to_json(int(best_prediction), product_line)
