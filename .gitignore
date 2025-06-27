@@ -3,11 +3,11 @@ venv/
 
 data/
 
-models/*
+models/**
 !models/**/*.toml
 
-saved_models/
-!saved_models/**.config
+saved_models/**
+!saved_models/**/*.config
 
 
 **/__pycache__/
