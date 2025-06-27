@@ -5,11 +5,15 @@ import logging
 import typeguard
 from PIL import Image
 import requests
+import numpy as np
 
 import uvicorn
 # from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
+
+
+from helper.image_processing import get_tensor_from_image
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, format_json
 from evaluation.evaluate import identify, CachedModels
@@ -47,12 +51,18 @@ async def predict(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f'invalid image: {exc}')
 
+    # _, model_img_width, model_img_height, _ = model.input_shape
+    model_img_width, model_img_height = 450, 650
+    img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
+    img_tensor = np.expand_dims(img_tensor, axis=0)
+
+
     product_line = string_to_product_line(product_line_string)
 
     # instread, create a post request to the docker containers that
     # best_prediction = identify(pil_image, 'm0', product_line)
-    url = 'http://tfs-lorcana:8605/v1/models/m0:predict'
-    response = requests.post(url, json={'instances': pil_image})
+    url = 'http://tfs-lorcana:8501/v1/models/m0:predict'
+    response = requests.post(url, json={'instances': img_tensor.tolist()})
 
     return response.json()
     
