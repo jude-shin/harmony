@@ -4,9 +4,11 @@ venv/
 data/
 
 models/**
+!models/**/
 !models/**/*.toml
 
 saved_models/**
+!saved_models/**/
 !saved_models/**/*.config
 
 
