@@ -1,0 +1,64 @@
+[m0]
+	description = "base"
+	is_final = false
+	outputs = 12
+
+[m1]
+	description = "None"
+	is_final = true
+	outputs = 23136
+	
+[m2]
+	description = "Grass"
+	is_final = true
+	outputs = 23136
+
+[m3]
+	description = "Lightning"
+	is_final = true
+	outputs = 23136
+	
+[m4]
+	description = "Darkness"
+	is_final = true
+	outputs = 23136
+
+[m5]
+	description = "Fairy"
+	is_final = true
+	outputs = 23136
+	
+[m6]
+	description = "Fire"
+	is_final = true
+	outputs = 23136
+
+[m7]
+	description = "Psychic"
+	is_final = true
+	outputs = 23136
+	
+[m8]
+	description = "Metal"
+	is_final = true
+	outputs = 23136
+
+[m9]
+	description = "Dragon"
+	is_final = true
+	outputs = 23136
+	
+[m10]
+	description = "Water"
+	is_final = true
+	outputs = 23136
+
+[m11]
+	description = "Fighting"
+	is_final = true
+	outputs = 23136
+	
+[m12]
+	description = "Colorless"
+	is_final = true
+	outputs = 23136

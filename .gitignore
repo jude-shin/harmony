@@ -1,5 +1,12 @@
 .venv/
+venv/
+
 data/
-models/
+
+
+**/*.keras
+
 saved_models/
+
+
 **/__pycache__/
