@@ -73,38 +73,6 @@ def evaluate(image: Image.Image, model: models.Model) -> str:
 
     return str(best_prediction_label)
 
-
-
-# TODO: toss this in a utils package if it gets reused later
-def cache_model(model_name: str, pl: PLS) -> models.Model:
-    '''
-    Gets the tensorflow model. (puts it into ram).
-    This should only be called once per model at the very beginning.
-
-
-
-    Args:
-        pl (PRODUCTLINES): The product_line we are working with.
-        model_name (string): unique identifier for which (sub)model we are using for evaluation
-            ex) in the model "m12.keras", the model_name is "m12"
-            ex) in the labels toml "m0_labels.toml", the model_name is "m0"
-    Returns:
-        models.Model: the trained tensorflow model
-    '''
-    try:
-        model_path = model_name + '.keras'
-        model_dir = os.getenv('MODEL_DIR')
-
-        if model_dir is None:
-            logging.error(' [cache_model] MODEL_DIR env var not set. Returning None.')
-            return None
-        full_model_path = os.path.join(model_dir, pl.value, model_path)
-        return models.load_model(full_model_path)
-    except Exception as e:
-        logging.error(' [cache_model] unexpected error %s. Returning None.', e)
-        return None
-
-
 # TODO: toss this in a utils package if it gets reused later
 def get_model_labels(model_name: str, pl: PLS) -> dict:
     '''
@@ -161,25 +129,3 @@ def get_model_config(pl: PLS) -> dict:
     except Exception as e:
         logging.error(' [get_model_config] unexpected error %s. Returning an empty dict.', e)
         return {}
-
-
-
-
-# TODO: put in the data definition class?
-class CachedModels(metaclass=Singleton):
-    def __init__(self):
-        self.cached_models = {}
-        for pl in PLS:
-            ms = {} # after moving to the data_def folder, rename this to models?
-            config_toml = get_model_config(pl)
-
-            for model_name in config_toml:
-                ms[model_name] = cache_model(model_name, pl)
-
-            self.cached_models[pl.value] = ms
-
-    def request_model(self, model_name: str, pl: PLS) -> models.Model:
-        try:
-            return self.cached_models[pl.value][model_name]
-        except KeyError as e:
-            logging.error(' [request_model] model_name or ps not loaded yet. Error: %s.', e)
