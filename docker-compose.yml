@@ -38,3 +38,16 @@ services:
     restart: unless-stopped
     container_name: tfs-lorcana
 
+  tfs-pokemon:
+    image: tensorflow/serving
+    ports:
+      - "8606:8606"
+    volumes:
+      - ./saved_models/pokemon/:/models/pokemon/
+    command: >
+      --model_config_file=/models/pokemon/tfs.config
+      --model_config_file_poll_wait_seconds=60
+      --rest_api_port=8606
+    restart: unless-stopped
+    container_name: tfs-pokemon
+
