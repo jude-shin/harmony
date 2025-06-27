@@ -3,10 +3,10 @@ venv/
 
 data/
 
+models/*
+!models/**/*.toml
 
-**/*.keras
-
-saved_models/
-
+saved_models/*
+!saved_models/*.config
 
 **/__pycache__/
