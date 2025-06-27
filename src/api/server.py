@@ -4,6 +4,7 @@ import json
 import logging 
 import typeguard
 from PIL import Image
+import requests
 
 import uvicorn
 # from pydantic import BaseModel
@@ -34,6 +35,7 @@ async def ping() -> dict[str, str]:
 @app.post('/predict')
 async def predict(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+        # TODO : add the ability to request multiple images within the same productline
         image: UploadFile = File(..., description='image scan from client'),
         ):
     # TODO : add some kind of validation to make sure that the file structure is good, and all the imputs and outputs check out
@@ -47,15 +49,17 @@ async def predict(
 
     product_line = string_to_product_line(product_line_string)
 
-    best_prediction = identify(pil_image, 'm0', product_line)
+    # instread, create a post request to the docker containers that
+    # best_prediction = identify(pil_image, 'm0', product_line)
+    url = 'http://tfs-lorcana:8605/v1/models/m0:predict'
+    response = requests.post(url, json={'instances': [pil_image]})
 
-    json_prediction_obj = label_to_json(int(best_prediction), product_line)
-    # formatted_json = format_json(raw_json, product_line)
-    # return json.loads(formatted_json)
-
-    # formatted_json = json.dumps(json_prediction_obj)
-    # TODO: this is going to spit out the wrong information.... it is just a fat object
-    return json_prediction_obj
+    return response.json()
+    
+    
+    # translation
+    # json_prediction_obj = label_to_json(int(best_prediction), product_line)
+    # return json_prediction_obj
 
 
 # ---------------------------------------------------------------------------

@@ -31,8 +31,8 @@
 #
 
 curl -X POST \
-     -F "image=@$HOME/harmony/testing/Selection_005.png" \
-     -F "product_line_string=pokemon" \
+     -F "image=@$HOME/harmony/testing/1.png" \
+     -F "product_line_string=lorcana" \
 		 -w "\\nResponse Time: %{time_total} seconds\\n" \
      https://ai.storepass.co/predict
 
