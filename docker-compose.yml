@@ -24,3 +24,17 @@ services:
               count: all
               capabilities: [gpu]
     container_name: api
+
+  tfs-lorcana:
+    image: tensorflow/serving
+    ports:
+      - "8605:8605"
+    volumes:
+      - ./saved_models/lorcana/:/models/lorcana/
+    command: >
+      --model_config_file=/models/lorcana/tfs.config
+      --model_config_file_poll_wait_seconds=60
+      --rest_api_port=8605
+    restart: unless-stopped
+    container_name: tfs-lorcana
+
