@@ -15,8 +15,6 @@ from utils.product_lines import PRODUCTLINES as PLS
 
 from tensorflow.keras import models
 
-# TODO: remove all of the ..._model_... names in the method
-
 def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
     '''
     Identifies a card with multiple models, giving the most confident output.
