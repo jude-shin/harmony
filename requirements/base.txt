@@ -3,6 +3,7 @@ numpy
 pandas
 pillow
 toml
+python-dotenv
 
 
 tensorflow[and-cuda]

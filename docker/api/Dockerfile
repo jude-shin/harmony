@@ -2,12 +2,6 @@
 FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS base
 WORKDIR /app
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/src \
-    MODEL_DIR=/models \
-    DATA_DIR=/data \
-    PORT=5000
-
 # OS deps + Python + fresh pip
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -36,7 +30,7 @@ COPY src/ /app/src
 # COPY src/helper /app/src/helper 
 # COPY src/api /app/src/api
 
-EXPOSE ${PORT}
+EXPOSE ${API_PORT}
 
 CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--workers", "1", "--bind", "0.0.0.0:5000", "--timeout", "120"]
 

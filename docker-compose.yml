@@ -3,16 +3,23 @@ services:
     build: 
       context: .
       dockerfile: docker/api/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/src
+
+      - MODEL_DIR=/models
+      - DATA_DIR=/data
+
+      - API_PORT=${API_PORT}
+      - TFS_PORT=${TFS_PORT}
+      - LORCANA_PORT=${LORCANA_PORT}
+      - POKEMON_PORT=${POKEMON_PORT}
     ports:
-      - "5000:5000"
+      - "${API_PORT}:5000"
     volumes:
       - ./models:/models:ro
       - ./data:/data:ro
-    environment:
-      - MODEL_DIR=/models
-      - PORT=5000
-      - WEB_CONCURRENCY=1
-      - TF_FORCE_GPU_ALLOW_GROWTH=true
+      - ./.env:/app/.env
     deploy:
       resources:
         limits:
@@ -28,7 +35,7 @@ services:
   tfs-lorcana:
     image: tensorflow/serving
     ports:
-      - "8605:8501"
+      - "${LORCANA_PORT}:8501"
     volumes:
       - ./saved_models/lorcana/:/models/lorcana/
     command: >
@@ -40,7 +47,7 @@ services:
   tfs-pokemon:
     image: tensorflow/serving
     ports:
-      - "8606:8501"
+      - "${POKEMON_PORT}:8501"
     volumes:
       - ./saved_models/pokemon/:/models/pokemon/
     command: >

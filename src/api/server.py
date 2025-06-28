@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import logging 
 import typeguard
 from PIL import Image
@@ -11,12 +12,9 @@ import uvicorn
 # from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
-
-
 from helper.image_processing import get_tensor_from_image
-from utils.product_lines import string_to_product_line
-from utils.data_conversion import label_to_json, format_json
-from evaluation.evaluate import identify
+from utils.product_lines import string_to_product_line, get_port
+from utils.data_conversion import label_to_json
 
 logging.getLogger().setLevel(0)
 
@@ -50,18 +48,21 @@ async def predict(
     img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
     img_tensor = np.expand_dims(img_tensor, axis=0)
 
-    product_line = string_to_product_line(product_line_string)
+    pl = string_to_product_line(product_line_string)
 
     # instread, create a post request to the docker containers that
-    # best_prediction = identify(pil_image, 'm0', product_line)
-    url = 'http://tfs-lorcana:8501/v1/models/m0:predict'
+    # best_prediction = identify(pil_image, 'm0', pl)
+    # this uses the internal port because all images are on the same network
+    TFS_PORT = os.getenv('TFS_PORT')
+    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/m0:predict'
+
     response = requests.post(url, json={'instances': img_tensor.tolist()}).json()
 
     predictions = response['predictions'][0]
 
     best_prediction = np.argmax(predictions)
 
-    json_prediction_obj = label_to_json(int(best_prediction), product_line)
+    json_prediction_obj = label_to_json(int(best_prediction), pl)
     return json_prediction_obj
 
 # ---------------------------------------------------------------------------
@@ -69,5 +70,6 @@ async def predict(
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
-    uvicorn.run('src.api.server:app', host='0.0.0.0', port=5000, reload=True)
+    uvicorn.run('src.api.server:app', host='0.0.0.0', port=os.getenv('API_PORT'), reload=True)
+    # uvicorn.run('src.api.server:app', host='0.0.0.0', port=5000, reload=True)
 
