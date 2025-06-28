@@ -15,34 +15,38 @@ from utils.product_lines import PRODUCTLINES as PLS
 
 from tensorflow.keras import models
 
-def identify(image: Image.Image, model_name: str, pl: PLS) -> str:
+def identify(instance: list, model_name: str, pl: PLS) -> str:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
     Args:
-        image: (Image.Image): The image of the card that is to be identified,
+        instance (list): The preprocessed image that is converted to a tensor, which is converted to a list
         model_name (string): unique identifier for which (sub)model we are using for evaluation
             ex) in the model "m12.keras", the model_name is "m12"
             ex) in the labels toml "m0_labels.toml", the model_name is "m0"
         pl (PRODUCTLINES): The product_line we are working with.
-    Returns: 
+    Returns:
         str: the most confident label of the image (from the master layer)
     '''
 
-    model = CachedModels().request_model(model_name, pl)
-    best_prediction_label = evaluate(image, model)
-    logging.info(' Model [%s] best prediction: %s.', model_name, best_prediction_label)
+    TFS_PORT = os.getenv('TFS_PORT')
+    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
+    response = requests.post(url, json={'instances': instance}).json()
 
+    predictions = response['predictions'][0]
+    best_prediction_label = str(np.argmax(predictions))
+
+    logging.info(' Model [%s] best prediction: %s.', model_name, best_prediction_label)
     model_config_dict = get_model_config(pl)
 
     if not model_config_dict[model_name]['is_final']:
         # the best prediction should be the output of the model
         labels_to_model_names_dict = get_model_labels(model_name, pl)
-        next_label_name = labels_to_model_names_dict [best_prediction_label]
+        next_label_name = labels_to_model_names_dict[best_prediction_label]
 
         # the output of this evaluation is going to feed into iteself with a recursive call
-        logging.info(' Model [%s] not is_final. Deferring to submodel [%s]; identifying the same image recursively.', model_name, next_label_name)
-        return identify(image, next_label_name, pl)
+        logging.info(' Model [%s] not is_final. Deferring to submodel [%s]; identifying the same image recursively.',     model_name,     next_label_name)
+        return identify(instance, next_label_name, pl)
 
     # the output is going to be the real deal (_id)
     logging.info(' Successfully identified image as: %s.', model_name)
