@@ -1,5 +1,4 @@
 #!/bin/bash
-docker stop api
-docker rm api
 
+# docker compose down
 docker compose up -d --build

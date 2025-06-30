@@ -27,17 +27,23 @@ services:
           memory: 16g
         reservations:
           devices:
-            - driver: nvidia
-              count: all
               capabilities: [gpu]
+    restart: unless-stopped
     container_name: api
 
   tfs-lorcana:
-    image: tensorflow/serving
+    image: tensorflow/serving:latest-gpu
+    environment: 
+      - NVIDIA_VISIBLE_DEVICES=all
     ports:
       - "${LORCANA_PORT}:8501"
     volumes:
       - ./saved_models/lorcana/:/models/lorcana/
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
     command: >
       --model_config_file=/models/lorcana/tfs.config
       --model_config_file_poll_wait_seconds=60
@@ -45,11 +51,18 @@ services:
     container_name: tfs-lorcana
 
   tfs-pokemon:
-    image: tensorflow/serving
+    image: tensorflow/serving:latest-gpu
+    environment: 
+      - NVIDIA_VISIBLE_DEVICES=all
     ports:
       - "${POKEMON_PORT}:8501"
     volumes:
       - ./saved_models/pokemon/:/models/pokemon/
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
     command: >
       --model_config_file=/models/pokemon/tfs.config
       --model_config_file_poll_wait_seconds=60
