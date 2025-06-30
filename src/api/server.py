@@ -24,6 +24,10 @@ app = FastAPI(
         version='1.0.0',
         )
 
+
+# TODO : add some kind of validation to make sure that the file structure is good, and all the imputs and outputs check out
+
+
 # Routes
 @app.get('/ping', summary='Health-check')
 async def ping() -> dict[str, str]:
@@ -34,9 +38,8 @@ async def predict(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
         # TODO : add the ability to request multiple images within the same productline
         image: UploadFile = File(..., description='image scan from client'),
+        threshold: float = Form(..., description='what percent confidence that is deemed correct')
         ):
-    # TODO : add some kind of validation to make sure that the file structure is good, and all the imputs and outputs check out
-
     # TODO : return the top 3 or top 5 predictions in order (instead of just the biggest one)
 
     try:
@@ -44,11 +47,9 @@ async def predict(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f'invalid image: {exc}')
 
-    # _, model_img_width, model_img_height, _ = model.input_shape
-    # model_img_width, model_img_height = 450, 650
-
     pl = string_to_product_line(product_line_string)
-
+    
+    # TODO : cache the model metadata somewhere
     metadata = get_model_metadata('m0', pl)
     model_img_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
     model_img_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
@@ -57,12 +58,11 @@ async def predict(
     img_tensor = np.expand_dims(img_tensor, axis=0)
     instance = img_tensor.tolist()
 
-    best_prediction = identify(instance, 'm0', pl)
+    best_predictions = identify(instance, 'm0', pl)
 
-    json_prediction_obj = label_to_json(int(best_prediction), pl)
+    # json_prediction_obj = label_to_json(int(best_prediction), pl)
+    json_prediction_obj = {'best_predictions': best_predictions}
     return json_prediction_obj
-
-# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
