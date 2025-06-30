@@ -14,6 +14,8 @@ services:
       - TFS_PORT=${TFS_PORT}
       - LORCANA_PORT=${LORCANA_PORT}
       - POKEMON_PORT=${POKEMON_PORT}
+
+      - TF_FORCE_GPU_ALLOW_GROWTH=true
     ports:
       - "${API_PORT}:5000"
     volumes:
@@ -22,12 +24,9 @@ services:
       - ./.env:/app/.env
     deploy:
       resources:
-        limits:
-          cpus: "2"
-          memory: 16g
         reservations:
           devices:
-              capabilities: [gpu]
+            - capabilities: [gpu]
     restart: unless-stopped
     container_name: api
 
@@ -35,6 +34,7 @@ services:
     image: tensorflow/serving:latest-gpu
     environment: 
       - NVIDIA_VISIBLE_DEVICES=all
+      - TF_FORCE_GPU_ALLOW_GROWTH=true
     ports:
       - "${LORCANA_PORT}:8501"
     volumes:
@@ -54,6 +54,7 @@ services:
     image: tensorflow/serving:latest-gpu
     environment: 
       - NVIDIA_VISIBLE_DEVICES=all
+      - TF_FORCE_GPU_ALLOW_GROWTH=true
     ports:
       - "${POKEMON_PORT}:8501"
     volumes:

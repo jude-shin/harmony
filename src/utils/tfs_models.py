@@ -5,15 +5,9 @@ import os
 import typeguard
 import requests
 
-from PIL import Image
-
 import numpy as np
-import tensorflow as tf
 
-from helper.image_processing import get_tensor_from_image
 from utils.product_lines import PRODUCTLINES as PLS
-
-from tensorflow.keras import models
 
 def identify(instance: list, model_name: str, pl: PLS) -> str:
     '''
