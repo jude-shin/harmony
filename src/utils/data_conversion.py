@@ -21,10 +21,16 @@ def label_to_id(label : int, pl : PLS) -> str:
     Returns:
         str: _id that is associated with that label
     '''
-    json = label_to_json(label, pl)
+    data_dir = os.getenv('DATA_DIR')
+    if data_dir is None:
+        logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
+        return ''
+    master_labels_path = os.path.join(data_dir, pl.value, 'master_labels.toml')
+    with open(master_labels_path, 'r') as f:
+        master_labels = toml.load(f)
 
-    # extract only the _id from the json str 
-    return ''
+    return master_labels[str(label)]
+
 
 def id_to_label(_id : str, pl : PLS) -> str:
     '''

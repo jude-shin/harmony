@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 
 from helper.image_processing import get_tensor_from_image
 from utils.product_lines import string_to_product_line
-from utils.data_conversion import label_to_json
+from utils.data_conversion import label_to_json, label_to_id
 from utils.tfs_models import identify, get_model_metadata
 
 logging.getLogger().setLevel(0)
@@ -58,10 +58,12 @@ async def predict(
     img_tensor = np.expand_dims(img_tensor, axis=0)
     instance = img_tensor.tolist()
 
-    best_predictions = identify(instance, 'm0', pl)
+    best_prediction = identify(instance, 'm0', pl)
 
-    # json_prediction_obj = label_to_json(int(best_prediction), pl)
-    json_prediction_obj = {'best_predictions': best_predictions}
+    #json_prediction_obj = label_to_json(int(best_prediction), pl)
+    # json_prediction_obj = {'best_prediction': best_prediction}
+    json_prediction_obj = {'best_prediction': label_to_id(int(best_prediction), pl)}
+
     return json_prediction_obj
 
 # ---------------------------------------------------------------------------
