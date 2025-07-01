@@ -62,17 +62,9 @@ async def predict(
         instances.append(instance)
 
     best_predictions = identify(instances, 'm0', pl)
-    print(best_predictions)
 
-    best_ids = []
-    for pred in best_predictions:
-        _id = label_to_id(int(pred), pl)
-        print(_id)
-        best_ids.append(_id)
-
-
-    # json_prediction_obj = {'best_predictions': [label_to_id(int(pred), pl) for pred in best_predictions]}
-    # return json_prediction_obj
+    json_prediction_obj = {'best_predictions': [label_to_id(int(pred), pl) for pred in best_predictions]}
+    return json_prediction_obj
     return {}
 
 # ---------------------------------------------------------------------------
