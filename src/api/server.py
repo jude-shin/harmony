@@ -55,16 +55,16 @@ async def predict(
 
     for pil_image in pil_images:
         img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
-        img_tensor = np.expand_dims(img_tensor, axis=0)
+        # img_tensor = np.expand_dims(img_tensor, axis=0)
+        # img_tensor = np.squeeze(img_tensor, axis=0)
 
-        instance = [BATCH_SIZE]
-        instance.extend(img_tensor.tolist())
+        instance = img_tensor.tolist()
 
         instances.append(instance)
 
     best_predictions = identify(instances, 'm0', pl)
 
-    json_prediction_obj = {'best_predictions': label_to_id(int(best_predictions), pl)}
+    json_prediction_obj = {'best_predictions': [label_to_id(int(pred), pl) for pred in best_predictions]}
     return json_prediction_obj
 
 # ---------------------------------------------------------------------------
