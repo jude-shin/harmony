@@ -9,12 +9,12 @@ import numpy as np
 
 from utils.product_lines import PRODUCTLINES as PLS
 
-def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
+def identify(instances: dict, model_name: str, pl: PLS) -> List[str]:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
     Args:
-        instance (list): The preprocessed image that is converted to a tensor, which is converted to a list
+        instances (dict): The preprocessed image that is converted to a tensor, which is converted to a list
         model_name (string): unique identifier for which (sub)model we are using for evaluation
             ex) in the model "m12.keras", the model_name is "m12"
             ex) in the labels toml "m0_labels.toml", the model_name is "m0"
@@ -25,7 +25,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
 
     TFS_PORT = os.getenv('TFS_PORT')
     url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
-    responses = requests.post(url, json={'instances': instances}).json()
+    responses = requests.post(url, json={'instances': list(instances.keys())}).json()
 
     # =============================
 
@@ -60,6 +60,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
 
 
     return final_prediction_labels 
+
 
 def get_model_metadata(model_name: str, pl: PLS) -> dict:
     '''

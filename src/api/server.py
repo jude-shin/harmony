@@ -51,20 +51,20 @@ async def predict(
             logging.error(HTTPException(status_code=400, detail=f'invalid image: {exc}'))
             pil_image = None
             continue
-        pil_images.add(pil_image)
+        pil_images.append(pil_image)
 
     
-    instances = []
+    instances = {}
     # TODO : cache the model metadata somewhere
     metadata = get_model_metadata('m0', pl)
     model_img_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
     model_img_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
 
-    for pl_image in pil_images:
-        img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
+    for pil_image in pil_images:
+        img_tensor = get_tensor_from_image(paddil_image, model_img_width, model_img_height)
         img_tensor = np.expand_dims(img_tensor, axis=0)
         instance = img_tensor.tolist()
-        instances.add(instance)
+        instances[instance] = None
 
     best_predictions = identify(instances, 'm0', pl)
 
