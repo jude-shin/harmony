@@ -1,16 +1,7 @@
-from __future__ import annotations
+import json, os, logging, requests, numpy as np, uvicorn, typeguard
 
-import json
-import os
-import logging 
-import typeguard
-from PIL import Image
-import requests
-import numpy as np
-
-import uvicorn
-# from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
+from PIL import Image
 
 from helper.image_processing import get_tensor_from_image
 from utils.product_lines import string_to_product_line
@@ -37,10 +28,12 @@ async def ping() -> dict[str, str]:
 async def predict(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
         # TODO : add the ability to request multiple images within the same productline
-        images: List[UploadFile] = File(..., description='image scans from client that are to be identified'),
+        images: list[UploadFile] = File(..., description='image scans from client that are to be identified'),
         threshold: float = Form(..., description='what percent confidence that is deemed correct')
         ):
     # TODO : return the top 3 or top 5 predictions in order (instead of just the biggest one)
+    BATCH_SIZE = 1
+
     pl = string_to_product_line(product_line_string)
     
     pil_images = []
@@ -61,9 +54,12 @@ async def predict(
     model_img_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
 
     for pil_image in pil_images:
-        img_tensor = get_tensor_from_image(paddil_image, model_img_width, model_img_height)
+        img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
         img_tensor = np.expand_dims(img_tensor, axis=0)
-        instance = img_tensor.tolist()
+
+        instance = [BATCH_SIZE]
+        instance.extend(img_tensor.tolist())
+
         instances.append(instance)
 
     best_predictions = identify(instances, 'm0', pl)

@@ -9,7 +9,7 @@ import numpy as np
 
 from utils.product_lines import PRODUCTLINES as PLS
 
-def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
+def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
@@ -20,13 +20,16 @@ def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
             ex) in the labels toml "m0_labels.toml", the model_name is "m0"
         pl (PRODUCTLINES): The product_line we are working with.
     Returns:
-        List[str]: a list of the most confident labels of the given images (from the master layer)
+        list[str]: a list of the most confident labels of the given images (from the master layer)
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
     url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
 
-    responses = requests.post(url, json={'instances': list(instances.keys())}).json()
+    response = requests.post(url, json={'instances': instances}).json()
+
+    print("Response JSON:", response)
+
     model_config_dict = get_model_config(pl)
     labels_to_model_names_dict = get_model_labels(model_name, pl)
     
