@@ -15,35 +15,42 @@ echo "num_images,response_time_sec" > "$LOG_FILE"
 all_images=($(find "$IMG_DIR" -type f -name "*.png" | sort))
 total_images=${#all_images[@]}
 
-echo "Found $total_images images."
+echo "Found $total_images images in $IMG_DIR."
 
-# Generate Fibonacci-based batch sizes up to total_images
+# Generate Fibonacci batch sizes (up to but not exceeding total_images)
 fib=(1 2)
 while true; do
 	next=$((fib[-1] + fib[-2]))
-	if [ "$next" -ge "$total_images" ]; then
-		fib+=("$total_images")
+	if [ "$next" -gt "$total_images" ]; then
 		break
 	fi
 	fib+=("$next")
 done
+
+# Ensure final batch is the full count if it's not already included
+if [ "${fib[-1]}" -lt "$total_images" ]; then
+	fib+=("$total_images")
+fi
 
 # Loop through each batch size
 for batch_size in "${fib[@]}"; do
 	echo "Testing batch size: $batch_size"
 
 	for run in $(seq 1 $REPEATS); do
-		# Build curl command
-		curl_cmd=(curl -s -w "\n%{time_total}" -o /dev/null -X POST)
+		# Shuffle the image list
+		shuffled_images=($(printf "%s\n" "${all_images[@]}" | shuf))
 
-		for ((i=0; i<batch_size; i++)); do
-			img_path="${all_images[i]}"
-			curl_cmd+=(-F "images=@$img_path")
-		done
+				# Build curl command
+				curl_cmd=(curl -s -w "\n%{time_total}" -o /dev/null -X POST)
 
-		curl_cmd+=( -F "product_line_string=$PRODUCT_LINE" -F "threshold=$THRESHOLD" "$ENDPOINT")
+				for ((i=0; i<batch_size; i++)); do
+					img_path="${shuffled_images[i]}"
+					curl_cmd+=(-F "images=@$img_path")
+				done
 
-				# Run the curl and extract response time
+				curl_cmd+=( -F "product_line_string=$PRODUCT_LINE" -F "threshold=$THRESHOLD" "$ENDPOINT")
+
+				# Execute the curl and extract response time
 				result="$("${curl_cmd[@]}")"
 				time_taken=$(echo "$result" | tail -n 1)
 
