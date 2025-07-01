@@ -9,7 +9,7 @@ import numpy as np
 
 from utils.product_lines import PRODUCTLINES as PLS
 
-def identify(instance: list, model_name: str, pl: PLS) -> str:
+def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
@@ -20,31 +20,46 @@ def identify(instance: list, model_name: str, pl: PLS) -> str:
             ex) in the labels toml "m0_labels.toml", the model_name is "m0"
         pl (PRODUCTLINES): The product_line we are working with.
     Returns:
-        str: the most confident label of the image (from the master layer)
+        List[str]: a list of the most confident labels of the given images (from the master layer)
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
     url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
-    response = requests.post(url, json={'instances': instance}).json()
+    responses = requests.post(url, json={'instances': instances}).json()
 
-    predictions = response['predictions'][0]
-    best_prediction_label = str(np.argmax(predictions))
+    # =============================
 
-    logging.info(' Model [%s] best prediction: %s.', model_name, best_prediction_label)
     model_config_dict = get_model_config(pl)
+    labels_to_model_names_dict = get_model_labels(model_name, pl)
+    final_prediction_labels = []
 
-    if not model_config_dict[model_name]['is_final']:
-        # the best prediction should be the output of the model
-        labels_to_model_names_dict = get_model_labels(model_name, pl)
-        next_label_name = labels_to_model_names_dict[best_prediction_label]
+    if model_config_dict[model_name]['is_final']:
+        for response in responses:
+            predictions = response['predictions'][0]
+            best_prediction_label = str(np.argmax(predictions))
+            logging.info(' Successfully identified image as: %s.', model_name)
+            final_prediction_labels.append(best_prediction_label)
+    else:
+        best_prediction_labels = {}
+        for response in responses:
+            predictions = response['predictions'][0]
+            best_prediction_label = str(np.argmax(predictions))
+            logging.info(' Model [%s] best prediction: %s.', model_name, best_prediction_label)
 
-        # the output of this evaluation is going to feed into iteself with a recursive call
-        logging.info(' Model [%s] not is_final. Deferring to submodel [%s]; identifying the same image recursively.',     model_name,     next_label_name)
-        return identify(instance, next_label_name, pl)
+            # the best prediction should be the output of the model
+            next_label_name = labels_to_model_names_dict[best_prediction_label]
+            
+            best_prediction_labels[next_label_name](instance)
 
-    # the output is going to be the real deal (_id)
-    logging.info(' Successfully identified image as: %s.', model_name)
-    return best_prediction_label
+
+
+        # TODO : this is not sequential.... :( this is not good, and you gotta label them or something to keep them all in order
+        for key in best_prediction_labels:
+            logging.info(' Model [%s] not is_final. Deferring to submodel [%s]; identifying the same image recursively.', model_name, next_label_name)
+            final_prediction_labels.extend(identify(instance, next_label_name, pl))
+
+
+    return final_prediction_labels 
 
 def get_model_metadata(model_name: str, pl: PLS) -> dict:
     '''

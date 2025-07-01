@@ -17,7 +17,7 @@ from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, label_to_id
 from utils.tfs_models import identify, get_model_metadata
 
-logging.getLogger().setLevel(0)
+logging.getLogger().setLevel(10)
 
 app = FastAPI(
         title='Harmony ML API',
