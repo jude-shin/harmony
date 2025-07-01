@@ -27,13 +27,9 @@ async def ping() -> dict[str, str]:
 @app.post('/predict')
 async def predict(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
-        # TODO : add the ability to request multiple images within the same productline
         images: list[UploadFile] = File(..., description='image scans from client that are to be identified'),
         threshold: float = Form(..., description='what percent confidence that is deemed correct')
         ):
-    # TODO : return the top 3 or top 5 predictions in order (instead of just the biggest one)
-    BATCH_SIZE = 1
-
     pl = string_to_product_line(product_line_string)
     
     pil_images = []
@@ -59,9 +55,12 @@ async def predict(
         instance = img_tensor.numpy().tolist()
         instances.append(instance)
 
-    best_predictions = identify(instances, 'm0', pl)
+    predictions, confidences = identify(instances, 'm0', pl)
 
-    json_prediction_obj = {'best_predictions': list(filter(lambda x: ('' if (x is None) else label_to_id(int(x), pl)), best_predictions))}
+    json_prediction_obj = {
+            'predictions': list(filter(lambda p: ('' if (p is None) else label_to_id(int(p), pl)), predictions)), 
+            'confidences': list(filter(lambda c: (0.00 if (c is None) else c))),
+            }
     return json_prediction_obj
 
 # ---------------------------------------------------------------------------
