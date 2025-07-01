@@ -26,42 +26,62 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
     TFS_PORT = os.getenv('TFS_PORT')
     url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
 
-    response = requests.post(url, json={'instances': instances}).json()
+    try:
+        response = requests.post(url, json={'instances': instances}, timeout=10)
+        response.raise_for_status()
+        predictions = response.json().get('predictions', [])
+    except Exception as e:
+        logging.warning("Model [%s] failed to get predictions: %s", model_name, str(e))
+        return [None] * len(instances)
 
     model_config_dict = get_model_config(pl)
-    
-    predictions = response['predictions']
     final_prediction_labels = [None] * len(instances)
 
     if model_config_dict[model_name]['is_final']:
         for i, p in enumerate(predictions):
-            best_prediction_label = str(np.argmax(p))
-            final_prediction_labels[i] = best_prediction_label 
-            logging.info('Model [%s] final prediction for image %d: %s', model_name, i, best_prediction_label)
+            try:
+                best_prediction_label = str(np.argmax(p))
+                final_prediction_labels[i] = best_prediction_label 
+                logging.info('Model [%s] final prediction for image %d: %s', model_name, i, best_prediction_label)
+            except Exception as e:
+                logging.warning("Model [%s] failed to process prediction for image %d: %s", model_name, i, str(e))
+                final_prediction_labels[i] = None
         return final_prediction_labels
 
+    # Handle submodel routing
     submodel_inputs = {}
     image_indices_by_submodel = {}
 
     for i, p in enumerate(predictions):
-        best_label = str(np.argmax(p))
+        try:
+            best_label = str(np.argmax(p))
+            labels_to_model_names_dict = get_model_labels(model_name, pl)
+            next_model = labels_to_model_names_dict[best_label]
 
-        labels_to_model_names_dict = get_model_labels(model_name, pl)
-        next_model = labels_to_model_names_dict[best_label]
-        logging.info('Model [%s] defers image %d to submodel [%s] (label: %s)', model_name, i, next_model, best_label)
-        if next_model not in submodel_inputs:
-            submodel_inputs[next_model] = []
-            image_indices_by_submodel[next_model] = []
+            logging.info('Model [%s] defers image %d to submodel [%s] (label: %s)', model_name, i, next_model, best_label)
 
-        submodel_inputs[next_model].append(instances[i])
-        image_indices_by_submodel[next_model].append(i)
+            if next_model not in submodel_inputs:
+                submodel_inputs[next_model] = []
+                image_indices_by_submodel[next_model] = []
 
+            submodel_inputs[next_model].append(instances[i])
+            image_indices_by_submodel[next_model].append(i)
+        except Exception as e:
+            logging.warning("Model [%s] failed to defer image %d: %s", model_name, i, str(e))
+            final_prediction_labels[i] = None
+
+    # Recurse into submodels
     for next_model, sub_instances in submodel_inputs.items():
-        sub_results = identify(sub_instances, next_model, pl)
+        try:
+            sub_results = identify(sub_instances, next_model, pl)
+        except Exception as e:
+            logging.warning("Submodel [%s] failed to identify batch: %s", next_model, str(e))
+            sub_results = [None] * len(sub_instances)
+
         for j, result in zip(image_indices_by_submodel[next_model], sub_results):
             final_prediction_labels[j] = result
 
-    return final_prediction_labels 
+    return final_prediction_labels
 
 
 def get_model_metadata(model_name: str, pl: PLS) -> dict:
