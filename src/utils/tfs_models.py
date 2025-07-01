@@ -25,41 +25,41 @@ def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
 
     TFS_PORT = os.getenv('TFS_PORT')
     url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
+
     responses = requests.post(url, json={'instances': list(instances.keys())}).json()
-
-    # =============================
-
     model_config_dict = get_model_config(pl)
     labels_to_model_names_dict = get_model_labels(model_name, pl)
-    final_prediction_labels = []
+    
+    predictions = response['predictions']
+    final_prediction_labels = [None] * len(instances)
 
     if model_config_dict[model_name]['is_final']:
-        for response in responses:
-            predictions = response['predictions'][0]
+        for i, p in enumerate(predictions):
             best_prediction_label = str(np.argmax(predictions))
-            logging.info(' Successfully identified image as: %s.', model_name)
-            final_prediction_labels.append(best_prediction_label)
-    else:
-        best_prediction_labels = {}
-        for response in responses:
-            predictions = response['predictions'][0]
-            best_prediction_label = str(np.argmax(predictions))
-            logging.info(' Model [%s] best prediction: %s.', model_name, best_prediction_label)
+            final_prediction_labels[i] = label
+            logging.info('Model [%s] final prediction for image %d: %s', model_name, i, label)
+            return final_prediction_labels
 
-            # the best prediction should be the output of the model
-            next_label_name = labels_to_model_names_dict[best_prediction_label]
-            
-            best_prediction_labels[next_label_name](instance)
+    submodel_inputs = {}
+    image_indices_by_submodel = {}
 
+    for i, p in ennumerate(predictions):
+        best_label = str(np.argmax(predictions))
+        next_model = labels_to_model_names_dict[best_label]
+        logging.info('Model [%s] defers image %d to submodel [%s] (label: %s)', model_name, i, next_model, best_label)
+        if next_model not in submodel_inputs:
+            submodel_inputs[next_model] = []
+            image_idices_by_submodel[next_model] = []
 
+        submodel_inputs[next_model].append(instances[i])
+        image_indices_by_submodel[next_model].append(i)
 
-        # TODO : this is not sequential.... :( this is not good, and you gotta label them or something to keep them all in order
-        for key in best_prediction_labels:
-            logging.info(' Model [%s] not is_final. Deferring to submodel [%s]; identifying the same image recursively.', model_name, next_label_name)
-            final_prediction_labels.extend(identify(instance, next_label_name, pl))
+        for next_model, sub_instances in submodel_inputs.items():
+            sub_results = identify(sub_instances, next_model, pl)
+            for j, result in zip(image_indices_by_submodel[next_model], sub_results):
+                final_prediction_labels[j] = result
 
-
-    return final_prediction_labels 
+        return final_prediction_labels 
 
 
 def get_model_metadata(model_name: str, pl: PLS) -> dict:

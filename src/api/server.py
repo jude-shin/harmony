@@ -54,7 +54,7 @@ async def predict(
         pil_images.append(pil_image)
 
     
-    instances = {}
+    instances = []
     # TODO : cache the model metadata somewhere
     metadata = get_model_metadata('m0', pl)
     model_img_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
@@ -64,7 +64,7 @@ async def predict(
         img_tensor = get_tensor_from_image(paddil_image, model_img_width, model_img_height)
         img_tensor = np.expand_dims(img_tensor, axis=0)
         instance = img_tensor.tolist()
-        instances[instance] = None
+        instances.append(instance)
 
     best_predictions = identify(instances, 'm0', pl)
 
