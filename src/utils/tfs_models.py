@@ -21,13 +21,9 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
         pl (PRODUCTLINES): The product_line we are working with.
 
     Returns:
-<<<<<<< Updated upstream
-        tuple[list[str], list[float]]: a tuple containing:
-            - list of most confident labels
+        tuple[list[str | None], list[float]]: a tuple containing:
+            - list of most confident labels (or None if there is some sort of error)
             - list of confidences corresponding to each label
-=======
-        list[str | None]: a list of the most confident labels of the given images (from the master layer), or None if there is some sort of error
->>>>>>> Stashed changes
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
