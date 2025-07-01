@@ -38,7 +38,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
             best_prediction_label = str(np.argmax(p))
             final_prediction_labels[i] = best_prediction_label 
             logging.info('Model [%s] final prediction for image %d: %s', model_name, i, best_prediction_label)
-            return final_prediction_labels
+        return final_prediction_labels
 
     submodel_inputs = {}
     image_indices_by_submodel = {}
