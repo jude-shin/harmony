@@ -56,10 +56,10 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
         submodel_inputs[next_model].append(instances[i])
         image_indices_by_submodel[next_model].append(i)
 
-        for next_model, sub_instances in submodel_inputs.items():
-            sub_results = identify(sub_instances, next_model, pl)
-            for j, result in zip(image_indices_by_submodel[next_model], sub_results):
-                final_prediction_labels[j] = result
+    for next_model, sub_instances in submodel_inputs.items():
+        sub_results = identify(sub_instances, next_model, pl)
+        for j, result in zip(image_indices_by_submodel[next_model], sub_results):
+            final_prediction_labels[j] = result
 
     return final_prediction_labels 
 
