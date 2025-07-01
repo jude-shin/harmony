@@ -6,7 +6,7 @@ PRODUCT_LINE="pokemon"
 THRESHOLD=90
 ENDPOINT="https://ai.storepass.co/predict"
 LOG_FILE="curl_test_log.csv"
-REPEATS=4  # number of curls per batch size
+REPEATS=1  # number of curls per batch size
 
 # Clear and initialize the log file
 echo "num_images,response_time_sec" > "$LOG_FILE"

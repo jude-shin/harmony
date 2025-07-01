@@ -60,15 +60,8 @@ async def predict(
         instances.append(instance)
 
     best_predictions = identify(instances, 'm0', pl)
-    best_ids = []
-    for pred in best_predictions:
-        _id = label_to_id(int(pred, pl))
-        if pred is None:
-            logging.warning('Error Identifying Image. Leaving _id blank...')
-            _id = ''
-        best_ids.append(_id)
 
-    json_prediction_obj = {'best_predictions': best_ids}
+    json_prediction_obj = {'best_predictions': list(filter(lambda x: ('' if (x is None) else label_to_id(int(x), pl)), best_predictions))}
     return json_prediction_obj
 
 # ---------------------------------------------------------------------------
