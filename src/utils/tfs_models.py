@@ -9,7 +9,7 @@ import numpy as np
 
 from utils.product_lines import PRODUCTLINES as PLS
 
-def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
+def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list[float]]:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
@@ -19,8 +19,11 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
             ex) in the model "m12.keras", the model_name is "m12"
             ex) in the labels toml "m0_labels.toml", the model_name is "m0"
         pl (PRODUCTLINES): The product_line we are working with.
+
     Returns:
-        list[str]: a list of the most confident labels of the given images (from the master layer)
+        tuple[list[str], list[float]]: a tuple containing:
+            - list of most confident labels
+            - list of confidences corresponding to each label
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
@@ -32,21 +35,25 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
         predictions = response.json().get('predictions', [])
     except Exception as e:
         logging.warning("Model [%s] failed to get predictions: %s", model_name, str(e))
-        return [None] * len(instances)
+        return [None] * len(instances), [0.0] * len(instances)
 
     model_config_dict = get_model_config(pl)
     final_prediction_labels = [None] * len(instances)
+    confidences = [0.0] * len(instances)
 
     if model_config_dict[model_name]['is_final']:
         for i, p in enumerate(predictions):
             try:
-                best_prediction_label = str(np.argmax(p))
-                final_prediction_labels[i] = best_prediction_label 
-                logging.info('Model [%s] final prediction for image %d: %s', model_name, i, best_prediction_label)
+                p_np = np.array(p)
+                best_idx = int(np.argmax(p_np))
+                best_label = str(best_idx)
+                confidence = float(p_np[best_idx])
+                final_prediction_labels[i] = best_label
+                confidences[i] = confidence
+                logging.info('Model [%s] final prediction for image %d: %s (%.4f)', model_name, i, best_label, confidence)
             except Exception as e:
                 logging.warning("Model [%s] failed to process prediction for image %d: %s", model_name, i, str(e))
-                final_prediction_labels[i] = None
-        return final_prediction_labels
+        return final_prediction_labels, confidences
 
     # Handle submodel routing
     submodel_inputs = {}
@@ -54,7 +61,10 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
 
     for i, p in enumerate(predictions):
         try:
-            best_label = str(np.argmax(p))
+            p_np = np.array(p)
+            best_idx = int(np.argmax(p_np))
+            best_label = str(best_idx)
+            confidence = float(p_np[best_idx])
             labels_to_model_names_dict = get_model_labels(model_name, pl)
             next_model = labels_to_model_names_dict[best_label]
 
@@ -68,20 +78,23 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
             image_indices_by_submodel[next_model].append(i)
         except Exception as e:
             logging.warning("Model [%s] failed to defer image %d: %s", model_name, i, str(e))
-            final_prediction_labels[i] = None
 
     # Recurse into submodels
     for next_model, sub_instances in submodel_inputs.items():
         try:
-            sub_results = identify(sub_instances, next_model, pl)
+            sub_labels, sub_confidences = identify(sub_instances, next_model, pl)
         except Exception as e:
             logging.warning("Submodel [%s] failed to identify batch: %s", next_model, str(e))
-            sub_results = [None] * len(sub_instances)
+            sub_labels = [None] * len(sub_instances)
+            sub_confidences = [0.0] * len(sub_instances)
 
-        for j, result in zip(image_indices_by_submodel[next_model], sub_results):
-            final_prediction_labels[j] = result
+    for idx, sub_label, sub_conf in zip(image_indices_by_submodel[next_model], sub_labels, sub_confidences):
+        top_prediction = predictions[idx]
+        top_conf = float(np.max(top_prediction))  # confidence of the top-level model
+        final_prediction_labels[idx] = sub_label
+        confidences[idx] = top_conf * sub_conf
 
-    return final_prediction_labels
+    return final_prediction_labels, confidences
 
 
 def get_model_metadata(model_name: str, pl: PLS) -> dict:
