@@ -37,33 +37,38 @@ async def ping() -> dict[str, str]:
 async def predict(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
         # TODO : add the ability to request multiple images within the same productline
-        image: UploadFile = File(..., description='image scan from client'),
+        images: List[UploadFile] = File(..., description='image scans from client that are to be identified'),
         threshold: float = Form(..., description='what percent confidence that is deemed correct')
         ):
     # TODO : return the top 3 or top 5 predictions in order (instead of just the biggest one)
-
-    try:
-        pil_image = Image.open(image.file).convert('RGB')
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=f'invalid image: {exc}')
-
     pl = string_to_product_line(product_line_string)
     
+    pil_images = []
+    for image in images:
+        try:
+            pil_image = Image.open(image.file).convert('RGB')
+        except Exception as exc:  # noqa: BLE001
+            logging.error(HTTPException(status_code=400, detail=f'invalid image: {exc}'))
+            pil_image = None
+            continue
+        pil_images.add(pil_image)
+
+    
+    instances = []
     # TODO : cache the model metadata somewhere
     metadata = get_model_metadata('m0', pl)
     model_img_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
     model_img_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
 
-    img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
-    img_tensor = np.expand_dims(img_tensor, axis=0)
-    instance = img_tensor.tolist()
+    for pl_image in pil_images:
+        img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
+        img_tensor = np.expand_dims(img_tensor, axis=0)
+        instance = img_tensor.tolist()
+        instances.add(instance)
 
-    best_prediction = identify(instance, 'm0', pl)
+    best_predictions = identify(instances, 'm0', pl)
 
-    #json_prediction_obj = label_to_json(int(best_prediction), pl)
-    # json_prediction_obj = {'best_prediction': best_prediction}
-    json_prediction_obj = {'best_prediction': label_to_id(int(best_prediction), pl)}
-
+    json_prediction_obj = {'best_predictions': label_to_id(int(best_predictions), pl)}
     return json_prediction_obj
 
 # ---------------------------------------------------------------------------
