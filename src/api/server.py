@@ -58,7 +58,7 @@ async def predict(
     predictions, confidences = identify(instances, 'm0', pl)
 
     json_prediction_obj = {
-            'predictions': list(filter(lambda p: ('' if (p is None) else label_to_id(int(p), pl)), predictions)), 
+            'predictions': [label_to_id(int(p), pl) if p is not None else None for p in predictions],
             'confidences': confidences 
             }
     return json_prediction_obj

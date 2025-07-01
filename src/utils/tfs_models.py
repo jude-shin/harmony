@@ -88,11 +88,11 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
             sub_labels = [None] * len(sub_instances)
             sub_confidences = [0.0] * len(sub_instances)
 
-    for idx, sub_label, sub_conf in zip(image_indices_by_submodel[next_model], sub_labels, sub_confidences):
-        top_prediction = predictions[idx]
-        top_conf = float(np.max(top_prediction))  # confidence of the top-level model
-        final_prediction_labels[idx] = sub_label
-        confidences[idx] = top_conf * sub_conf
+        for idx, sub_label, sub_conf in zip(image_indices_by_submodel[next_model], sub_labels, sub_confidences):
+            top_prediction = predictions[idx]
+            top_conf = float(np.max(top_prediction))  # confidence of the top-level model
+            final_prediction_labels[idx] = sub_label
+            confidences[idx] = top_conf * sub_conf
 
     return final_prediction_labels, confidences
 
