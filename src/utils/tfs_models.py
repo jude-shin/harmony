@@ -9,12 +9,12 @@ import numpy as np
 
 from utils.product_lines import PRODUCTLINES as PLS
 
-def identify(instances: dict, model_name: str, pl: PLS) -> List[str]:
+def identify(instances: list, model_name: str, pl: PLS) -> List[str]:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
     Args:
-        instances (dict): The preprocessed image that is converted to a tensor, which is converted to a list
+        instances (list): The list of preprocessed images that are converted to a tensor, which is converted to a list
         model_name (string): unique identifier for which (sub)model we are using for evaluation
             ex) in the model "m12.keras", the model_name is "m12"
             ex) in the labels toml "m0_labels.toml", the model_name is "m0"
