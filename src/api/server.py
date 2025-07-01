@@ -58,14 +58,22 @@ async def predict(
         # img_tensor = np.expand_dims(img_tensor, axis=0)
         # img_tensor = np.squeeze(img_tensor, axis=0)
 
-        instance = img_tensor.tolist()
-
+        instance = img_tensor.numpy().tolist()
         instances.append(instance)
 
     best_predictions = identify(instances, 'm0', pl)
+    print(best_predictions)
 
-    json_prediction_obj = {'best_predictions': [label_to_id(int(pred), pl) for pred in best_predictions]}
-    return json_prediction_obj
+    best_ids = []
+    for pred in best_predictions:
+        _id = label_to_id(int(pred), pl)
+        print(_id)
+        best_ids.append(_id)
+
+
+    # json_prediction_obj = {'best_predictions': [label_to_id(int(pred), pl) for pred in best_predictions]}
+    # return json_prediction_obj
+    return {}
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':

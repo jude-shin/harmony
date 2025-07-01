@@ -28,31 +28,30 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
 
     response = requests.post(url, json={'instances': instances}).json()
 
-    print("Response JSON:", response)
-
     model_config_dict = get_model_config(pl)
-    labels_to_model_names_dict = get_model_labels(model_name, pl)
     
     predictions = response['predictions']
     final_prediction_labels = [None] * len(instances)
 
     if model_config_dict[model_name]['is_final']:
         for i, p in enumerate(predictions):
-            best_prediction_label = str(np.argmax(predictions))
-            final_prediction_labels[i] = label
-            logging.info('Model [%s] final prediction for image %d: %s', model_name, i, label)
+            best_prediction_label = str(np.argmax(p))
+            final_prediction_labels[i] = best_prediction_label 
+            logging.info('Model [%s] final prediction for image %d: %s', model_name, i, best_prediction_label)
             return final_prediction_labels
 
     submodel_inputs = {}
     image_indices_by_submodel = {}
 
-    for i, p in ennumerate(predictions):
-        best_label = str(np.argmax(predictions))
+    for i, p in enumerate(predictions):
+        best_label = str(np.argmax(p))
+
+        labels_to_model_names_dict = get_model_labels(model_name, pl)
         next_model = labels_to_model_names_dict[best_label]
         logging.info('Model [%s] defers image %d to submodel [%s] (label: %s)', model_name, i, next_model, best_label)
         if next_model not in submodel_inputs:
             submodel_inputs[next_model] = []
-            image_idices_by_submodel[next_model] = []
+            image_indices_by_submodel[next_model] = []
 
         submodel_inputs[next_model].append(instances[i])
         image_indices_by_submodel[next_model].append(i)
@@ -62,7 +61,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> list[str]:
             for j, result in zip(image_indices_by_submodel[next_model], sub_results):
                 final_prediction_labels[j] = result
 
-        return final_prediction_labels 
+    return final_prediction_labels 
 
 
 def get_model_metadata(model_name: str, pl: PLS) -> dict:
