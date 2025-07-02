@@ -2,7 +2,6 @@ typeguard
 numpy
 pandas
 pillow
-toml
 python-dotenv
 
 
