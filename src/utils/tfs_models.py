@@ -1,5 +1,5 @@
 import json
-import toml
+import tomllib
 import logging
 import os
 import typeguard
@@ -8,6 +8,7 @@ import requests
 import numpy as np
 
 from utils.product_lines import PRODUCTLINES as PLS
+from utils.singleton import Singleton
 
 def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list[float]]:
     '''
@@ -37,11 +38,12 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
         logging.warning("Model [%s] failed to get predictions: %s", model_name, str(e))
         return [None] * len(instances), [0.0] * len(instances)
 
-    model_config_dict = get_model_config(pl)
+    # model_config_dict = get_model_config(pl)
     final_prediction_labels = [None] * len(instances)
     confidences = [0.0] * len(instances)
 
-    if model_config_dict[model_name]['is_final']:
+    # if model_config_dict[model_name]['is_final']:
+    if CachedConfigs().request_config(pl)[model_name]['is_final']:
         for i, p in enumerate(predictions):
             try:
                 p_np = np.array(p)
@@ -136,8 +138,8 @@ def get_model_labels(model_name: str, pl: PLS) -> dict:
 
         full_toml_path = os.path.join(data_dir, pl.value, toml_path)
 
-        with open(full_toml_path, 'r') as f:
-            return toml.load(f)
+        with open(full_toml_path, 'rb') as f:
+            return tomllib.load(f)
 
     except Exception as e:
         logging.error(' [get_model_labels] unexpected error %s. Returning an empty dict.', e)
@@ -162,12 +164,27 @@ def get_model_config(pl: PLS) -> dict:
 
         full_toml_path = os.path.join(model_dir, pl.value, toml_path)
 
-        with open(full_toml_path, 'r') as f:
-            return toml.load(f)
+        with open(full_toml_path, 'rb') as f:
+            return tomllib.load(f)
 
     except Exception as e:
         logging.error(' [get_model_config] unexpected error %s. Returning an empty dict.', e)
         return {}
+
+
+
+# -------------------------------------------------------
+class CachedConfigs(metaclass=Singleton):
+    def __init__(self):
+        self.cached_configs = {}
+        for pl in PLS:
+            self.cached_configs[pl.value] = get_model_config(pl)
+
+    def request_config(self, pl: PLS) -> dict:
+        try:
+            return self.cached_configs[pl.value]
+        except KeyError as e:
+            logging.error(' [request_config] ps not loaded yet. Error: %s.', e)
 
 # TODO
 def validate_config(pl: PLS) -> bool:
