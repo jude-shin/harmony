@@ -46,16 +46,12 @@ async def predict(
 
     
     instances = []
-    # TODO : cache the model metadata somewhere
-    metadata = get_model_metadata('m0', pl)
-    model_img_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
-    model_img_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
-
-    print('%s WIDTH: %d', pl.value, model_img_width) # 313
-    print('%s HEIGHT: %d', pl.value,  model_img_height) # 437
+    # NOTE: for simplicity we need the models to all comply to the same width and height
+    input_width = CachedConfigs().requestConfig(pl)['m0'][input_width]
+    input_height  = CachedConfigs().requestConfig(pl)['m0'][input_height]
 
     for pil_image in pil_images:
-        img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
+        img_tensor = get_tensor_from_image(pil_image, input_width, input_height)
 
         instance = img_tensor.numpy().tolist()
         instances.append(instance)
