@@ -154,10 +154,10 @@ def get_model_config(pl: PLS) -> dict:
     '''
     try:
         toml_path = 'config.toml'
-        model_dir = os.getenv('MODEL_DIR')
+        model_dir = os.getenv('SAVED_MODEL_DIR')
 
         if model_dir is None:
-            logging.error(' [get_model_config] MODEL_DIR env var not set. Returning an empty dict.')
+            logging.error(' [get_model_config] SAVED_MODEL_DIR env var not set. Returning an empty dict.')
             return {}
 
         full_toml_path = os.path.join(model_dir, pl.value, toml_path)
@@ -178,22 +178,17 @@ class CachedConfigs(metaclass=Singleton):
         for pl in PLS:
             self.cached_configs[pl.value] = get_model_config(pl)
 
+            # for each of the product lines
+            # find the one that is 'base'
+            # that is the only one that needs height and width because all other models should be following the same format
+            # this is for efficiency. why else should we be training the models off of different sized images?A
+            # this might bite me in the butt when it comes to versioning... 
             metadata = get_model_metadata('m0', pl)
             input_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
             input_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
 
             self.cached_configs[pl.value]['m0']['input_width'] = input_width
             self.cached_configs[pl.value]['m0']['input_height'] = input_height 
-
-
-
-        # for each of the product lines
-        # find the one that is 'base'
-        # that is the only one that needs height and width because all other models should be following the same format
-        # this is for efficiency. why else should we be training the models off of different sized images?A
-        # this might bite me in the butt when it comes to versioning... 
-        # for each of the models in a product line
-        # request the config with and height
 
     def request_config(self, pl: PLS) -> dict:
         try:
