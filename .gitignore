@@ -12,6 +12,8 @@ saved_models/**
 !saved_models/**/
 !saved_models/**/*.config
 
+testing/
+
 **/__pycache__/
 
 .env
