@@ -35,14 +35,12 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
         response.raise_for_status()
         predictions = response.json().get('predictions', [])
     except Exception as e:
-        logging.warning("Model [%s] failed to get predictions: %s", model_name, str(e))
+        logging.warning('Model [%s] failed to get predictions: %s', model_name, str(e))
         return [None] * len(instances), [0.0] * len(instances)
 
-    # model_config_dict = get_model_config(pl)
     final_prediction_labels = [None] * len(instances)
     confidences = [0.0] * len(instances)
 
-    # if model_config_dict[model_name]['is_final']:
     if CachedConfigs().request_config(pl)[model_name]['is_final']:
         for i, p in enumerate(predictions):
             try:
@@ -54,7 +52,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
                 confidences[i] = confidence
                 logging.info('Model [%s] final prediction for image %d: %s (%.4f)', model_name, i, best_label, confidence)
             except Exception as e:
-                logging.warning("Model [%s] failed to process prediction for image %d: %s", model_name, i, str(e))
+                logging.warning('Model [%s] failed to process prediction for image %d: %s', model_name, i, str(e))
         return final_prediction_labels, confidences
 
     # Handle submodel routing
@@ -79,14 +77,14 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
             submodel_inputs[next_model].append(instances[i])
             image_indices_by_submodel[next_model].append(i)
         except Exception as e:
-            logging.warning("Model [%s] failed to defer image %d: %s", model_name, i, str(e))
+            logging.warning('Model [%s] failed to defer image %d: %s', model_name, i, str(e))
 
     # Recurse into submodels
     for next_model, sub_instances in submodel_inputs.items():
         try:
             sub_labels, sub_confidences = identify(sub_instances, next_model, pl)
         except Exception as e:
-            logging.warning("Submodel [%s] failed to identify batch: %s", next_model, str(e))
+            logging.warning('Submodel [%s] failed to identify batch: %s', next_model, str(e))
             sub_labels = [None] * len(sub_instances)
             sub_confidences = [0.0] * len(sub_instances)
 
