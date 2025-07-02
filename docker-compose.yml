@@ -23,7 +23,6 @@ services:
       - ./keras_models:/keras_models:ro
       - ./saved_models:/saved_models:ro
       - ./data:/data:ro
-      - ./.env:/app/.env
     deploy:
       resources:
         reservations:
