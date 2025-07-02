@@ -10,7 +10,7 @@ from utils.tfs_models import identify, get_model_metadata, CachedConfigs
 
 logging.getLogger().setLevel(20)
 
-CachedConfigs()
+# CachedConfigs()
 
 app = FastAPI(
         title='Harmony ML API',
@@ -51,8 +51,8 @@ async def predict(
     model_img_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
     model_img_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
 
-    print('%s WIDTH: %d', pl.value, model_img_width)
-    print('%s HEIGHT: %d', pl.value,  model_img_height)
+    print('%s WIDTH: %d', pl.value, model_img_width) # 313
+    print('%s HEIGHT: %d', pl.value,  model_img_height) # 437
 
     for pil_image in pil_images:
         img_tensor = get_tensor_from_image(pil_image, model_img_width, model_img_height)
