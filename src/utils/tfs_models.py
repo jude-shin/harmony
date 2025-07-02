@@ -154,13 +154,13 @@ def get_model_config(pl: PLS) -> dict:
     '''
     try:
         toml_path = 'config.toml'
-        data_dir = os.getenv('MODEL_DIR')
+        model_dir = os.getenv('MODEL_DIR')
 
-        if data_dir is None:
-            logging.error(' [get_model_config] DATA_DIR env var not set. Returning an empty dict.')
+        if model_dir is None:
+            logging.error(' [get_model_config] MODEL_DIR env var not set. Returning an empty dict.')
             return {}
 
-        full_toml_path = os.path.join(data_dir, pl.value, toml_path)
+        full_toml_path = os.path.join(model_dir, pl.value, toml_path)
 
         with open(full_toml_path, 'r') as f:
             return toml.load(f)
