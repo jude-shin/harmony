@@ -4,9 +4,7 @@ venv/
 data/
 *.png
 
-models/**
-!models/**/
-!models/**/*.toml
+keras_models/
 
 saved_models/**
 !saved_models/**/

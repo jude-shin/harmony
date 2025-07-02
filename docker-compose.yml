@@ -7,7 +7,7 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app/src
 
-      - MODEL_DIR=/models
+      - MODEL_DIR=/keras_models
       - DATA_DIR=/data
       - SAVED_MODEL_DIR=/saved_models
 
@@ -20,7 +20,7 @@ services:
     ports:
       - "${API_PORT}:5000"
     volumes:
-      - ./models:/models:ro
+      - ./keras_models:/keras_models:ro
       - ./saved_models:/saved_models:ro
       - ./data:/data:ro
       - ./.env:/app/.env
