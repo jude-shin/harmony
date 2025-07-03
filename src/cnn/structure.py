@@ -4,7 +4,7 @@ import logging
 # from tf.keras import layers, models
 
 from tensorflow import keras
-from keras import layers, models
+from keras import layers, models, Model
 
 # make a parent structure that is a subclass of tf.models
 
@@ -35,12 +35,103 @@ class PreprocessingLayer(layers.Layer):
 
 
 class AugmentLayer(layers.Layer):
+    """
+    A data augmentation layer that applies a random combination of image augmentations.
+    This layer is only active during training.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.augmentations = [
+                layers.RandomFlip("horizontal_and_vertical"),
+                layers.RandomRotation(0.1),
+                layers.RandomZoom(0.1)
+                ]
+        # TODO: add more augmentation layers if you want 
+        self.custom_augmentations = []
+
+    def call(self, inputs, training=False):
+        if not training:
+            return inputs
+
+        x = inputs
+        for layer in self.augmentations + self.custom_augmentations:
+            x = layer(x)
+        return x
+
+    def add_custom_augmentation(self, layer):
+        """
+        Add a custom Keras layer to be included in the augmentation pipeline.
+        I don't know how useful this may be... we might still want to do some preprocessing in the tf.data.Dataset
+        """
+        self.custom_augmentations.append(layer)
+
 
 # BLOCKS
-# convolutional block
+class ConvBlock1(layers.Layer):
+    """
+    A modular convolutional block: Conv2D -> BatchNorm -> ReLU -> MaxPool
+    """
+    def __init__(self, filters, kernel_size=3, pool_size=2, **kwargs):
+        super().__init__(**kwargs)
+        self.conv = tf.keras.layers.Conv2D(filters, kernel_size, padding="same")
+        self.bn = tf.keras.layers.BatchNormalization()
+        self.act = tf.keras.layers.ReLU() # could be LeakyReLu
+        self.pool = tf.keras.layers.MaxPooling2D(pool_size)
+
+    def call(self, inputs, training=False):
+        x = self.conv(inputs)
+        x = self.bn(x, training=training)
+        x = self.act(x)
+        return self.pool(x)
+
+
+class FlattenBlock1(layers.Layer):
+    """
+    Final classifier block: Flatten -> Dense -> optional Dropout -> Output
+    """
+    def __init__(self, num_classes, hidden_units, dropout_rate=0.5, **kwargs):
+        super().__init__(**kwargs)
+        self.flatten = tf.keras.layers.Flatten()
+        self.dense1 = tf.keras.layers.Dense(hidden_units, activation="relu")
+        # add a LeakyReLu?
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+        self.output_layer = tf.keras.layers.Dense(num_classes, activation="softmax")
+
+    def call(self, inputs, training=False):
+        x = self.flatten(inputs)
+        x = self.dense1(x)
+        x = self.dropout(x, training=training)
+        return self.output_layer(x)
+
+
 
 # MODELS
+class ConvModel(Model):
+    """
+    Full model: Preprocessing -> Augmentation -> ConvBlocks -> FlattenBlock
+    """
+    def __init__(self, input_shape, num_classes, **kwargs):
+        super().__init__(**kwargs)
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.augment = AugmentationLayer()
 
-# make a subclass of the parent class (there will be many of these because these are the different versions)
+        self.blocks = [
+                ConvBlock1(32),
+                ConvBlock1(64),
+                ConvBlock1(128)
+                ]
 
-# 
+        self.classifier = FlattenBlock1(num_classes)
+
+    def call(self, inputs, training=False):
+        x = self.preprocess(inputs)
+        x = self.augment(x, training=training)
+
+        for block in self.blocks:
+            x = block(x, training=training)
+
+        return self.classifier(x, training=training)
+
+
+
+
