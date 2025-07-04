@@ -16,7 +16,6 @@ class CsvLoggerCallback(tf.keras.callbacks.Callback):
                 writer.writerow(["epoch"] + list(logs.keys()))
             writer.writerow([epoch] + list(logs.values()))
 
-
 class ValidationAccuracyThresholdCallback(tf.keras.callbacks.Callback):
     def __init__(self, threshold):
         super(ValidationAccuracyThresholdCallback, self).__init__()
