@@ -116,6 +116,8 @@ def generate_datasets(csv_path, img_dir):
     train_ds = get_train_dataset(train_paths, train_labels, augment_factor=10)
     val_ds = get_val_dataset(val_paths, val_labels)
 
+    # TODO : save the datasets in the os.getenv('VAL_DATASET_PATH'), and os.getenv('TRAIN_DATASET_PATH')
+
     return train_ds, val_ds
     # model.fit(train_ds, validation_data=val_ds, epochs=10)
 
