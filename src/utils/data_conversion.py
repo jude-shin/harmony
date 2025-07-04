@@ -11,6 +11,8 @@ from pathlib import Path
 
 from utils.product_lines import PRODUCTLINES as PLS
 
+# TODO : move this to the processing package
+
 def label_to_id(label : int, pl : PLS) -> str:
     '''
     Convert a given label to the deckdrafterprod _id based on the master_labels.toml

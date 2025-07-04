@@ -10,6 +10,9 @@ import numpy as np
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
 
+# TODO : move to api package?
+# but keep some of the features
+
 def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list[float]]:
     '''
     Identifies a card with multiple models, giving the most confident output.
