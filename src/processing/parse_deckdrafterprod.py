@@ -8,6 +8,8 @@ import os
 
 
 # TODO: we are going to add all the photos to the queue side
+# all this data is temporary because it will be turned into a tf.data.Dataset
+# but maybe we should still save them to reduce the overhead of retraining when the time comes to retrain the whole thing?
 
 
 def parse_deckdrafterprod(deckdrafterprod_path):
