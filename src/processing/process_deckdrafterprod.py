@@ -2,6 +2,8 @@ import os
 import json 
 import logging
 
+from utils.product_lines import PRODUCT_LINES as PLS
+
 # TODO: renme this file to preprocessing or something
 # TODO: function that adds images that already have an _id
     # checks to see that the key is already present, (skips the image if the key is unknown)
@@ -27,29 +29,44 @@ def download_images(deckdrafterprod_path):
     each name of the card should be the _id
     '''
     logging.warning('download_images not implemented yet')
-    # with open('', 'r') as f:
-    #     data = f.json()
+
+
+        
         
 
-def generate_keys():
+def generate_keys(pl: PLS):
     '''
-    _id to label, and label to _id
+    label_to_id 
+        NOTE: if we need the id_to_label, you can load the json to a dict, and then zip the values and the keys
+        inverted_dict = dict(zip(original_dict.values(), original_dict.keys()))
     this will be the master key that can be referenced across all models and all versions
     if we loose that file we are kind of screwed
     we should definitly make backups of this
 
     format can be json, or anything that can be parsed to a hashmap
     '''
-    logging.warning('generate_keys not implemented yet')
+    # logging.warning('generate_keys not implemented yet')
+    deckdrafterprod_path = os.path.join(os.getenv('DATADIR'), pl.value, 'deckdrafterprod.json')
+    with open(deckdrafterprod_path, 'r') as f:
+        deckdrafterprod = f.json()
+
+    label_to_id = {}
     
-    # with open('', 'w') as f:
-    #     key = f.json()
+    label = -1
+    for card in data:
+        _id = card['_id']
+        label += 1
+        label_to_id[str(label)] = str(_id)
+    
+    label_to_id_path = os.path.join(os.getenv('DATADIR'), pl.value, 'label_to_id.json')
+    with open(label_to_id_path, 'w+') as f:
+        json.dump(data, f, indent=4)
+
 
 def process_deckdrafterprod():
     logging.info('process_deckdrafterprod called...')
     download_images('foo')
     generate_keys()
-
 
 if __name__ == '__main__':
     process_deckdrafterprod()
