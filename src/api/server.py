@@ -3,7 +3,7 @@ import json, os, logging, requests, numpy as np, uvicorn, typeguard
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image
 
-from helper.image_processing import get_tensor_from_image
+from processing.image_processing import get_tensor_from_image
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, label_to_id
 from utils.tfs_models import identify, get_model_metadata, CachedConfigs

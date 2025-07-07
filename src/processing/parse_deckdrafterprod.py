@@ -1,4 +1,5 @@
 import os
+import json 
 
 # TODO: renme this file to preprocessing or something
 # TODO: function that adds images that already have an _id
@@ -12,7 +13,7 @@ import os
 # but maybe we should still save them to reduce the overhead of retraining when the time comes to retrain the whole thing?
 
 
-def parse_deckdrafterprod(deckdrafterprod_path):
+def download_images(deckdrafterprod_path):
     '''
     NOTE: this is used only if there are new cards with new _ids added to the deckdrafterprod
     IT IS NOT used for when we want to download images of cards that we know the _id of already
@@ -24,8 +25,12 @@ def parse_deckdrafterprod(deckdrafterprod_path):
     add it to a processed_deckdrafterprod.json
     each name of the card should be the _id
     '''
+    with open('', 'r') as f:
+        data = f.json()
+        
+    for card in data:
 
-def generate_key():
+def generate_keys():
     '''
     _id to label, and label to _id
     this will be the master key that can be referenced across all models and all versions
@@ -35,3 +40,10 @@ def generate_key():
     format can be json, or anything that can be parsed to a hashmap
     '''
     # has the 
+    
+    with open('', 'w') as f:
+        key = f.json()
+
+def process_deckdrafterprod():
+    download_images()
+    generate_keys()
