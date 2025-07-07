@@ -5,3 +5,6 @@
 - making config.toml files
 - queue for images that are to be trained (this may be in the tf.data.Dataset)
 - exporting the .keras files from the keras_models folder to the saved_models folder
+
+#### TODO
+- I rename everything so that it doesn't have stuff like "\*processing" or "processing_\*"
