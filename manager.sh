@@ -13,14 +13,18 @@ build() {
 	docker compose up -d --build
 }
 
+process_deckdrafterprod() {
+	python3 src/processing/process_deckdrafterprod.py
+}
+
 
 
 # CMD ARGS (main) ---------------------------------------------------------------------
 set -euo pipefail
 
 # Define the options: short -h, -v, -c [arg]; long --help, --verbose, --config [arg]
-OPTIONS=hvb::
-LONGOPTS=help,verbose,build::
+OPTIONS=hvbt::
+LONGOPTS=help,verbose,build,process_deckdrafterprod::
 
 # -temporarily store output to be able to check for errors
 # -activate advanced mode with -- "$@" (preserves quoted arguments)
@@ -35,7 +39,6 @@ eval set -- "$PARSED"
 
 # Default values
 VERBOSE=false
-CONFIG_FILE=""
 
 # Parse flags
 while true; do
@@ -50,6 +53,10 @@ while true; do
 			;;
 		-b|--build)
 			build
+			shift
+			;;
+		-p|--process_deckdrafterprod)
+			process_deckdrafterprod
 			shift
 			;;
 		--)

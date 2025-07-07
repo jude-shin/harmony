@@ -1,5 +1,6 @@
 import os
 import json 
+import logging
 
 # TODO: renme this file to preprocessing or something
 # TODO: function that adds images that already have an _id
@@ -25,10 +26,10 @@ def download_images(deckdrafterprod_path):
     add it to a processed_deckdrafterprod.json
     each name of the card should be the _id
     '''
-    with open('', 'r') as f:
-        data = f.json()
+    logging.warning('download_images not implemented yet')
+    # with open('', 'r') as f:
+    #     data = f.json()
         
-    for card in data:
 
 def generate_keys():
     '''
@@ -39,11 +40,17 @@ def generate_keys():
 
     format can be json, or anything that can be parsed to a hashmap
     '''
-    # has the 
+    logging.warning('generate_keys not implemented yet')
     
-    with open('', 'w') as f:
-        key = f.json()
+    # with open('', 'w') as f:
+    #     key = f.json()
 
 def process_deckdrafterprod():
-    download_images()
+    logging.info('process_deckdrafterprod called...')
+    download_images('foo')
     generate_keys()
+
+
+if __name__ == '__main__':
+    process_deckdrafterprod()
+
