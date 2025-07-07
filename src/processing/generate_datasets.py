@@ -4,25 +4,17 @@ import os
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_addons as tfa
+# import tensorflow_addons as tfa
 
 from tf import keras, models, layers
 from sklearn.model_selection import train_test_split
-
-
-# @tf.function
-# def load_and_preprocess(path, label):
-#     image = tf.io.read_file(path)
-#     image = tf.image.decode_jpeg(image, channels=3)
-#     image = tf.image.resize(image, IMG_SIZE)
-#     image = tf.cast(image, tf.float32) / 255.0
-#     return image, label
 
 # ========================================
 
 @tf.function
 def augment_blur(image, label):
-    image = tfa.image.gaussian_filter2d(image, filter_shape=(5, 5), sigma=1.0)
+    # image = tfa.image.gaussian_filter2d(image, filter_shape=(5, 5), sigma=1.0)
+    image = keras_cv.layers.GaussianBlur(kernel_size=5, sigma=1.0)(image)
     return image, label
 
 @tf.function
@@ -39,7 +31,8 @@ def augment_contrast(image, label):
 
 @tf.function
 def augment_sharpness(image, label):
-    blur = tfa.image.gaussian_filter2d(image, filter_shape=(3, 3), sigma=1.0)
+    # blur = tfa.image.gaussian_filter2d(image, filter_shape=(3, 3), sigma=1.0)
+    blur = keras_cv.layers.GaussianBlur(kernel_size=5, sigma=1.0)(image)
     sharpness = tf.random.shuffle([0.5, 1.5])[0]
     image = tf.clip_by_value(image * sharpness + blur * (1 - sharpness), 0.0, 1.0)
     return image, label
