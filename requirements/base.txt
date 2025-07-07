@@ -6,6 +6,7 @@ python-dotenv
 
 
 tensorflow[and-cuda]
+keras-cv
 scikit-learn
 keras-tuner
 opencv-python
