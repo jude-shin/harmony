@@ -2,7 +2,7 @@ import os
 import json 
 import logging
 
-from utils.product_lines import PRODUCT_LINES as PLS
+from utils.product_lines import PRODUCTLINES as PLS
 
 # TODO: renme this file to preprocessing or something
 # TODO: function that adds images that already have an _id
@@ -66,7 +66,7 @@ def generate_keys(pl: PLS):
 def process_deckdrafterprod():
     logging.info('process_deckdrafterprod called...')
     download_images('foo')
-    generate_keys()
+    generate_keys(PLS.LORCANA) # TODO: hardcoded for now
 
 if __name__ == '__main__':
     process_deckdrafterprod()
