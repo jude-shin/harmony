@@ -71,7 +71,7 @@ def generate_keys(pl: PLS):
         pickle.dump(label_to_id, f)
 
 
-def process_deckdrafterprod():
+def process_deckdrafterprod(pl: PLS):
     logging.info('process_deckdrafterprod called...')
     download_images('foo')
-    generate_keys(PLS.LORCANA) # TODO: hardcoded for now
+    generate_keys(pl)

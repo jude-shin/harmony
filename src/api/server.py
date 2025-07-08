@@ -1,4 +1,4 @@
-import json, os, logging, requests, numpy as np, uvicorn, typeguard
+import os, logging, uvicorn, typeguard
 
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image
@@ -6,8 +6,8 @@ from PIL import Image
 from processing.image_processing import get_tensor_from_image
 from processing.process_deckdrafterprod import process_deckdrafterprod
 from utils.product_lines import string_to_product_line
-from utils.data_conversion import label_to_json, label_to_id
-from utils.tfs_models import identify, get_model_metadata, CachedConfigs
+from utils.data_conversion import label_to_id
+from utils.tfs_models import identify, CachedConfigs
 
 logging.getLogger().setLevel(20)
 
@@ -28,10 +28,12 @@ async def validate():
     logging.warning('validate endpoint not implemented yet')
     return {'validate endpoint not implemented yet'}
 
-@app.get('/process', summary='processes deckdrafterprod for the first time')
-async def validate():
-    logging.info('process endpoint called')
-    process_deckdrafterprod()
+@app.post('/process', summary='processes deckdrafterprod for the first time')
+async def process(
+        product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+        ):
+    pl = string_to_product_line(product_line_string)
+    process_deckdrafterprod(pl)
     return {}
 
 @app.post('/predict')
