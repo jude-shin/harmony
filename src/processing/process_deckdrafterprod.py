@@ -1,6 +1,7 @@
 import os
 import json 
 import logging
+import pickle
 
 from utils.product_lines import PRODUCTLINES as PLS
 
@@ -46,21 +47,28 @@ def generate_keys(pl: PLS):
     format can be json, or anything that can be parsed to a hashmap
     '''
     # logging.warning('generate_keys not implemented yet')
-    deckdrafterprod_path = os.path.join(os.getenv('DATA_DIR'), pl.value, 'deckdrafterprod.json')
+    # TODO: None handling
+    data_dir= os.getenv('DATA_DIR')
+    if data_dir is None:
+        logging.error(' [generate_keys] DATA_DIR env var not set. Returning an empty dict.')
+        return
+
+    json_path = 'deckdrafterprod.json'
+
+    deckdrafterprod_path = os.path.join(data_dir, pl.value, json_path)
     with open(deckdrafterprod_path, 'r') as f:
         deckdrafterprod = json.load(f)
 
-    label_to_id = {}
-    
-    label = -1
+    label_to_id = []
     for card in deckdrafterprod:
         _id = card['_id']
-        label += 1
-        label_to_id[str(label)] = str(_id)
+        label_to_id.append(str(_id))
     
-    label_to_id_path = os.path.join(os.getenv('DATA_DIR'), pl.value, 'label_to_id.json')
-    with open(label_to_id_path, 'w+') as f:
-        json.dump(label_to_id_path, f, indent=4)
+    pickle_path = 'label_to_id.pkl'
+
+    label_to_id_path = os.path.join(data_dir, pl.value, pickle_path)
+    with open(label_to_id_path, 'wb+') as f:
+        pickle.dump(label_to_id, f)
 
 
 def process_deckdrafterprod():
