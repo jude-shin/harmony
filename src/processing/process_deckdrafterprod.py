@@ -46,28 +46,24 @@ def generate_keys(pl: PLS):
     format can be json, or anything that can be parsed to a hashmap
     '''
     # logging.warning('generate_keys not implemented yet')
-    deckdrafterprod_path = os.path.join(os.getenv('DATADIR'), pl.value, 'deckdrafterprod.json')
+    deckdrafterprod_path = os.path.join(os.getenv('DATA_DIR'), pl.value, 'deckdrafterprod.json')
     with open(deckdrafterprod_path, 'r') as f:
-        deckdrafterprod = f.json()
+        deckdrafterprod = json.load(f)
 
     label_to_id = {}
     
     label = -1
-    for card in data:
+    for card in deckdrafterprod:
         _id = card['_id']
         label += 1
         label_to_id[str(label)] = str(_id)
     
-    label_to_id_path = os.path.join(os.getenv('DATADIR'), pl.value, 'label_to_id.json')
+    label_to_id_path = os.path.join(os.getenv('DATA_DIR'), pl.value, 'label_to_id.json')
     with open(label_to_id_path, 'w+') as f:
-        json.dump(data, f, indent=4)
+        json.dump(label_to_id_path, f, indent=4)
 
 
 def process_deckdrafterprod():
     logging.info('process_deckdrafterprod called...')
     download_images('foo')
     generate_keys(PLS.LORCANA) # TODO: hardcoded for now
-
-if __name__ == '__main__':
-    process_deckdrafterprod()
-

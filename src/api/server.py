@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image
 
 from processing.image_processing import get_tensor_from_image
+from processing.process_deckdrafterprod import process_deckdrafterprod
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_json, label_to_id
 from utils.tfs_models import identify, get_model_metadata, CachedConfigs
@@ -17,14 +18,21 @@ app = FastAPI(
         version='1.0.0',
         )
 
-
-# TODO : add some kind of validation to make sure that the file structure is good, and all the imputs and outputs check out
-
-
 # Routes
-@app.get('/ping', summary='Health-check')
+@app.get('/ping', summary='testing')
 async def ping() -> dict[str, str]:
     return {'ping': 'pong'}
+
+@app.get('/validate', summary='validates the structure of our application')
+async def validate():
+    logging.warning('validate endpoint not implemented yet')
+    return {'validate endpoint not implemented yet'}
+
+@app.get('/process', summary='processes deckdrafterprod for the first time')
+async def validate():
+    logging.info('process endpoint called')
+    process_deckdrafterprod()
+    return {}
 
 @app.post('/predict')
 async def predict(
