@@ -1,9 +1,14 @@
 import os
 import json 
+import requests 
 import logging
 import pickle
+import typeguard
+
+from time import time
 
 from utils.product_lines import PRODUCTLINES as PLS
+from utils.time import get_current_time, get_elapsed_time
 
 # TODO: renme this file to preprocessing or something
 # TODO: function that adds images that already have an _id
@@ -17,7 +22,7 @@ from utils.product_lines import PRODUCTLINES as PLS
 # but maybe we should still save them to reduce the overhead of retraining when the time comes to retrain the whole thing?
 
 
-def download_images(deckdrafterprod_path):
+def download_images(pl: PLS, size: str):
     '''
     NOTE: this is used only if there are new cards with new _ids added to the deckdrafterprod
     IT IS NOT used for when we want to download images of cards that we know the _id of already
@@ -29,10 +34,55 @@ def download_images(deckdrafterprod_path):
     add it to a processed_deckdrafterprod.json
     each name of the card should be the _id
     '''
-    logging.warning('download_images not implemented yet')
 
+    images_downloaded: int = 0
+    images_skipped: int = 0
+    st: float = time()
 
+    data_dir= os.getenv('DATA_DIR')
+    if data_dir is None:
+        logging.error(' [generate_keys] DATA_DIR env var not set. Returning an empty dict.')
+        return
+
+    json_path = 'deckdrafterprod.json'
+
+    deckdrafterprod_path = os.path.join(data_dir, pl.value, json_path)
+    images_dir = os.path.join(data_dir, pl.value, 'images')
+
+    with open(deckdrafterprod_path, 'r') as f:
+        deckdrafterprod = json.load(f)
+
+    for card in deckdrafterprod:
+        _id: str = card['_id']
         
+        logging.info(f'downloading image _id: %s', _id)
+
+        try:
+            image_url = card['images'][size]
+            data = requests.get(image_url).content
+
+            image_path = os.path.join(images_dir, _id+'.jpg')
+
+            with open(image_path, 'wb+') as f:
+                f.write(data)
+                images_downloaded += 1
+
+        except KeyError as e:
+            #TODO it may be better to do something else.. I don't know what to do about this. maybe take note and have this be in the queue for the next
+            # round of retraining
+            logging.error(f'[download_images] no images of that size... skippping image for now. Error: ', e)
+            images_skipped += 1
+            continue
+        except ValueError as e:
+            logging.error(f'[download_images] some information not found... skipping image for now. Error: ', e)
+            images_skipped += 1
+            continue
+
+
+    # TODO: show the number downloaded, and the number of images skipped, and the time it took to download everything 
+    logging.info(f'images downloaded: %d', images_downloaded)
+    logging.info(f'images skipped: %d', images_skipped)
+    logging.info(f'total elapsed time: %s', get_elapsed_time(st))
         
 
 def generate_keys(pl: PLS):
@@ -47,7 +97,6 @@ def generate_keys(pl: PLS):
     format can be json, or anything that can be parsed to a hashmap
     '''
     # logging.warning('generate_keys not implemented yet')
-    # TODO: None handling
     data_dir= os.getenv('DATA_DIR')
     if data_dir is None:
         logging.error(' [generate_keys] DATA_DIR env var not set. Returning an empty dict.')
@@ -73,5 +122,5 @@ def generate_keys(pl: PLS):
 
 def process_deckdrafterprod(pl: PLS):
     logging.info('process_deckdrafterprod called...')
-    download_images('foo')
     generate_keys(pl)
+    download_images(pl, 'large')

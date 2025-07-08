@@ -1,13 +1,15 @@
-import os, logging, uvicorn, typeguard
+import os, logging, uvicorn, typeguard, asyncio
 
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image
 
 from processing.image_processing import get_tensor_from_image
-from processing.process_deckdrafterprod import process_deckdrafterprod
+from processing.process_deckdrafterprod import process_deckdrafterprod, generate_keys
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
 from utils.tfs_models import identify, CachedConfigs
+
+from utils.images import download_images
 
 logging.getLogger().setLevel(20)
 
@@ -34,6 +36,22 @@ async def process(
         ):
     pl = string_to_product_line(product_line_string)
     process_deckdrafterprod(pl)
+    return {}
+
+@app.post('/process_images', summary='pickles the labels from the deckdrafterprod')
+async def process_images(
+        product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+        ):
+    pl = string_to_product_line(product_line_string)
+    await download_images(pl)
+    return {}
+
+@app.post('/process_keys', summary='pickles the labels from the deckdrafterprod')
+async def process_keys(
+        product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+        ):
+    pl = string_to_product_line(product_line_string)
+    generate_keys(pl)
     return {}
 
 @app.post('/predict')
