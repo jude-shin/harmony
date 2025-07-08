@@ -20,9 +20,9 @@ services:
     ports:
       - "${API_PORT}:5000"
     volumes:
-      - ./keras_models:/keras_models:ro
-      - ./saved_models:/saved_models:ro
-      - ./data:/data:ro
+      - ./keras_models:/keras_models
+      - ./saved_models:/saved_models
+      - ./data:/data
     deploy:
       resources:
         reservations:
