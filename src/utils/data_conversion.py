@@ -7,10 +7,9 @@ from pathlib import Path
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.json import load_deckdrafterprod
+from utils.file_handler.pickle import load_ids
 
 # TODO : move this to the processing package
-# master_labels.toml should be depreciated.... we should use the pkl python dict
-
 def label_to_id(label : int, pl : PLS) -> str:
     '''
     Convert a given label to the deckdrafterprod _id based on the master_labels.toml
@@ -21,15 +20,8 @@ def label_to_id(label : int, pl : PLS) -> str:
     Returns:
         str: _id that is associated with that label
     '''
-    data_dir = os.getenv('DATA_DIR')
-    if data_dir is None:
-        logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
-        return ''
-    master_labels_path = os.path.join(data_dir, pl.value, 'master_labels.toml')
-    with open(master_labels_path, 'rb') as f:
-        master_labels = tomllib.load(f)
-
-    return master_labels[str(label)]
+    _ids = load_ids(pl, 'master', 'rb')
+    return _ids[label]
 
 
 def id_to_label(_id : str, pl : PLS) -> str:
@@ -57,22 +49,11 @@ def label_to_json(label : int, pl : PLS) -> dict:
     Returns:
         dict: json entry that is associated with that label (dict by default)
     '''
-
-    data_dir = os.getenv('DATA_DIR')
-    if data_dir is None:
-        logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
-        return {}
-    master_labels_path = os.path.join(data_dir, pl.value, 'master_labels.toml')
-    with open(master_labels_path, 'rb') as f:
-        master_labels = tomllib.load(f)
-
-    predicted_id = master_labels[str(label)]
-
+    _ids = load_ids(pl, 'master', 'rb')
+    predicted_id = _ids[label]
     logging.info(' Label: %d -> _id: %s', label, predicted_id)
 
-
     deckdrafterprod: dict = load_deckdrafterprod(pl, 'r')
-
     card_obj = {}
     for obj in deckdrafterprod:
         if str(obj['_id']) == str(predicted_id):
