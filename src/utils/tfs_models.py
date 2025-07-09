@@ -1,4 +1,3 @@
-import json
 import tomllib
 import logging
 import os
@@ -175,6 +174,7 @@ def get_model_config(pl: PLS) -> dict:
 
 # -------------------------------------------------------
 class CachedConfigs(metaclass=Singleton):
+    # TODO: pickled information may be easier?
     def __init__(self):
         self.cached_configs = {}
         for pl in PLS:
@@ -197,7 +197,5 @@ class CachedConfigs(metaclass=Singleton):
             return self.cached_configs[pl.value]
         except KeyError as e:
             logging.error(' [request_config] ps not loaded yet. Error: %s.', e)
+            return {}
 
-# TODO
-def validate_config(pl: PLS) -> bool:
-    return True 
