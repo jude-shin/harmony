@@ -16,6 +16,11 @@ def string_to_product_line(s : str) -> PRODUCTLINES:
         looks up the various ways a product line could be referenced outside of harmony's system
         ex) PRODUCTLINES.MTG can be referenced from storepass as mtg, MTG, 'Magic: the Gathering', 'magic the gathering'....
         there is probably a better way to do this
+        
+        Args:
+            s (str): the string we are trying to translate and match to the PRODUCTLINES type
+        Returns:
+            PRODUCTLINES: the translated product line
     '''
 
     s = s.lower()
