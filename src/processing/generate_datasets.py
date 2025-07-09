@@ -1,5 +1,6 @@
 import pandas as pd 
 import os
+import logging
 
 import tensorflow as tf
 # import tensorflow_addons as tfa
@@ -107,18 +108,30 @@ def get_val_dataset(paths, labels, batch_size=64):
     return ds
 
 # ========================================
-def generate_datasets(csv_path, img_dir):
+def generate_datasets(pl: PLS):
     '''
     Generates a training and validataion dataset.
 
     Args:
-        csv_path (str): the path to the csv in the format of "filename, label"
-        img_dir (str): the directory that the images are stored in
     Returns:
         tuple[tf.data.Dataset, tf.data.Dataset]: a tuple containing:
             - a training dataset
             - a validation dataset
     '''
+    
+    data_dir = os.getenv('DATA_DIR')
+    if data_dir is None:
+        msg = 'DATA_DIR env var is not set...'
+        logging.error(msg)
+        raise KeyError(msg)
+
+    img_dir = os.path.join(data_dir, pl.value, 'images')
+
+    # TODO
+
+
+    # load the pkl file. the image names should be the _id, and then the label should be the index 
+
 
     df = pd.read_csv(csv_path)
     

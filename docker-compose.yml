@@ -7,9 +7,9 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app/src
 
-      - MODEL_DIR=/keras_models
-      - DATA_DIR=/data
-      - SAVED_MODEL_DIR=/saved_models
+      - MODEL_DIR=${MODEL_DIR}
+      - DATA_DIR=${DATA_DIR}
+      - SAVED_MODEL_DIR=${SAVED_MODEL_DIR}
 
       - API_PORT=${API_PORT}
       - TFS_PORT=${TFS_PORT}
