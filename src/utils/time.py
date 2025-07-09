@@ -8,18 +8,6 @@ def get_current_time() -> str:
     Returns:
         str: the current time as a string 
     '''
-
-
-    '''
-    Convert a given label to the deckdrafterprod _id based on the master_labels.toml
-
-    Args:
-        label (str): what the tensorflow model will spit out
-        pl (PRODUCTLINES): The product_line we are working with.
-    Returns:
-        str: _id that is associated with that label
-    '''
-
     return strftime('%B %d, %I:%M%p', localtime())
 
 
