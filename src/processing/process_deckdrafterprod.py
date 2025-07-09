@@ -112,7 +112,10 @@ def generate_keys(pl: PLS):
         _id = card['_id']
         label_to_id.append(str(_id))
     
-    pickle_path = 'label_to_id.pkl'
+
+
+    # TODO: use the file_management module in utils
+    pickle_path = '_ids.pkl'
 
     label_to_id_path = os.path.join(data_dir, pl.value, pickle_path)
     with open(label_to_id_path, 'wb+') as f:

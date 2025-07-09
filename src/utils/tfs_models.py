@@ -127,6 +127,9 @@ def get_model_labels(model_name: str, pl: PLS) -> dict:
     Returns:
         dict: the dictonary of labels to model_names 
     '''
+
+
+    # TODO: change this to a pickled file, not a toml file
     try:
         toml_path = model_name + '_labels.toml'
         data_dir = os.getenv('DATA_DIR')
