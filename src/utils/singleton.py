@@ -1,6 +1,9 @@
 import logging
 
 class Singleton(type):
+    '''
+        Can be used as a metaclass to simulate a singleton
+    '''
     def __init__(cls, *args, **kwargs):
         cls.__instance = None
         super().__init__(*args, **kwargs)
