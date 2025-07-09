@@ -9,7 +9,7 @@ from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
 from utils.tfs_models import identify, CachedConfigs
 
-from utils.images import download_images
+from utils.images import download_images_parallel
 
 logging.getLogger().setLevel(20)
 
@@ -43,7 +43,7 @@ async def process_images(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
         ):
     pl = string_to_product_line(product_line_string)
-    await download_images(pl)
+    download_images_parallel(pl)
     return {}
 
 @app.post('/process_keys', summary='pickles the labels from the deckdrafterprod')

@@ -1,14 +1,15 @@
 import os
 import logging
+import time 
 import requests
 
 from concurrent.futures import ThreadPoolExecutor
-from requests.timeout import Timeout
+from requests.exceptions import Timeout, RequestException
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.json import load_deckdrafterprod
 
-def download_image(item, index, images_dir):
+def download_image(item, index, images_dir, max_retries=5, backoff_base=2):
     try:
         _id = item['_id']
         url = item['images']['large']
@@ -18,19 +19,26 @@ def download_image(item, index, images_dir):
 
     filename = os.path.join(images_dir, f'{_id}.jpg')
 
-    try:
-        response = requests.get(url, timeout=(5, 10))
-        response.raise_for_status()
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=(5, 10))
+            response.raise_for_status()
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+            logging.info(f'[{index}] Downloaded: {_id}')
+            return
+        except Timeout as e:
+            logging.warning(f'[{index}] Timeout (attempt {attempt + 1}) for {_id}: {e}')
+        except RequestException as e:
+            logging.warning(f'[{index}] Request error (attempt {attempt + 1}) for {_id}: {e}')
+        except Exception as e:
+            logging.error(f'[{index}] Unexpected error (attempt {attempt + 1}) for {_id}: {e}')
 
-        with open(filename, 'wb') as f:
-            f.write(response.content)
-        logging.info(f'[{index}] Downloaded: {_id}')
-    except requests.RequestException as e:
-        logging.error(f'[{index}] HTTP error for {_id}: {e}')
-    except Exception as e:
-        logging.error(f'[{index}] Unexpected error for {_id}: {e}')
-    except Timeout as e:
-        logging.error(f"[{index}] Timeout for {_id}: {e}")
+        if attempt < max_retries - 1:
+            delay = backoff_base ** attempt
+            time.sleep(delay)
+
+    logging.error(f'[{index}] Failed to download {_id} after {max_retries} attempts')
 
 
 def download_images_parallel(pl: PLS, max_workers=8):

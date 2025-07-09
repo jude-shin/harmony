@@ -6,6 +6,7 @@ import tomllib
 from pathlib import Path
 
 from utils.product_lines import PRODUCTLINES as PLS
+from utils.file_handler.json import load_deckdrafterprod
 
 # TODO : move this to the processing package
 # master_labels.toml should be depreciated.... we should use the pkl python dict
@@ -69,10 +70,8 @@ def label_to_json(label : int, pl : PLS) -> dict:
 
     logging.info(' Label: %d -> _id: %s', label, predicted_id)
 
-    # deckdrafterprod.json (for _id -> various information)
-    deckdrafterprod_path = Path(data_dir, pl.value, 'deckdrafterprod.json')
-    with open(deckdrafterprod_path, 'r') as deckdrafterprod_file:
-        deckdrafterprod = json.load(deckdrafterprod_file)
+
+    deckdrafterprod: dict = load_deckdrafterprod(pl, 'r')
 
     card_obj = {}
     for obj in deckdrafterprod:
