@@ -10,6 +10,7 @@ from tqdm.asyncio import tqdm
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 from utils.product_lines import PRODUCTLINES as PLS
+from utils.file_handler.json import load_deckdrafterprod
 
 # TODO: understand this code
 
@@ -67,20 +68,7 @@ async def download_images(pl: PLS):
     Args:
         items (list[dict]): List of dicts with keys ['_id'] and ['images']['large']
     '''
-    
-    data_dir= os.getenv('DATA_DIR')
-    if data_dir is None:
-        logging.error(' [generate_keys] DATA_DIR env var not set. Returning an empty dict.')
-    
-    images_dir = os.path.join(data_dir, pl.value, 'images')
-
-    json_path = 'deckdrafterprod.json'
-    
-    deckdrafterprod_path = os.path.join(data_dir, pl.value, json_path)
-    
-    with open(deckdrafterprod_path, 'r') as f:
-            deckdrafterprod = json.load(f)
-
+    deckdrafterprod = load_deckdrafterprod(pl, 'r')
 
     await _run_downloads(deckdrafterprod, pl)
 
