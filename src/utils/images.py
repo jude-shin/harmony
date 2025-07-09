@@ -11,6 +11,8 @@ from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_t
 
 from utils.product_lines import PRODUCTLINES as PLS
 
+# TODO: understand this code
+
 async def _ensure_session():
     timeout = aiohttp.ClientTimeout(total=60)
     connector = aiohttp.TCPConnector(limit=50)
