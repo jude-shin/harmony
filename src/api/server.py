@@ -1,4 +1,4 @@
-import os, logging, uvicorn, typeguard, asyncio
+import os, logging, uvicorn
 
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image

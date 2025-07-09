@@ -1,11 +1,7 @@
 import json
 import logging
 import os
-import typeguard
 import tomllib
-
-import pandas as pd
-import numpy as np 
 
 from pathlib import Path
 
@@ -63,7 +59,7 @@ def label_to_json(label : int, pl : PLS) -> dict:
     data_dir = os.getenv('DATA_DIR')
     if data_dir is None:
         logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
-        return ''
+        return {}
     master_labels_path = os.path.join(data_dir, pl.value, 'master_labels.toml')
     with open(master_labels_path, 'rb') as f:
         master_labels = tomllib.load(f)

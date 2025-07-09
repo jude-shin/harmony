@@ -3,12 +3,11 @@ import json
 import requests 
 import logging
 import pickle
-import typeguard
 
 from time import time
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.time import get_current_time, get_elapsed_time
+from utils.time import get_elapsed_time
 
 # TODO: renme this file to preprocessing or something
 # TODO: function that adds images that already have an _id

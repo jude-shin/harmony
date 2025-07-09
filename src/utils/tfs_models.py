@@ -2,7 +2,6 @@ import json
 import tomllib
 import logging
 import os
-import typeguard
 import requests
 
 import numpy as np

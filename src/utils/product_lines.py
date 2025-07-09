@@ -1,5 +1,3 @@
-import typeguard
-
 from enum import Enum
 
 class PRODUCTLINES(Enum):
