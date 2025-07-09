@@ -1,74 +1,54 @@
 import os
-import asyncio
-import aiohttp
-import aiofiles
 import logging
-import json 
+import requests
 
-from urllib.parse import urlparse
-from tqdm.asyncio import tqdm
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+from concurrent.futures import ThreadPoolExecutor
+from requests.timeout import Timeout
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.json import load_deckdrafterprod
 
-# TODO: understand this code
-
-async def _ensure_session():
-    timeout = aiohttp.ClientTimeout(total=60)
-    connector = aiohttp.TCPConnector(limit=50)
-    return aiohttp.ClientSession(timeout=timeout, connector=connector)
-
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_fixed(2),
-    retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError))
-)
-async def _download_image(session, item, pl: PLS):
+def download_image(item, index, images_dir):
     try:
+        _id = item['_id']
         url = item['images']['large']
-        img_id = str(item['_id'])
+    except KeyError as e:
+        logging.warning(f'[{index}] Missing _id or url. Skipping. Item: {item}')
+        return
 
+    filename = os.path.join(images_dir, f'{_id}.jpg')
 
-        data_dir= os.getenv('DATA_DIR')
-        if data_dir is None:
-            logging.error(' [generate_keys] DATA_DIR env var not set. Returning an empty dict.')
-            raise FileNotFoundError
-    
-        images_dir = os.path.join(data_dir, pl.value, 'images')
+    try:
+        response = requests.get(url, timeout=(5, 10))
+        response.raise_for_status()
 
-        filename = os.path.join(images_dir, f'{img_id}.jpg')
-
-        async with session.get(url) as response:
-            if response.status == 200:
-                async with aiofiles.open(filename, 'wb') as f:
-                    await f.write(await response.read())
-                logging.info(f'Downloaded {img_id} from {url}')
-            else:
-                msg = f'Failed to download {img_id} (HTTP {response.status})'
-                logging.warning(msg)
-                raise aiohttp.ClientError(msg)
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        logging.info(f'[{index}] Downloaded: {_id}')
+    except requests.RequestException as e:
+        logging.error(f'[{index}] HTTP error for {_id}: {e}')
     except Exception as e:
-        logging.error(f'Error downloading {item["_id"]} from {item["images"]["large"]}: {e}')
-        raise
+        logging.error(f'[{index}] Unexpected error for {_id}: {e}')
+    except Timeout as e:
+        logging.error(f"[{index}] Timeout for {_id}: {e}")
 
-async def _run_downloads(items, pl: PLS):
-    async with await _ensure_session() as session:
-        tasks = [_download_image(session, item, pl) for item in items]
-        for f in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc='Downloading images'):
-            try:
-                await f
-            except Exception:
-                continue  # error already logged via retry
 
-async def download_images(pl: PLS):
-    '''
-    Download images concurrently using aiohttp.
-    
-    Args:
-        items (list[dict]): List of dicts with keys ['_id'] and ['images']['large']
-    '''
+def download_images_parallel(pl: PLS, max_workers=8):
     deckdrafterprod = load_deckdrafterprod(pl, 'r')
 
-    await _run_downloads(deckdrafterprod, pl)
+    data_dir = os.getenv('DATA_DIR')
+    if data_dir is None:
+        msg = 'DATA_DIR env var is not set...'
+        logging.error(msg)
+        raise KeyError(msg)
 
+    images_dir = os.path.join(data_dir, pl.value, 'images')
+
+    if not os.path.exists(images_dir):
+        os.makedirs(images_dir)
+        logging.info(f'Created output directory: {images_dir}')
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for idx, item in enumerate(deckdrafterprod):
+            executor.submit(download_image, item, idx, images_dir)
+        executor.shutdown(wait=True)
