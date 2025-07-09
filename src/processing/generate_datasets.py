@@ -1,15 +1,42 @@
-import csv
 import pandas as pd 
 import os
 
-import numpy as np
 import tensorflow as tf
 # import tensorflow_addons as tfa
+import keras_cv
 
 # from tensorflow import keras, models, layers
 from sklearn.model_selection import train_test_split
 
 # ========================================
+
+@tf.function
+def augment_zoom_rotate(image, label):
+    # Random zoom scale
+    scale = tf.random.uniform([], 0.95, 1.05)
+    image_shape = tf.shape(image)
+    h, w = image_shape[0], image_shape[1]
+    new_h = tf.cast(scale * tf.cast(h, tf.float32), tf.int32)
+    new_w = tf.cast(scale * tf.cast(w, tf.float32), tf.int32)
+
+    # Resize to zoom
+    image = tf.image.resize(image, [new_h, new_w])
+
+    # Pad back to original size with random color
+    pad_color = tf.random.uniform([3], 0.0, 1.0)
+    pad_color = tf.reshape(pad_color, [1, 1, 3])
+    pad_color = tf.tile(pad_color, [h, w, 1])
+
+    image = tf.image.resize_with_crop_or_pad(image, h, w)
+    image = tf.where(tf.equal(image, 0.0), pad_color, image)
+
+    # Apply rotation using KerasCV
+    image = keras_cv.layers.RandomRotation(
+            factor=0.028,  # ~5 degrees = 5/180 ≈ 0.028
+            fill_mode="reflect"
+            )
+
+    return image, label
 
 @tf.function
 def augment_blur(image, label):
@@ -40,7 +67,7 @@ def augment_sharpness(image, label):
 # other options for composing all of the augmentations 
 @tf.function
 def augment(image, label):
-    fns = [tf_zoom_rotate, tf_blur, tf_adjust_color, tf_adjust_contrast, tf_adjust_sharpness]
+    fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_contrast]
     for fn in fns:
         apply = tf.random.uniform([]) > 0.5
         image, label = tf.cond(apply, lambda: fn(image, label), lambda: (image, label))
@@ -74,7 +101,7 @@ def get_val_dataset(paths, labels, batch_size=64):
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
     # no preprocessing should occur in the validation dataset
     # overfitting may occur 
-    ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
+    # ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.batch(batch_size)
     ds = ds.prefetch(tf.data.AUTOTUNE)
     return ds
