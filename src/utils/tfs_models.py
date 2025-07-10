@@ -8,6 +8,7 @@ import numpy as np
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
 from utils.file_handler.pickle import load_ids
+from utils.file_handler.dir import get_saved_model_dir 
 
 # TODO : move to api package?
 # but keep some of the features
@@ -129,13 +130,10 @@ def get_model_config(pl: PLS) -> dict:
     '''
     try:
         toml_path = 'config.toml'
-        model_dir = os.getenv('SAVED_MODEL_DIR')
 
-        if model_dir is None:
-            logging.error(' [get_model_config] SAVED_MODEL_DIR env var not set. Returning an empty dict.')
-            return {}
 
-        full_toml_path = os.path.join(model_dir, pl.value, toml_path)
+        saved_model_dir = get_saved_model_dir()
+        full_toml_path = os.path.join(saved_model_dir, pl.value, toml_path)
 
         with open(full_toml_path, 'rb') as f:
             return tomllib.load(f)

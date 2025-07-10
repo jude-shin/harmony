@@ -10,6 +10,7 @@ import keras_cv
 # from sklearn.model_selection import train_test_split
 
 from utils.product_lines import PRODUCTLINES as PLS
+from utils.file_handler.dir import get_data_dir
 
 # ========================================
 
@@ -121,17 +122,11 @@ def generate_datasets(pl: PLS):
             - a validation dataset
     '''
     
-    data_dir = os.getenv('DATA_DIR')
-    if data_dir is None:
-        msg = 'DATA_DIR env var is not set...'
-        logging.error(msg)
-        raise KeyError(msg)
+    data_dir = get_data_dir()
 
     img_dir = os.path.join(data_dir, pl.value, 'images')
 
     # TODO
-
-
     # load the pkl file. the image names should be the _id, and then the label should be the index 
 
 

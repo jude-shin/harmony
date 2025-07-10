@@ -61,8 +61,6 @@ async def predict(
         threshold: float = Form(..., description='what percent confidence that is deemed correct')
         ):
 
-    logging.info('ENDPOINT REACHED')
-
     pl = string_to_product_line(product_line_string)
     
     # with Process are we able to process all of these in parallel?
@@ -79,8 +77,6 @@ async def predict(
             continue
         pil_images.append(pil_image)
 
-    logging.info('IMAGES PROCESSED')
-    
     instances = []
     # NOTE: for simplicity we need the models to all comply to the same width and height
     input_width = CachedConfigs().request_config(pl)['m0']['input_width']
@@ -92,10 +88,7 @@ async def predict(
         instance = img_tensor.numpy().tolist()
         instances.append(instance)
 
-
     predictions, confidences = identify(instances, 'm0', pl)
-
-    logging.info('IMAGES IDENTIFIED')
 
     json_prediction_obj = {
             'predictions': [label_to_id(int(p), pl) if p is not None else None for p in predictions],

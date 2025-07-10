@@ -8,6 +8,7 @@ from requests.exceptions import Timeout, RequestException
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.json import load_deckdrafterprod
+from utils.file_handler.dir import get_data_dir
 
 def download_image(item, index, images_dir, max_retries=5, backoff_base=2):
     try:
@@ -44,12 +45,7 @@ def download_image(item, index, images_dir, max_retries=5, backoff_base=2):
 def download_images_parallel(pl: PLS, max_workers=8):
     deckdrafterprod = load_deckdrafterprod(pl, 'r')
 
-    data_dir = os.getenv('DATA_DIR')
-    if data_dir is None:
-        msg = 'DATA_DIR env var is not set...'
-        logging.error(msg)
-        raise KeyError(msg)
-
+    data_dir = get_data_dir()
     images_dir = os.path.join(data_dir, pl.value, 'images')
 
     if not os.path.exists(images_dir):

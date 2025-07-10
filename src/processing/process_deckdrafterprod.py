@@ -8,6 +8,8 @@ from time import time
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.time import get_elapsed_time
+from utils.file_handler.json import load_deckdrafterprod 
+from utils.file_handler.dir import get_data_dir
 
 # TODO: renme this file to preprocessing or something
 # TODO: function that adds images that already have an _id
@@ -38,18 +40,7 @@ def download_images(pl: PLS, size: str):
     images_skipped: int = 0
     st: float = time()
 
-    data_dir= os.getenv('DATA_DIR')
-    if data_dir is None:
-        logging.error(' [generate_keys] DATA_DIR env var not set. Returning an empty dict.')
-        return
-
-    json_path = 'deckdrafterprod.json'
-
-    deckdrafterprod_path = os.path.join(data_dir, pl.value, json_path)
-    images_dir = os.path.join(data_dir, pl.value, 'images')
-
-    with open(deckdrafterprod_path, 'r') as f:
-        deckdrafterprod = json.load(f)
+    deckdrafterprod = load_deckdrafterprod(pl, 'r')
 
     for card in deckdrafterprod:
         _id: str = card['_id']
@@ -96,23 +87,13 @@ def generate_keys(pl: PLS):
     format can be json, or anything that can be parsed to a hashmap
     '''
     # logging.warning('generate_keys not implemented yet')
-    data_dir= os.getenv('DATA_DIR')
-    if data_dir is None:
-        logging.error(' [generate_keys] DATA_DIR env var not set. Returning an empty dict.')
-        return
-
-    json_path = 'deckdrafterprod.json'
-
-    deckdrafterprod_path = os.path.join(data_dir, pl.value, json_path)
-    with open(deckdrafterprod_path, 'r') as f:
-        deckdrafterprod = json.load(f)
+    data_dir = get_data_dir()
+    deckdrafterprod = load_deckdrafterprod(pl, 'r')
 
     label_to_id = []
     for card in deckdrafterprod:
         _id = card['_id']
         label_to_id.append(str(_id))
-    
-
 
     # TODO: use the file_management module in utils
     pickle_path = 'master_ids.pkl'
