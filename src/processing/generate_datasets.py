@@ -7,7 +7,9 @@ import tensorflow as tf
 import keras_cv
 
 # from tensorflow import keras, models, layers
-from sklearn.model_selection import train_test_split
+# from sklearn.model_selection import train_test_split
+
+from utils.product_lines import PRODUCTLINES as PLS
 
 # ========================================
 

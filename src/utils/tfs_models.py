@@ -7,6 +7,7 @@ import numpy as np
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
+from utils.file_handler.pickle import load_ids
 
 # TODO : move to api package?
 # but keep some of the features
@@ -47,11 +48,10 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
             try:
                 p_np = np.array(p)
                 best_idx = int(np.argmax(p_np))
-                best_label = str(best_idx)
                 confidence = float(p_np[best_idx])
-                final_prediction_labels[i] = best_label
+                final_prediction_labels[i] = best_idx
                 confidences[i] = confidence
-                logging.info('Model [%s] final prediction for image %d: %s (%.4f)', model_name, i, best_label, confidence)
+                logging.info('Model [%s] final prediction for image %d: %d (%.4f)', model_name, i, best_idx, confidence)
             except Exception as e:
                 logging.warning('Model [%s] failed to process prediction for image %d: %s', model_name, i, str(e))
         return final_prediction_labels, confidences
@@ -64,12 +64,13 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
         try:
             p_np = np.array(p)
             best_idx = int(np.argmax(p_np))
-            best_label = str(best_idx)
             confidence = float(p_np[best_idx])
-            labels_to_model_names_dict = get_model_labels(model_name, pl)
-            next_model = labels_to_model_names_dict[best_label]
 
-            logging.info('Model [%s] defers image %d to submodel [%s] (label: %s)', model_name, i, next_model, best_label)
+            _ids: list[str] = load_ids(pl, model_name, 'rb') # TODO: move this outside of the for enumerate(predictions) loop
+
+            next_model: str = _ids[best_idx]
+
+            logging.info('Model [%s] defers image %d to submodel [%s] (label: %d)', model_name, i, next_model, best_idx)
 
             if next_model not in submodel_inputs:
                 submodel_inputs[next_model] = []
@@ -115,38 +116,8 @@ def get_model_metadata(model_name: str, pl: PLS) -> dict:
     url = f'http://tfs-{pl.value}:{port}/v1/models/{model_name}/metadata'
     return requests.get(url).json()
 
-def get_model_labels(model_name: str, pl: PLS) -> dict:
-    '''
-    Gets the labels to _id in a hashmap form.
-    
-    Args:
-        pl (PRODUCTLINES): The product_line we are working with.
-        model_name (string): unique identifier for which (sub)model we are using for evaluation
-            ex) in the model "m12.keras", the model_name is "m12"
-            ex) in the labels toml "m0_labels.toml", the model_name is "m0"
-    Returns:
-        dict: the dictonary of labels to model_names 
-    '''
 
-
-    # TODO: change this to a pickled file, not a toml file
-    try:
-        toml_path = model_name + '_labels.toml'
-        data_dir = os.getenv('DATA_DIR')
-
-        if data_dir is None:
-            logging.error(' [get_model_labels] DATA_DIR env var not set. Returning an empty dict.')
-            return {}
-
-        full_toml_path = os.path.join(data_dir, pl.value, toml_path)
-
-        with open(full_toml_path, 'rb') as f:
-            return tomllib.load(f)
-
-    except Exception as e:
-        logging.error(' [get_model_labels] unexpected error %s. Returning an empty dict.', e)
-        return {}
-
+# TODO: pickled information may be easier?
 def get_model_config(pl: PLS) -> dict:
     '''
     Gets the tensorflow model config.toml (shows the is_final status and no. of outputs a model has).

@@ -26,9 +26,8 @@ def load_ids(pl: PLS, prefix: str, mode: str) -> list[str]:
         raise KeyError(msg)
 
     _ids_path: str = os.path.join(data_dir, pl.value, prefix+'_ids.pkl')
-    _ids: list[str] = []
 
     with open(_ids_path, mode) as f:
-        pickle.dump(_ids, f)
+        _ids = pickle.load(f)
 
     return _ids 

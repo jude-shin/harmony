@@ -11,7 +11,7 @@ from utils.tfs_models import identify, CachedConfigs
 
 from utils.images import download_images_parallel
 
-logging.getLogger().setLevel(20)
+logging.getLogger().setLevel(0) # 20
 
 CachedConfigs()
 
@@ -60,8 +60,15 @@ async def predict(
         images: list[UploadFile] = File(..., description='image scans from client that are to be identified'),
         threshold: float = Form(..., description='what percent confidence that is deemed correct')
         ):
+
+    logging.info('ENDPOINT REACHED')
+
     pl = string_to_product_line(product_line_string)
     
+    # with Process are we able to process all of these in parallel?
+    # first find out if these use cpu instructions
+    # from multiprocessing import Process
+    # p1 = Process(target(func1))
     pil_images = []
     for image in images:
         try:
@@ -72,6 +79,7 @@ async def predict(
             continue
         pil_images.append(pil_image)
 
+    logging.info('IMAGES PROCESSED')
     
     instances = []
     # NOTE: for simplicity we need the models to all comply to the same width and height
@@ -84,7 +92,10 @@ async def predict(
         instance = img_tensor.numpy().tolist()
         instances.append(instance)
 
+
     predictions, confidences = identify(instances, 'm0', pl)
+
+    logging.info('IMAGES IDENTIFIED')
 
     json_prediction_obj = {
             'predictions': [label_to_id(int(p), pl) if p is not None else None for p in predictions],
