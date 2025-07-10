@@ -9,4 +9,4 @@ logging.getLogger().setLevel(20)
 
 if __name__ == '__main__':
     # download_images_parallel(pl=PLS.POKEMON, max_workers=32)
-    generate_datasets()
+    generate_datasets(pl=PLS.POKEMON)
