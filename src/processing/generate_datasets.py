@@ -13,20 +13,21 @@ from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.dir import get_data_dir
 from utils.file_handler.pickle import load_ids 
 
+RANDOM_RANGE = 10000
+
 # ========================================
 
 @tf.function
 def augment_zoom_rotate(image, label):
-
     return image, label
 
 @tf.function
 def augment_blur(image, label):
-
     return image, label
 
 @tf.function
 def augment_saturation(image, label):
+    image = tf.image.stateless_random_saturation(image, 0.5, 1, (1, 2))
     return image, label
 
 @tf.function
@@ -40,11 +41,11 @@ def augment_sharpness(image, label):
 # other options for composing all of the augmentations 
 @tf.function
 def augment(image, label):
-    # fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_sharpness]
-    fns = [augment_saturation, augment_contrast]
+    fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_sharpness]
+
     for fn in fns:
-        apply = tf.random.uniform([]) > 0.5
-        image, label = tf.cond(apply, lambda: fn(image, label), lambda: (image, label))
+        image, label = fn(image, label)
+
     return image, label
 
 
@@ -66,7 +67,7 @@ def get_train_dataset(paths, labels, augment_factor=10, batch_size=64):
     # ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE) 
     ds = ds.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
 
-    ds = ds.shuffle(1000)
+    ds = ds.shuffle(RANDOM_RANGE) # 1000
     ds = ds.batch(batch_size)
     ds = ds.prefetch(tf.data.AUTOTUNE)
     return ds
