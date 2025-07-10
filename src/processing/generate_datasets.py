@@ -133,7 +133,7 @@ def generate_datasets(pl: PLS):
             )
     train_labels = tf.convert_to_tensor(
             train_df['label'].values,
-            dtype=tf.string
+            dtype=tf.int32
             )
 
     val_paths = tf.convert_to_tensor(
@@ -142,7 +142,7 @@ def generate_datasets(pl: PLS):
             )
     val_labels = tf.convert_to_tensor(
             val_df['label'].values,
-            dtype=tf.string
+            dtype=tf.int32
             )
 
     train_ds = get_train_dataset(train_paths, train_labels, augment_factor=10)
