@@ -3,7 +3,8 @@ import os, logging, uvicorn
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image
 
-from processing.image_processing import get_tensor_from_image
+from processing.image_processing import get_tensor_from_image # TODO: THIS should just be the same preprocess step
+
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
 from utils.tfs_models import identify, CachedConfigs
@@ -83,7 +84,7 @@ async def predict(
     input_height  = CachedConfigs().request_config(pl)['m0']['input_height']
 
     for pil_image in pil_images:
-        img_tensor = get_tensor_from_image(pil_image, input_width, input_height)
+        img_tensor = get_tensor_from_image(pil_image, input_width, input_height) # TODO: use the custom data.dataset.tensor_from_image
 
         instance = img_tensor.numpy().tolist()
         instances.append(instance)
