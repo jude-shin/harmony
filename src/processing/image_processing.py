@@ -6,7 +6,7 @@ from typing import Tuple
 from PIL import Image, ImageFilter, ImageEnhance
 from io import BytesIO
 
-
+# TODO: get rid of this stuff lol
 def zoom_rotate_img(image):
     """Help: Randomly rotate and zoom the given PIL image degrees and return it"""
 
