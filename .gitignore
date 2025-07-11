@@ -3,11 +3,11 @@ venv/
 
 data/
 *.png
+*.jpg
 
 keras_models/
 
 saved_models/**
-!saved_models/**/
 !saved_models/**/*.config
 
 testing/
@@ -15,3 +15,4 @@ testing/
 **/__pycache__/
 
 .env
+.env.development
