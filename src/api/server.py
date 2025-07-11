@@ -4,12 +4,12 @@ from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image
 
 from processing.image_processing import get_tensor_from_image
-from processing.process_deckdrafterprod import process_deckdrafterprod, generate_keys
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
 from utils.tfs_models import identify, CachedConfigs
 
-from utils.images import download_images_parallel
+# from data.collect import generate_keys
+# from data.collect import download_images_parallel
 
 logging.getLogger().setLevel(0) # 20
 
@@ -25,34 +25,34 @@ app = FastAPI(
 async def ping() -> dict[str, str]:
     return {'ping': 'pong'}
 
-@app.get('/validate', summary='validates the structure of our application')
-async def validate():
-    logging.warning('validate endpoint not implemented yet')
-    return {'validate endpoint not implemented yet'}
-
-@app.post('/process', summary='processes deckdrafterprod for the first time')
-async def process(
-        product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
-        ):
-    pl = string_to_product_line(product_line_string)
-    process_deckdrafterprod(pl)
-    return {}
-
-@app.post('/process_images', summary='pickles the labels from the deckdrafterprod')
-async def process_images(
-        product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
-        ):
-    pl = string_to_product_line(product_line_string)
-    download_images_parallel(pl)
-    return {}
-
-@app.post('/process_keys', summary='pickles the labels from the deckdrafterprod')
-async def process_keys(
-        product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
-        ):
-    pl = string_to_product_line(product_line_string)
-    generate_keys(pl)
-    return {}
+# @app.get('/validate', summary='validates the structure of our application')
+# async def validate():
+#     logging.warning('validate endpoint not implemented yet')
+#     return {'validate endpoint not implemented yet'}
+# 
+# @app.post('/process', summary='processes deckdrafterprod for the first time')
+# async def process(
+#         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+#         ):
+#     pl = string_to_product_line(product_line_string)
+#     process_deckdrafterprod(pl)
+#     return {}
+# 
+# @app.post('/process_images', summary='pickles the labels from the deckdrafterprod')
+# async def process_images(
+#         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+#         ):
+#     pl = string_to_product_line(product_line_string)
+#     download_images_parallel(pl)
+#     return {}
+# 
+# @app.post('/process_keys', summary='pickles the labels from the deckdrafterprod')
+# async def process_keys(
+#         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
+#         ):
+#     pl = string_to_product_line(product_line_string)
+#     generate_keys(pl)
+#     return {}
 
 @app.post('/predict')
 async def predict(
