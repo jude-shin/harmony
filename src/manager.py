@@ -1,6 +1,6 @@
 import logging
 
-from utils.images import download_images_parallel
+from data.collect import download_images_parallel
 from utils.product_lines import PRODUCTLINES as PLS
 
 from processing.generate_datasets import generate_datasets
