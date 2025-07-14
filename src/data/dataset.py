@@ -136,7 +136,25 @@ def generate_datasets(pl: PLS):
 
     # =======================
 
-    # =======================
+    dataset = tf.keras.utils.image_dataset_from_directory(
+        IMAGE_DIR,
+        image_size=(WIDTH, HEIGHT),
+        label_mode='int',
+        shuffle=False  # important for consistency
+    )
+    
+    # Normalize images
+    dataset = dataset.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y), num_parallel_calls=AUTOTUNE)
+
+
+
+
+    val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
+    
+    train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
+    
+    save_dataset(val_ds, get_val_dataset_dir)
+    save_dataset(train_ds, get_train_dataset_dir)
 
     return train_ds, val_ds
 
