@@ -29,9 +29,9 @@ def load_and_preprocess(path, label):
     return image, label
 
 
-###################################
-#   augmentation (during training)#
-###################################
+######################################
+#   augmentation (during training)   #
+######################################
 
 # note: this will be done to the training dataset real time
 # prevents overfitting, stochastic, and decreases disk space
@@ -75,7 +75,7 @@ def generate_datasets(pl: PLS):
     '''
     Generates a training and validataion dataset.
 
-    Saves the dataset as a df.pkl?
+    Saves the dataset
 
     Args:
     Returns:
@@ -119,11 +119,12 @@ def generate_datasets(pl: PLS):
             dtype=tf.int32
             )
 
+    # TODO: the inital generation of the datset should be here
+
     val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
     
     train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
     
-    # TODO : save the datasets in the os.getenv('VAL_DATASET_PATH'), and os.getenv('TRAIN_DATASET_PATH')
     save_dataset(val_ds, get_val_dataset_dir)
     save_dataset(train_ds, get_train_dataset_dir)
 
