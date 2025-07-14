@@ -8,7 +8,7 @@ import numpy as np
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
 from utils.file_handler.pickle import load_ids
-from utils.file_handler.dir import get_saved_model_dir 
+from utils.file_handler.dir import get_dir 
 
 # TODO : move to api package?
 # but keep some of the features

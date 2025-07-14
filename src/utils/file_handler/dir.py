@@ -1,10 +1,10 @@
 import os
 import logging 
 
-from utils.product_lines import PRODUCTLINES as PLS
-
 DATA_DIR = 'DATA_DIR'
 SAVED_MODEL_DIR = 'SAVED_MODEL_DIR'
+TRAIN_DATASET_DIR = 'TRAIN_DATASET_DIR'
+VAL_DATASET_DIR = 'VAL_DATASET_DIR'
 
 def get_dir(n: str) -> str:
     d = os.getenv(n)
