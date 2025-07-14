@@ -21,3 +21,10 @@ def get_data_dir() -> str:
 def get_saved_model_dir() -> str:
     return get_dir(SAVED_MODEL_DIR)
 
+def get_val_dataset_dir() -> str:
+    return get_dir(TRAIN_DATASET_DIR)
+
+def get_train_dataset_dir() -> str:
+    return get_dir(VAL_DATASET_DIR)
+
+
