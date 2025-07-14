@@ -10,19 +10,30 @@ from utils.file_handler.pickle import load_ids
 
 RANDOM_RANGE = 10000
 
+###########################################################
+#   preprocessing the images to be stored in a TFRecord   #
+###########################################################
 
 @tf.function
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
     image = tf.image.decode_jpeg(image, channels=3)
 
-    # image = tf.image.resize(image, [224, 224])
+    # TODO: resize this to 413 by 312 or whatever the large one is
+    # should this be a constant that we pull from the .env?
+    image = tf.image.resize(image, [224, 224]) 
+
     image = tf.image.convert_image_dtype(image, tf.float32)  
 
     return image, label
 
 
-# ========================================
+###################################
+#   augmentation (during training)#
+###################################
+
+# note: this will be done to the training dataset real time
+# prevents overfitting, stochastic, and decreases disk space
 
 @tf.function
 def augment_zoom_rotate(image, label):
@@ -55,8 +66,9 @@ def augment(image, label):
 
     return image, label
 
-
-# ========================================
+################
+#   datasets   #
+################
 
 def get_train_dataset(paths, labels, augment_factor=10, batch_size=64):
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
@@ -91,7 +103,6 @@ def get_val_dataset(paths, labels, batch_size=64):
     ds = ds.prefetch(tf.data.AUTOTUNE)
     return ds
 
-# ========================================
 def generate_datasets(pl: PLS):
     '''
     Generates a training and validataion dataset.
