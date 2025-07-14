@@ -8,7 +8,8 @@ from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.dir import get_data_dir
 from utils.file_handler.pickle import load_ids 
 
-RANDOM_RANGE = 10000
+WIDTH=413
+HEIGHT=312
 
 ###########################################################
 #   preprocessing the images to be stored in a TFRecord   #
@@ -21,7 +22,7 @@ def load_and_preprocess(path, label):
 
     # TODO: resize this to 413 by 312 or whatever the large one is
     # should this be a constant that we pull from the .env?
-    image = tf.image.resize(image, [224, 224]) 
+    image = tf.image.resize(image, [WIDTH, HEIGHT]) 
 
     image = tf.image.convert_image_dtype(image, tf.float32)  
 
@@ -70,39 +71,6 @@ def augment(image, label):
 #   datasets   #
 ################
 
-def get_train_dataset(paths, labels, augment_factor=10, batch_size=64):
-    ds = tf.data.Dataset.from_tensor_slices((paths, labels))
-
-    # Repeat each image N times
-    ds = ds.flat_map(
-            lambda path, label: tf.data.Dataset.from_tensors((path, label)).repeat(augment_factor)
-            )
-
-    # Stream, decode, augment
-    # preprocessing happens in the model
-    # any sized image (and I guess any type of image) can be tossed in
-    # the preprocessing will resize and normalize the image 
-    # BUT we do still need this to be a tensor 
-
-    ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE) 
-    ds = ds.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
-
-    ds = ds.shuffle(RANDOM_RANGE) # 1000
-    ds = ds.batch(batch_size)
-    ds = ds.prefetch(tf.data.AUTOTUNE)
-    return ds
-
-def get_val_dataset(paths, labels, batch_size=64):
-    ds = tf.data.Dataset.from_tensor_slices((paths, labels))
-    # no augmentation should occur in the validation dataset
-    # overfitting may occur 
-
-    ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
-
-    ds = ds.batch(batch_size)
-    ds = ds.prefetch(tf.data.AUTOTUNE)
-    return ds
-
 def generate_datasets(pl: PLS):
     '''
     Generates a training and validataion dataset.
@@ -124,7 +92,7 @@ def generate_datasets(pl: PLS):
     
     df = pd.DataFrame({
         'label': range(0, len(_ids)),
-        '_ids': _ids
+        '_ids': _ids # NOTE: if this is a 
         })
 
     # Stratified validation: ensure at least 1 sample per class
@@ -151,21 +119,24 @@ def generate_datasets(pl: PLS):
             dtype=tf.int32
             )
 
-    train_ds = get_train_dataset(train_paths, train_labels, augment_factor=10)
-    val_ds = get_val_dataset(val_paths, val_labels)
-
+    # No augmentation (e.g., validation set)
+    val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
+    
+    # Augment each sample once per epoch (standard online augmentation)
+    train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=1)
+    
+    # Augment each sample 5× to expand training data
+    augmented_train_ds = load_dataset("augmented_train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
+    
     # TODO : save the datasets in the os.getenv('VAL_DATASET_PATH'), and os.getenv('TRAIN_DATASET_PATH')
-    logging.info('FINISHED GENERATING DATASETS')
+    save_dataset(val_ds, )
 
     return train_ds, val_ds
-    # model.fit(train_ds, validation_data=val_ds, epochs=10)
 
 
 ###############
 #   records   #
-
-
-
+###############
 
 def serialize_example(image, label):
     feature = {
@@ -183,20 +154,16 @@ def parse_example(example_proto):
     parsed_example = tf.io.parse_single_example(example_proto, feature_description)
     
     image = tf.io.parse_tensor(parsed_example['image'], out_type=tf.float32)
-    image = tf.reshape(image, [224, 224, 3])  # use the same size used in preprocessing
+    image = tf.reshape(image, [WIDTH, HEIGHT, 3])  # use the same size used in preprocessing
     label = parsed_example['label']
     return image, label
 
-
-
-def write_tfrecord(dataset, tfrecord_path):
+def save_dataset(dataset, tfrecord_path):
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
         for image, label in dataset:
             for i in range(image.shape[0]):  # image and label are batched
                 serialized = serialize_example(image[i], label[i])
                 writer.write(serialized)
-
-
 
 def load_dataset(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
@@ -205,13 +172,13 @@ def load_dataset(tfrecord_path, batch_size=32, shuffle=False, augment=False, mul
     if augment and multiply > 1:
         # Repeat and augment each image N times
         def expand(image, label):
-            images = [augment_image(image, label)[0] for _ in range(multiply)]
+            images = [augment(image, label)[0] for _ in range(multiply)]
             labels = [label for _ in range(multiply)]
             return tf.data.Dataset.from_tensor_slices((images, labels))
 
         dataset = parsed_dataset.flat_map(expand)
     elif augment and multiply == 1:
-        dataset = parsed_dataset.map(augment_image, num_parallel_calls=tf.data.AUTOTUNE)
+        dataset = parsed_dataset.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
     else:
         dataset = parsed_dataset
 
@@ -222,3 +189,15 @@ def load_dataset(tfrecord_path, batch_size=32, shuffle=False, augment=False, mul
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
     return dataset
 
+
+'''
+# No augmentation (e.g., validation set)
+val_dataset = load_dataset("all_data.tfrecord", batch_size=32, shuffle=False, augment=False)
+
+# Augment each sample once per epoch (standard online augmentation)
+train_dataset = load_dataset("all_data.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=1)
+
+# Augment each sample 5× to expand training data
+train_dataset_expanded = load_dataset("all_data.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=5)
+
+'''
