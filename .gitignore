@@ -6,7 +6,6 @@ data/
 *.jpg
 
 keras_models/
-
 saved_models/**
 !saved_models/**/*.config
 
