@@ -127,8 +127,8 @@ def generate_datasets(pl: PLS):
     train_ds = build_dataset(train_paths, train_labels)
     val_ds = build_dataset(val_paths, val_labels)
 
-    save_dataset(val_ds, get_val_dataset_dir)
-    save_dataset(train_ds, get_train_dataset_dir)
+    save_dataset(val_ds, get_val_dataset_path(pl))
+    save_dataset(train_ds, get_train_dataset_path(pl))
 
     # val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
     # 
@@ -143,8 +143,8 @@ val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=F
 
 train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
 
-save_dataset(val_ds, get_val_dataset_dir)
-save_dataset(train_ds, get_train_dataset_dir)
+save_dataset(val_ds, get_val_dataset_path)
+save_dataset(train_ds, get_train_dataset_path)
 
 '''
 

@@ -3,7 +3,6 @@ import logging
 
 from utils.product_lines import PRODUCTLINES as PLS
 
-
 DATA_DIR_ENV= 'DATA_DIR'
 SAVED_MODEL_DIR_ENV = 'SAVED_MODEL_DIR'
 
@@ -32,6 +31,6 @@ def get_val_dataset_path(pl: PLS) -> str:
 def get_train_dataset_path(pl: PLS) -> str:
     return os.path.join(get_data_dir(), pl.value, VAL_DATASET_PATH_ENV)
 
-def get_images_dir() -> str:
+def get_images_dir(pl: PLS) -> str:
     return os.path.join(get_data_dir(), pl.value, IMAGES_PATH_ENV)
 
