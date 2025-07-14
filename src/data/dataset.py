@@ -71,19 +71,9 @@ def augment(image, label):
 #   datasets   #
 ################
 
-def generate_dataset(pl: PLS, validation=False, model='master', image_size=(WIDTH, HEIGHT)):
-    img_dir = get_image_dir()
-    _ids = load_ids(pl, model, 'rb')
-
-    df = pd.DataFrame({
-        'label': range(0, len(_ids)),
-        '_ids': _ids 
-        })
-
-    # Stratified validation: ensure at least 1 sample per class
-    val_df = df.groupby('label').sample(n=1, random_state=42)
-    train_df = df.drop(val_df.index)
-
+def build_dataset(paths, labels):
+    ds = tf.data.Dataset.from_tensor_slices((paths, labels))
+    return ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
 
 
 def generate_datasets(pl: PLS):
@@ -134,27 +124,15 @@ def generate_datasets(pl: PLS):
             dtype=tf.int32
             )
 
-    # =======================
+    train_ds = build_dataset(train_paths, train_labels)
+    val_ds = build_dataset(val_paths, val_labels)
 
-    dataset = tf.keras.utils.image_dataset_from_directory(
-        IMAGE_DIR,
-        image_size=(WIDTH, HEIGHT),
-        label_mode='int',
-        shuffle=False  # important for consistency
-    )
-    
-    # Normalize images
-    dataset = dataset.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y), num_parallel_calls=AUTOTUNE)
-
-
-
-
-    val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
-    
-    train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
-    
     save_dataset(val_ds, get_val_dataset_dir)
     save_dataset(train_ds, get_train_dataset_dir)
+
+    # val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
+    # 
+    # train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
 
     return train_ds, val_ds
 
