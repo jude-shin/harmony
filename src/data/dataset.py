@@ -5,7 +5,9 @@ import logging
 import tensorflow as tf
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.file_handler.dir import get_data_dir, get_val_dataset_dir, get_train_dataset_dir, get_image_dir
+from utils.file_handler.dir import get_train_dataset_path, get_val_dataset_path, get_data_dir, get_images_dir
+
+# import get_data_dir, get_val_dataset_dir, get_train_dataset_dir, get_image_dir
 from utils.file_handler.pickle import load_ids 
 
 WIDTH=413
