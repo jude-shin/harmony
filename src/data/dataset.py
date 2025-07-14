@@ -5,7 +5,7 @@ import logging
 import tensorflow as tf
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.file_handler.dir import get_data_dir, get_val_dataset_dir, get_train_dataset_dir
+from utils.file_handler.dir import get_data_dir, get_val_dataset_dir, get_train_dataset_dir, get_image_dir
 from utils.file_handler.pickle import load_ids 
 
 WIDTH=413
@@ -72,6 +72,18 @@ def augment(image, label):
 ################
 
 def generate_dataset(pl: PLS, validation=False, model='master', image_size=(WIDTH, HEIGHT)):
+    img_dir = get_image_dir()
+    _ids = load_ids(pl, model, 'rb')
+
+    df = pd.DataFrame({
+        'label': range(0, len(_ids)),
+        '_ids': _ids 
+        })
+
+    # Stratified validation: ensure at least 1 sample per class
+    val_df = df.groupby('label').sample(n=1, random_state=42)
+    train_df = df.drop(val_df.index)
+
 
 
 def generate_datasets(pl: PLS):
