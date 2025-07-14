@@ -9,8 +9,8 @@ from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
 from utils.tfs_models import identify, CachedConfigs
 
-# from data.collect import generate_keys
-# from data.collect import download_images_parallel
+from data.collect import generate_keys
+from data.collect import download_images_parallel
 
 logging.getLogger().setLevel(0) # 20
 
