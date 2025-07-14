@@ -71,6 +71,9 @@ def augment(image, label):
 #   datasets   #
 ################
 
+def generate_dataset(pl: PLS, validation=False, model='master', image_size=(WIDTH, HEIGHT)):
+
+
 def generate_datasets(pl: PLS):
     '''
     Generates a training and validataion dataset.
@@ -119,16 +122,23 @@ def generate_datasets(pl: PLS):
             dtype=tf.int32
             )
 
-    # TODO: the inital generation of the datset should be here
+    # =======================
 
-    val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
-    
-    train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
-    
-    save_dataset(val_ds, get_val_dataset_dir)
-    save_dataset(train_ds, get_train_dataset_dir)
+    # =======================
 
     return train_ds, val_ds
+
+'''
+# TODO: the inital generation of the datset should be here
+
+val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
+
+train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
+
+save_dataset(val_ds, get_val_dataset_dir)
+save_dataset(train_ds, get_train_dataset_dir)
+
+'''
 
 
 ###############
