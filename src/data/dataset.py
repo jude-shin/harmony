@@ -5,7 +5,7 @@ import logging
 import tensorflow as tf
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.file_handler.dir import get_data_dir
+from utils.file_handler.dir import get_data_dir, get_val_dataset_dir, get_train_dataset_dir
 from utils.file_handler.pickle import load_ids 
 
 WIDTH=413
@@ -119,17 +119,13 @@ def generate_datasets(pl: PLS):
             dtype=tf.int32
             )
 
-    # No augmentation (e.g., validation set)
     val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
     
-    # Augment each sample once per epoch (standard online augmentation)
-    train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=1)
-    
-    # Augment each sample 5× to expand training data
-    augmented_train_ds = load_dataset("augmented_train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
+    train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
     
     # TODO : save the datasets in the os.getenv('VAL_DATASET_PATH'), and os.getenv('TRAIN_DATASET_PATH')
-    save_dataset(val_ds, )
+    save_dataset(val_ds, get_val_dataset_dir)
+    save_dataset(train_ds, get_train_dataset_dir)
 
     return train_ds, val_ds
 
@@ -189,15 +185,3 @@ def load_dataset(tfrecord_path, batch_size=32, shuffle=False, augment=False, mul
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
     return dataset
 
-
-'''
-# No augmentation (e.g., validation set)
-val_dataset = load_dataset("all_data.tfrecord", batch_size=32, shuffle=False, augment=False)
-
-# Augment each sample once per epoch (standard online augmentation)
-train_dataset = load_dataset("all_data.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=1)
-
-# Augment each sample 5× to expand training data
-train_dataset_expanded = load_dataset("all_data.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=5)
-
-'''
