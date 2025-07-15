@@ -19,12 +19,12 @@ def collect(pl: PLS):
 #############################################
 #   images (downloads images in parallel)   #
 #############################################
-def download_image(item, index, size, images_dir, max_retries=5, backoff_base=2):
+def download_image(item, i, size, images_dir, max_retries=5, backoff_base=2):
     try:
         _id = item['_id']
         url = item['images'][size]
     except KeyError as e:
-        logging.warning(f'[{index}] Missing _id or url. Skipping. Item: {item}')
+        logging.warning(f'[{i}] Missing _id or url. Skipping. Item: {item}')
         return
 
     filename = os.path.join(images_dir, f'{_id}.jpg')
@@ -35,20 +35,20 @@ def download_image(item, index, size, images_dir, max_retries=5, backoff_base=2)
             response.raise_for_status()
             with open(filename, 'wb') as f:
                 f.write(response.content)
-            logging.info(f'[{index}] Downloaded: {_id}')
+            logging.info(f'[{i}] Downloaded: {_id}')
             return
         except Timeout as e:
-            logging.warning(f'[{index}] Timeout (attempt {attempt + 1}) for {_id}: {e}')
+            logging.warning(f'[{i}] Timeout (attempt {attempt + 1}) for {_id}: {e}')
         except RequestException as e:
-            logging.warning(f'[{index}] Request error (attempt {attempt + 1}) for {_id}: {e}')
+            logging.warning(f'[{i}] Request error (attempt {attempt + 1}) for {_id}: {e}')
         except Exception as e:
-            logging.error(f'[{index}] Unexpected error (attempt {attempt + 1}) for {_id}: {e}')
+            logging.error(f'[{i}] Unexpected error (attempt {attempt + 1}) for {_id}: {e}')
 
         if attempt < max_retries - 1:
             delay = backoff_base ** attempt
             time.sleep(delay)
 
-    logging.error(f'[{index}] Failed to download {_id} after {max_retries} attempts')
+    logging.error(f'[{i}] Failed to download {_id} after {max_retries} attempts')
 
 
 def download_images_parallel(pl: PLS, size='large', max_workers=64):
@@ -62,8 +62,8 @@ def download_images_parallel(pl: PLS, size='large', max_workers=64):
         logging.info(f'Created output directory: {images_dir}')
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for idx, item in enumerate(deckdrafterprod):
-            executor.submit(download_image, item, idx, size, images_dir)
+        for i, item in enumerate(deckdrafterprod):
+            executor.submit(download_image, item, i, size, images_dir)
         executor.shutdown(wait=True)
 
 
@@ -71,8 +71,7 @@ def download_images_parallel(pl: PLS, size='large', max_workers=64):
 #   keys (processes deckdrafterprod.json)   #
 #############################################
 
-
-def generate_keys(pl: PLS, size='large'):
+def generate_keys(pl: PLS):
     '''
     label_to_id 
         NOTE: if we need the id_to_label, you can load the json to a dict, and then zip the values and the keys
@@ -87,13 +86,8 @@ def generate_keys(pl: PLS, size='large'):
     deckdrafterprod = load_deckdrafterprod(pl, 'r')
 
     label_to_id = []
-    for i, card in enumerate(deckdrafterprod):
-        try:
-            _id = card['_id']
-            url = card['images'][size]
-        except KeyError as e:
-            logging.warning(f'[{i}] Missing _id or url. Skipping... Error: {e}')
-            continue 
+    for card in deckdrafterprod:
+        _id = card['_id']
         label_to_id.append(str(_id))
 
 
