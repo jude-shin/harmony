@@ -9,8 +9,8 @@ from utils.file_handler.dir import get_train_dataset_path, get_val_dataset_path,
 
 from utils.file_handler.pickle import load_ids 
 
-WIDTH=413
-HEIGHT=312
+IMG_WIDTH=413
+IMG_HEIGHT=312
 
 ###########################################################
 #   preprocessing the images to be stored in a TFRecord   #
@@ -23,7 +23,7 @@ def load_and_preprocess(path, label):
 
     # TODO: resize this to 413 by 312 or whatever the large one is
     # should this be a constant that we pull from the .env?
-    image = tf.image.resize(image, [WIDTH, HEIGHT]) 
+    image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
 
     image = tf.image.convert_image_dtype(image, tf.float32)  
 
@@ -94,16 +94,15 @@ def generate_datasets(pl: PLS):
 
     img_dir = os.path.join(data_dir, pl.value, 'images')
 
-    _ids = load_ids(pl, 'master', 'rb')
-    
     df = pd.DataFrame({
         'label': range(0, len(_ids)),
-        '_ids': _ids # NOTE: if this is a 
+        '_ids': load_ids(pl, 'master', 'rb') 
         })
 
     # Stratified validation: ensure at least 1 sample per class
     val_df = df.groupby('label').sample(n=1, random_state=42)
-    train_df = df.drop(val_df.index)
+    # train_df = df.drop(val_df.index) # drops the index 'rows' labels by default
+    train_df = df.drop()
     
     # TODO: remove the hard coded '.jpg'
     # Create file paths
@@ -157,16 +156,15 @@ def parse_example(example_proto):
     parsed_example = tf.io.parse_single_example(example_proto, feature_description)
     
     image = tf.io.parse_tensor(parsed_example['image'], out_type=tf.float32)
-    image = tf.reshape(image, [WIDTH, HEIGHT, 3])  # use the same size used in preprocessing
+    image = tf.reshape(image, [IMG_HEIGHT, IMG_WIDTH, 3])  # use the same size used in preprocessing
     label = parsed_example['label']
     return image, label
 
 def save_records(tfrecord_path, dataset):
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
         for image, label in dataset:
-            for i in range(image.shape[0]):  # image and label are batched
-                serialized = serialize_example(image[i], label[i])
-                writer.write(serialized)
+            serialized = serialize_example(image, label)
+            writer.write(serialized)
 
 def load_records(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
