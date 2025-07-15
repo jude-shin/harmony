@@ -17,7 +17,7 @@ IMG_EXTS=('.jpg', '.png')
 #   preprocessing the images to be stored in a TFRecord   #
 ###########################################################
 
-@tf.function
+# @tf.function
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
     image = tf.image.decode_jpeg(image, channels=3)
