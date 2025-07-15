@@ -72,7 +72,7 @@ def download_images_parallel(pl: PLS, size='large', max_workers=64):
 #############################################
 
 
-def generate_keys(pl: PLS):
+def generate_keys(pl: PLS, size='large'):
     '''
     label_to_id 
         NOTE: if we need the id_to_label, you can load the json to a dict, and then zip the values and the keys
@@ -83,14 +83,19 @@ def generate_keys(pl: PLS):
 
     format can be json, or anything that can be parsed to a hashmap
     '''
-    # logging.warning('generate_keys not implemented yet')
     data_dir = get_data_dir()
     deckdrafterprod = load_deckdrafterprod(pl, 'r')
 
     label_to_id = []
-    for card in deckdrafterprod:
-        _id = card['_id']
+    for i, card in enumerate(deckdrafterprod):
+        try:
+            _id = card['_id']
+            url = card['images'][size]
+        except KeyError as e:
+            logging.warning(f'[{i}] Missing _id or url. Skipping... Error: {e}')
+            continue 
         label_to_id.append(str(_id))
+
 
     # TODO: use the file_management module in utils
     pickle_path = 'master_ids.pkl'

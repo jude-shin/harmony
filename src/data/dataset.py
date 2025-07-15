@@ -94,15 +94,16 @@ def generate_datasets(pl: PLS):
 
     img_dir = os.path.join(data_dir, pl.value, 'images')
 
+    _ids = load_ids(pl, 'master', 'rb') 
+
     df = pd.DataFrame({
         'label': range(0, len(_ids)),
-        '_ids': load_ids(pl, 'master', 'rb') 
+        '_ids': _ids,
         })
 
     # Stratified validation: ensure at least 1 sample per class
     val_df = df.groupby('label').sample(n=1, random_state=42)
-    # train_df = df.drop(val_df.index) # drops the index 'rows' labels by default
-    train_df = df.drop()
+    train_df = df.drop(val_df.index) # drops the index 'rows' labels by default
     
     # TODO: remove the hard coded '.jpg'
     # Create file paths
