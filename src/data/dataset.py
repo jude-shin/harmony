@@ -128,12 +128,15 @@ def generate_datasets(pl: PLS):
     train_df_present, train_df_missing = process_df(pl, train_df)
     val_df_present, val_df_missing = process_df(pl, val_df)
 
+    print('Validation present count:', len(val_df_present))
+    print(val_df_present[['path', 'label']])
+
     # make note of the missing ids for later
     missing_out = os.path.join(get_data_dir(), pl.value, f'missing_{pl.value}.csv')
     pd.concat([train_df_missing, val_df_missing]).to_csv(missing_out, index=False)
     logging.warning(
-            "generate_datasets[%s]: %d training and %d validation images are absent; "
-            "their IDs are saved to %s",
+            'generate_datasets[%s]: %d training and %d validation images are absent; '
+            'their IDs are saved to %s',
             pl.name, len(train_df_missing), len(val_df_missing), missing_out
             )
 
@@ -150,9 +153,9 @@ def generate_datasets(pl: PLS):
     save_records(get_val_dataset_path(pl), val_ds)
     save_records(get_train_dataset_path(pl), train_ds)
 
-    # val_ds = load_records("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
+    # val_ds = load_records('val_ds.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
     # 
-    # train_ds = load_records("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
+    # train_ds = load_records('train_ds.tfrecord', batch_size=32, shuffle=True, augment=True, multiply=10)
 
     return train_ds, val_ds
 
@@ -189,8 +192,8 @@ def save_records(tfrecord_path, dataset):
                 writer.write(serialized)
                 count += 1
             except Exception as e:
-                logging.error("Failed to serialize example: %s", e)
-    logging.info("Wrote %d examples to %s", count, tfrecord_path)
+                logging.error('Failed to serialize example: %s', e)
+    logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
 def load_records(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
