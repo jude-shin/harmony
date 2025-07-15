@@ -11,6 +11,7 @@ from utils.file_handler.pickle import load_ids
 
 IMG_WIDTH=413
 IMG_HEIGHT=312
+IMG_EXTS=('.jpg', '.png')
 
 ###########################################################
 #   preprocessing the images to be stored in a TFRecord   #
@@ -76,27 +77,29 @@ def build_dataset(paths, labels):
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
     return ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
 
-def process_df(pl: PLS, df: pd.DataFrame):
+def resolve_path(img_dir: str, file_id: str) -> str | None:
+    '''
+    Return the first existing file matching <file_id> plus one of the accepted extensions inside <img_dir>.
+    If nothing exists, return None.
+    '''
+    # NOTE: we might be able to just use .jpg
+    for ext in IMG_EXTS:
+        canidate = os.path.join(img_dir, file_id + ext)
+        if os.path.isfile(canidate):
+            return canidate
+    return None
+
+
+def process_df(pl: PLS, df: pd.DataFrame) -> tuble[pd.DataFrame, pd.DataFrame]:
     # construct the name 
     data_dir = get_data_dir()
     images_dir = os.path.join(data_dir, pl.value, 'images')
 
-    for i in range(len(df)):
-        entry = df[i]
+    df['path'] = df['_ids'].apply(lambda x: resolve_path(img_dir, x))
 
-        _id = entry['_ids']
-        # label = entry['labels']
-        img_path = os.path.join(images_dir, _id + '.jpg')
-        
-        if os.path.exists(img_path):
-            entry['_ids'] = img_path 
-        else:
-            # if it does NOT, then remove this entire entry from the dataframe
-            df.drop(i)
-            i = i - 1
-
-    return df
-
+    present = df.dropna(subset=['path']).reset_index(drop=True)
+    missing = df[df['path'].isna()].reset_index(drop=True)
+    return present, missing
 
 def generate_datasets(pl: PLS):
     '''
@@ -119,23 +122,31 @@ def generate_datasets(pl: PLS):
         })
 
     # Stratified validation: ensure at least 1 sample per class
-    val_df = df.groupby('label').sample(n=1, random_state=42)
+    val_df = df.groupby('label', group_keys=False).sample(n=1, random_state=42)
     train_df = df.drop(val_df.index) # drops the index 'rows' labels by default
     
-    # TODO: remove the hard coded '.jpg'
-    # if the file does not exsist, the label should still exsist, but that label would just not get trained on at the moment
 
-    val_df = process_df(pl, val_df)
-    train_df = process_df(pl, train_df)
+    train_df_present, train_df_missing = process_df(pl, train_df)
+    val_df_present, val_df_missing = process_df(pl, val_df)
+
+    # make note of the missing ids for later
+    missing_out = os.path.join(get_data_dir(), pl.value), f'missing_{p.value}.csv')
+    pd.concat([train_df_missing, val_df_missing]).to_csv(missing_out, index=False)
+    logging.warning(
+            "generate_datasets[%s]: %d training and %d validation images are absent; "
+            "their IDs are saved to %s",
+            pl.name, len(train_missing), len(val_missing), missing_out
+            )
 
     # Create file paths
-    train_paths = tf.convert_to_tensor(train_df['_ids'], dtype=tf.string)
+    train_paths = tf.convert_to_tensor(train_df['path'], dtype=tf.string)
     train_labels = tf.convert_to_tensor(train_df['label'].values, dtype=tf.int32)
 
-    val_paths = tf.convert_to_tensor(val_df['_ids'], dtype=tf.string)
+    val_paths = tf.convert_to_tensor(val_df['path'], dtype=tf.string)
     val_labels = tf.convert_to_tensor(val_df['label'].values, dtype=tf.int32)
 
     train_ds = build_dataset(train_paths, train_labels)
+
     val_ds = build_dataset(val_paths, val_labels)
 
     save_records(get_val_dataset_path(pl), val_ds)
