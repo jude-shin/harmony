@@ -7,7 +7,6 @@ import tensorflow as tf
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.dir import get_train_dataset_path, get_val_dataset_path, get_data_dir, get_images_dir
 
-# import get_data_dir, get_val_dataset_dir, get_train_dataset_dir, get_image_dir
 from utils.file_handler.pickle import load_ids 
 
 WIDTH=413
@@ -129,27 +128,14 @@ def generate_datasets(pl: PLS):
     train_ds = build_dataset(train_paths, train_labels)
     val_ds = build_dataset(val_paths, val_labels)
 
-    save_dataset(val_ds, get_val_dataset_path(pl))
-    save_dataset(train_ds, get_train_dataset_path(pl))
+    save_records(get_val_dataset_path(pl), val_ds)
+    save_records(get_train_dataset_path(pl), train_ds)
 
-    # val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
+    # val_ds = load_records("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
     # 
-    # train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
+    # train_ds = load_records("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
 
     return train_ds, val_ds
-
-'''
-# TODO: the inital generation of the datset should be here
-
-val_ds = load_dataset("val_ds.tfrecord", batch_size=32, shuffle=False, augment=False, multiply=1)
-
-train_ds = load_dataset("train_ds.tfrecord", batch_size=32, shuffle=True, augment=True, multiply=10)
-
-save_dataset(val_ds, get_val_dataset_path)
-save_dataset(train_ds, get_train_dataset_path)
-
-'''
-
 
 ###############
 #   records   #
@@ -175,14 +161,14 @@ def parse_example(example_proto):
     label = parsed_example['label']
     return image, label
 
-def save_dataset(dataset, tfrecord_path):
+def save_records(tfrecord_path, dataset):
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
         for image, label in dataset:
             for i in range(image.shape[0]):  # image and label are batched
                 serialized = serialize_example(image[i], label[i])
                 writer.write(serialized)
 
-def load_dataset(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
+def load_records(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
     parsed_dataset = raw_dataset.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 

@@ -13,8 +13,8 @@ if __name__ == '__main__':
     st = time.time()
 
     # download_images_parallel(pl=PLS.LORCANA, max_workers=64)
-    collect(PLS.LORCANA)
-    generate_datasets(pl=PLS.LORCANA)
+    # collect(PLS.LORCANA)
 
+    generate_datasets(pl=PLS.LORCANA)
 
     logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
