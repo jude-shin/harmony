@@ -181,10 +181,16 @@ def parse_example(example_proto):
     return image, label
 
 def save_records(tfrecord_path, dataset):
+    count = 0
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
         for image, label in dataset:
-            serialized = serialize_example(image, label)
-            writer.write(serialized)
+            try:
+                serialized = serialize_example(image, label)
+                writer.write(serialized)
+                count += 1
+            except Exception as e:
+                logging.error("Failed to serialize example: %s", e)
+    logging.info("Wrote %d examples to %s", count, tfrecord_path)
 
 def load_records(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
