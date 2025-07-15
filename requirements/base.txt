@@ -3,7 +3,7 @@ numpy
 pandas
 pillow
 
-tensorflow
+tensorflow[and-cuda]
 keras-cv
 scikit-learn
 keras-tuner
