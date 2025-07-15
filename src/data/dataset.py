@@ -38,29 +38,29 @@ def load_and_preprocess(path, label):
 # note: this will be done to the training dataset real time
 # prevents overfitting, stochastic, and decreases disk space
 
-@tf.function
+# @tf.function
 def augment_zoom_rotate(image, label):
     return image, label
 
-@tf.function
+# @tf.function
 def augment_blur(image, label):
     return image, label
 
-@tf.function
+# @tf.function
 def augment_saturation(image, label):
     image = tf.image.stateless_random_saturation(image, 0.5, 1, (1, 2))
     return image, label
 
-@tf.function
+# @tf.function
 def augment_contrast(image, label):
     return image, label
 
-@tf.function
+# @tf.function
 def augment_sharpness(image, label):
     return image, label
 
 # other options for composing all of the augmentations 
-@tf.function
+# @tf.function
 def augment(image, label):
     fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_sharpness]
 
