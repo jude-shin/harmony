@@ -120,24 +120,26 @@ def generate_datasets(pl: PLS):
         '_ids': _ids,
         })
 
-    # Stratified validation: ensure at least 1 sample per class
-    val_df = df.groupby('label', group_keys=False).sample(n=1, random_state=42)
-    train_df = df.drop(val_df.index) # drops the index 'rows' labels by default
+    # Resolve paths *first*
+    df_present, df_missing = process_df(pl, df)
     
-
-    train_df_present, train_df_missing = process_df(pl, train_df)
-    val_df_present, val_df_missing = process_df(pl, val_df)
-
-    print('Validation present count:', len(val_df_present))
-    print(val_df_present[['path', 'label']])
-
+    # Do stratified split only on present data
+    val_df_present = (
+        df_present
+        .groupby('label', group_keys=False)
+        .sample(n=1, random_state=42)
+        .reset_index(drop=True)
+    )
+    train_df_present = df_present.drop(val_df_present.index).reset_index(drop=True)
+    
     # make note of the missing ids for later
     missing_out = os.path.join(get_data_dir(), pl.value, f'missing_{pl.value}.csv')
-    pd.concat([train_df_missing, val_df_missing]).to_csv(missing_out, index=False)
+    # pd.concat([train_df_missing, val_df_missing]).to_csv(missing_out, index=False)
+    df_missing.to_csv(missing_out, index=False)
     logging.warning(
-            'generate_datasets[%s]: %d training and %d validation images are absent; '
+            'generate_datasets[%s]: %d images are absent; '
             'their IDs are saved to %s',
-            pl.name, len(train_df_missing), len(val_df_missing), missing_out
+            pl.name, len(df_missing), missing_out
             )
 
     # Create file paths
