@@ -91,14 +91,15 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
 
 
 def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # construct the name 
-    img_dir = get_images_dir(pl)
+    # img_dir = get_images_dir(pl) # this does not work
+    img_dir = os.path.join(get_data_dir(), pl.value, 'images')
 
     df['path'] = df['_ids'].apply(lambda x: resolve_path(img_dir, x))
 
     present = df.dropna(subset=['path']).reset_index(drop=True)
     missing = df[df['path'].isna()].reset_index(drop=True)
     return present, missing
+
 
 def generate_datasets(pl: PLS):
     '''
@@ -120,9 +121,9 @@ def generate_datasets(pl: PLS):
         '_ids': _ids,
         })
 
-    # Resolve paths *first*
+    # resolve missing images
     df_present, df_missing = process_df(pl, df)
-    
+
     # Do stratified split only on present data
     val_df_present = (
         df_present
