@@ -90,10 +90,9 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
     return None
 
 
-def process_df(pl: PLS, df: pd.DataFrame) -> tuble[pd.DataFrame, pd.DataFrame]:
+def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     # construct the name 
-    data_dir = get_data_dir()
-    images_dir = os.path.join(data_dir, pl.value, 'images')
+    img_dir = get_images_dir(pl)
 
     df['path'] = df['_ids'].apply(lambda x: resolve_path(img_dir, x))
 
@@ -130,23 +129,22 @@ def generate_datasets(pl: PLS):
     val_df_present, val_df_missing = process_df(pl, val_df)
 
     # make note of the missing ids for later
-    missing_out = os.path.join(get_data_dir(), pl.value), f'missing_{p.value}.csv')
+    missing_out = os.path.join(get_data_dir(), pl.value, f'missing_{pl.value}.csv')
     pd.concat([train_df_missing, val_df_missing]).to_csv(missing_out, index=False)
     logging.warning(
             "generate_datasets[%s]: %d training and %d validation images are absent; "
             "their IDs are saved to %s",
-            pl.name, len(train_missing), len(val_missing), missing_out
+            pl.name, len(train_df_missing), len(val_df_missing), missing_out
             )
 
     # Create file paths
-    train_paths = tf.convert_to_tensor(train_df['path'], dtype=tf.string)
-    train_labels = tf.convert_to_tensor(train_df['label'].values, dtype=tf.int32)
+    train_paths = tf.convert_to_tensor(train_df_present['path'], dtype=tf.string)
+    train_labels = tf.convert_to_tensor(train_df_present['label'].values, dtype=tf.int32)
 
-    val_paths = tf.convert_to_tensor(val_df['path'], dtype=tf.string)
-    val_labels = tf.convert_to_tensor(val_df['label'].values, dtype=tf.int32)
+    val_paths = tf.convert_to_tensor(val_df_present['path'], dtype=tf.string)
+    val_labels = tf.convert_to_tensor(val_df_present['label'].values, dtype=tf.int32)
 
     train_ds = build_dataset(train_paths, train_labels)
-
     val_ds = build_dataset(val_paths, val_labels)
 
     save_records(get_val_dataset_path(pl), val_ds)
