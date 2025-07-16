@@ -85,22 +85,39 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
     Return the first existing file matching <file_id> plus one of the accepted extensions inside <img_dir>.
     If nothing exists, return None.
     '''
-    # NOTE: we might be able to just use .jpg
-    for ext in IMG_EXTS:
-        canidate = os.path.join(img_dir, file_id + ext)
-        if os.path.isfile(canidate):
-            return canidate
+
+    canidate = os.path.join(img_dir, file_id + '.jpg')
+    if os.path.isfile(canidate):
+        return canidate
     return None
+
+
+
+    # NOTE: we might be able to just use .jpg
+    # for ext in IMG_EXTS:
+    #     # canidate = os.path.join(img_dir, file_id + ext)
+    #     canidate = os.path.join(img_dir, file_id + '.jpg')
+    # 
+    #     if os.path.isfile(canidate):
+    #         return canidate
+    # return None
 
 
 def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     # img_dir = get_images_dir(pl) # this does not work
     img_dir = os.path.join(get_data_dir(), pl.value, 'images')
 
-    df['path'] = df['_ids'].apply(lambda x: resolve_path(img_dir, x))
+    df['path'] = df['_id'].apply(lambda x: resolve_path(img_dir, x))
 
-    present = df.dropna(subset=['path']).reset_index(drop=True)
+    present = df[df['path'].notna()].reset_index(drop=True)
     missing = df[df['path'].isna()].reset_index(drop=True)
+   
+    print('PRESENT')
+    print(present)
+
+    print('MISSING')
+    print(missing)
+
     return present, missing
 
 
@@ -121,23 +138,13 @@ def generate_datasets(pl: PLS):
 
     df = pd.DataFrame({
         'label': range(0, len(_ids)),
-        '_ids': _ids,
+        '_id': _ids,
         })
 
     # resolve missing images
     df_present, df_missing = process_df(pl, df)
 
-    # Do stratified split only on present data
-    val_mask = (
-        df_present
-        .groupby('label', group_keys=False)
-        .sample(n=1, random_state=42)
-        # .reset_index(drop=True)
-        .index
-    )
-    val_df_present = df_present.loc[val_mask].reset_index(drop=True)
-    train_df_present = df_present.drop(val_df_present.index).reset_index(drop=True)
-    
+    # ========================================== 
     # make note of the missing ids for later
     missing_out = os.path.join(get_data_dir(), pl.value, f'missing_{pl.value}.csv')
     # pd.concat([train_df_missing, val_df_missing]).to_csv(missing_out, index=False)
@@ -147,34 +154,27 @@ def generate_datasets(pl: PLS):
             'their IDs are saved to %s',
             pl.name, len(df_missing), missing_out
             )
+    # ========================================== 
 
     # Create file paths
-    train_paths = tf.convert_to_tensor(train_df_present['path'], dtype=tf.string)
-    train_labels = tf.convert_to_tensor(train_df_present['label'].values, dtype=tf.int32)
+    paths = tf.convert_to_tensor(df_present['path'], dtype=tf.string)
+    labels = tf.convert_to_tensor(df_present['label'].values, dtype=tf.int32)
 
-    val_paths = tf.convert_to_tensor(val_df_present['path'], dtype=tf.string)
-    val_labels = tf.convert_to_tensor(val_df_present['label'].values, dtype=tf.int32)
-
-    train_ds = build_dataset(train_paths, train_labels)
-    val_ds = build_dataset(val_paths, val_labels)
-
+    ds = build_dataset(paths, labels)
     
-    print("Total train elements:", sum(1 for _ in train_ds))
-    print("Total val_ds elements:", sum(1 for _ in val_ds))
-
-    save_records(get_train_dataset_path(pl), train_ds)
-    save_records(get_val_dataset_path(pl), val_ds)
-
+    save_records(get_train_dataset_path(pl), ds)
+    
     # val_ds = load_records('val_ds.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
     # 
     # train_ds = load_records('train_ds.tfrecord', batch_size=32, shuffle=True, augment=True, multiply=10)
 
-    return train_ds, val_ds
+    return ds 
 
 ###############
 #   records   #
 ###############
 
+# NOTE: Good
 def serialize_example(image, label):
     feature = {
             'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.io.serialize_tensor(image).numpy()])),
@@ -183,6 +183,7 @@ def serialize_example(image, label):
     example = tf.train.Example(features=tf.train.Features(feature=feature))
     return example.SerializeToString()
 
+# NOTE: untested
 def parse_example(example_proto):
     feature_description = {
         'image': tf.io.FixedLenFeature([], tf.string),
@@ -195,11 +196,10 @@ def parse_example(example_proto):
     label = parsed_example['label']
     return image, label
 
+# 
 def save_records(tfrecord_path, dataset):
     count = 0
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
-        it = dataset.enumerate()
-
         for image, label in dataset:
             try:
                 serialized = serialize_example(image, label)
@@ -210,6 +210,7 @@ def save_records(tfrecord_path, dataset):
                 continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
+# NOTE: untested
 def load_records(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
     parsed_dataset = raw_dataset.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
