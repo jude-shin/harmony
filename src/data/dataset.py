@@ -112,15 +112,10 @@ def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def generate_datasets(pl: PLS):
     '''
-    Generates a training and validataion dataset.
-
-    Saves the dataset
+    Saves the dataset to disk.
 
     Args:
     Returns:
-        tuple[tf.data.Dataset, tf.data.Dataset]: a tuple containing:
-            - a training dataset
-            - a validation dataset
     '''
 
     _ids = load_ids(pl, 'master', 'rb') 
@@ -152,17 +147,16 @@ def generate_datasets(pl: PLS):
     ds = build_dataset(paths, labels)
     
     save_record(get_record_path(pl), ds)
-    
-    val_ds = load_record('record.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
-    train_ds = load_record('record.tfrecord', batch_size=32, shuffle=True, augment=True, multiply=10)
 
-    return val_ds, train_ds
+    # usage
+    # val_ds = load_record('record.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
+    # train_ds = load_record('record.tfrecord', batch_size=32, shuffle=True, augment=True, multiply=10)
+
 
 ###############
 #   records   #
 ###############
 
-# NOTE: Good
 def serialize_example(image, label):
     feature = {
             'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.io.serialize_tensor(image).numpy()])),
@@ -171,7 +165,6 @@ def serialize_example(image, label):
     example = tf.train.Example(features=tf.train.Features(feature=feature))
     return example.SerializeToString()
 
-# NOTE: untested
 def parse_example(example_proto):
     feature_description = {
         'image': tf.io.FixedLenFeature([], tf.string),
@@ -184,7 +177,6 @@ def parse_example(example_proto):
     label = parsed_example['label']
     return image, label
 
-#  NOTE: Good
 def save_record(tfrecord_path, dataset):
     count = 0
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
@@ -198,7 +190,6 @@ def save_record(tfrecord_path, dataset):
                 continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
-# NOTE: untested
 def load_record(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
     parsed_dataset = raw_dataset.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
