@@ -11,7 +11,7 @@ from utils.file_handler.pickle import load_ids
 
 IMG_WIDTH=413
 IMG_HEIGHT=312
-IMG_EXTS=('.jpg', '.png')
+IMG_EXTS=('.jpg')
 
 ###########################################################
 #   preprocessing the images to be stored in a TFRecord   #
@@ -75,7 +75,10 @@ def augment(image, label):
 
 def build_dataset(paths, labels):
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
-    return ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE, deterministic=False)
+
+    ds = ds.apply(tf.data.Dataset.ignore_errors)
+    return ds
 
 def resolve_path(img_dir: str, file_id: str) -> str | None:
     '''
@@ -125,12 +128,14 @@ def generate_datasets(pl: PLS):
     df_present, df_missing = process_df(pl, df)
 
     # Do stratified split only on present data
-    val_df_present = (
+    val_mask = (
         df_present
         .groupby('label', group_keys=False)
         .sample(n=1, random_state=42)
-        .reset_index(drop=True)
+        # .reset_index(drop=True)
+        .index
     )
+    val_df_present = df_present.loc[val_mask].reset_index(drop=True)
     train_df_present = df_present.drop(val_df_present.index).reset_index(drop=True)
     
     # make note of the missing ids for later
@@ -153,8 +158,12 @@ def generate_datasets(pl: PLS):
     train_ds = build_dataset(train_paths, train_labels)
     val_ds = build_dataset(val_paths, val_labels)
 
-    save_records(get_val_dataset_path(pl), val_ds)
+    
+    print("Total train elements:", sum(1 for _ in train_ds))
+    print("Total val_ds elements:", sum(1 for _ in val_ds))
+
     save_records(get_train_dataset_path(pl), train_ds)
+    save_records(get_val_dataset_path(pl), val_ds)
 
     # val_ds = load_records('val_ds.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
     # 
@@ -189,13 +198,16 @@ def parse_example(example_proto):
 def save_records(tfrecord_path, dataset):
     count = 0
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
+        it = dataset.enumerate()
+
         for image, label in dataset:
             try:
                 serialized = serialize_example(image, label)
                 writer.write(serialized)
                 count += 1
             except Exception as e:
-                logging.error('Failed to serialize example: %s', e)
+                logging.error("Example %d failed: %s", n.numpy(), e)
+                continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
 def load_records(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):

@@ -12,7 +12,7 @@ logging.getLogger().setLevel(20)
 if __name__ == '__main__':
     st = time.time()
 
-    collect(PLS.LORCANA)
+    # collect(PLS.LORCANA)
     generate_datasets(PLS.LORCANA)
 
     logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
