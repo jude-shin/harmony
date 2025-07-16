@@ -14,21 +14,21 @@ class PreprocessingLayer(layers.Layer):
     This layer is active in both training and inference modes.
     '''
 
-    def __init__(self, target_size=(224, 224), rescale=1./255, mean=0.0, std=1.0, **kwargs):
+    def __init__(self, target_size=(224, 224), rescale=1./255, **kwargs):
         super().__init__(trainable=False, **kwargs)
         self.target_size = target_size
         self.rescale = rescale
-        self.mean = mean
-        self.std = std
+        # self.mean = mean
+        # self.std = std
 
         self.resize_layer = layers.Resizing(*self.target_size)
         self.rescale_layer = layers.Rescaling(self.rescale)
-        self.normalize_layer = layers.Normalization(mean=self.mean, variance=self.std**2)
+        # self.normalize_layer = layers.Normalization(mean=self.mean, variance=self.std**2)
 
     def call(self, inputs):
         x = self.resize_layer(inputs)
         x = self.rescale_layer(x)
-        x = self.normalize_layer(x)
+        # x = self.normalize_layer(x)
         return x
 
 
@@ -187,9 +187,6 @@ class CnnModel1(Model):
 
         self.pool = layers.GlobalAveragePooling2D()
         self.output_layer = layers.Dense(num_classes, activation='softmax')
-
-    def build(self, input_shape):
-        super().build(input_shape)
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)

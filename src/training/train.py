@@ -27,23 +27,32 @@ def train(pl: PLS):
     logging.info('Loading Model...')
 
     # create object 
-    model = CnnModel1([312, 413], 993)
+    model = CnnModel1([312, 413], 994) # (NOT 993 because one of them were skipped, but we still want that entry...)
 
-    # normalize layers
-    model.preprocess.normalize_layer.adapt(train_ds.map(lambda x, y: x))
+    # # normalize layers
+    # model.preprocess.normalize_layer.adapt(train_ds.map(lambda x, y: x))
 
     # build the layers
     model(tf.zeros([1, 312, 413, 3]))
 
 
+    # model.compile(
+    #         optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+    #         loss=keras.losses.BinaryCrossentropy(),
+    #         metrics=[
+    #             keras.metrics.BinaryAccuracy(),
+    #             keras.metrics.FalseNegatives(),
+    #             ],
+    #         )
+
     model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=1e-3),
-            loss=keras.losses.BinaryCrossentropy(),
-            metrics=[
-                keras.metrics.BinaryAccuracy(),
-                keras.metrics.FalseNegatives(),
-                ],
-            )
+        optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+        loss=keras.losses.SparseCategoricalCrossentropy(),
+        metrics=[keras.metrics.SparseCategoricalAccuracy()]
+    )
+
+
+
     logging.info('Finished Loading Model!')
 
     # (3) model.fit with the custom callbacks
