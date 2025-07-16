@@ -61,7 +61,7 @@ def augment_sharpness(image, label):
 
 # other options for composing all of the augmentations 
 # @tf.function
-def augment(image, label):
+def augment_all(image, label):
     fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_sharpness]
 
     for fn in fns:
@@ -151,13 +151,12 @@ def generate_datasets(pl: PLS):
 
     ds = build_dataset(paths, labels)
     
-    save_records(get_record_path(pl), ds)
+    save_record(get_record_path(pl), ds)
     
-    # val_ds = load_records('val_ds.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
-    # 
-    # train_ds = load_records('train_ds.tfrecord', batch_size=32, shuffle=True, augment=True, multiply=10)
+    val_ds = load_record('record.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
+    train_ds = load_record('record.tfrecord', batch_size=32, shuffle=True, augment=True, multiply=10)
 
-    return ds 
+    return val_ds, train_ds
 
 ###############
 #   records   #
@@ -185,8 +184,8 @@ def parse_example(example_proto):
     label = parsed_example['label']
     return image, label
 
-# 
-def save_records(tfrecord_path, dataset):
+#  NOTE: Good
+def save_record(tfrecord_path, dataset):
     count = 0
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
         for image, label in dataset:
@@ -200,14 +199,14 @@ def save_records(tfrecord_path, dataset):
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
 # NOTE: untested
-def load_records(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
+def load_record(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
     parsed_dataset = raw_dataset.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
     if augment and multiply > 1:
         # Repeat and augment each image N times
         def expand(image, label):
-            images = [augment(image, label)[0] for _ in range(multiply)]
+            images = [augment_all(image, label)[0] for _ in range(multiply)]
             labels = [label for _ in range(multiply)]
             return tf.data.Dataset.from_tensor_slices((images, labels))
 
