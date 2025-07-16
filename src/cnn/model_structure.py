@@ -157,7 +157,7 @@ def makeCnnSeq(filters, dropout_rate):
         ResidualBlock(filters),
         SEBlock(),
         DropBlock(rate=dropout_rate)
-        ]),
+        ])
 
 class DropBlock(layers.Layer):
     def __init__(self, rate=0.3, **kwargs):
@@ -187,6 +187,9 @@ class CnnModel1(Model):
 
         self.pool = layers.GlobalAveragePooling2D()
         self.output_layer = layers.Dense(num_classes, activation='softmax')
+
+    def build(self, input_shape):
+        super().build(input_shape)
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
