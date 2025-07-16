@@ -74,7 +74,7 @@ class ConvBlock(layers.Layer):
         self.conv = layers.Conv2D(filters, kernel_size, padding='same')
         self.bn = layers.BatchNormalization()
         self.act = layers.ReLU() # could be LeakyReLu
-        self.pool = Layers.MaxPooling2D(pool_size)
+        self.pool = layers.MaxPooling2D(pool_size)
 
     def call(self, inputs, training=False):
         x = self.conv(inputs)
