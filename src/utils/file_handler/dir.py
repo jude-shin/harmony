@@ -26,10 +26,10 @@ def get_saved_model_dir() -> str:
     return get_dir(SAVED_MODEL_DIR_ENV)
 
 def get_val_dataset_path(pl: PLS) -> str:
-    return os.path.join(get_data_dir(), pl.value, TRAIN_DATASET_PATH_ENV)
+    return os.path.join(get_data_dir(), pl.value, VAL_DATASET_PATH_ENV)
 
 def get_train_dataset_path(pl: PLS) -> str:
-    return os.path.join(get_data_dir(), pl.value, VAL_DATASET_PATH_ENV)
+    return os.path.join(get_data_dir(), pl.value, TRAIN_DATASET_PATH_ENV)
 
 def get_images_dir(pl: PLS) -> str:
     return os.path.join(get_data_dir(), pl.value, IMAGES_PATH_ENV)
