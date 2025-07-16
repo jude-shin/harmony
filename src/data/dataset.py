@@ -11,7 +11,7 @@ from utils.file_handler.pickle import load_ids
 
 IMG_WIDTH=413
 IMG_HEIGHT=312
-IMG_EXTS=('.jpg')
+IMG_EXTS=['.jpg']
 
 ###########################################################
 #   preprocessing the images to be stored in a TFRecord   #
@@ -86,21 +86,14 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
     If nothing exists, return None.
     '''
 
-    canidate = os.path.join(img_dir, file_id + '.jpg')
-    if os.path.isfile(canidate):
-        return canidate
-    return None
-
-
-
     # NOTE: we might be able to just use .jpg
-    # for ext in IMG_EXTS:
-    #     # canidate = os.path.join(img_dir, file_id + ext)
-    #     canidate = os.path.join(img_dir, file_id + '.jpg')
-    # 
-    #     if os.path.isfile(canidate):
-    #         return canidate
-    # return None
+    for ext in IMG_EXTS:
+        canidate = os.path.join(img_dir, file_id + ext)
+        # canidate = os.path.join(img_dir, file_id + '.jpg')
+    
+        if os.path.isfile(canidate):
+            return canidate
+    return None
 
 
 def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
