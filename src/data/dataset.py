@@ -5,7 +5,7 @@ import logging
 import tensorflow as tf
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.file_handler.dir import get_train_dataset_path, get_val_dataset_path, get_data_dir, get_images_dir
+from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path
 
 from utils.file_handler.pickle import load_ids 
 
@@ -86,10 +86,8 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
     If nothing exists, return None.
     '''
 
-    # NOTE: we might be able to just use .jpg
     for ext in IMG_EXTS:
         canidate = os.path.join(img_dir, file_id + ext)
-        # canidate = os.path.join(img_dir, file_id + '.jpg')
     
         if os.path.isfile(canidate):
             return canidate
@@ -97,19 +95,17 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
 
 
 def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # img_dir = get_images_dir(pl) # this does not work
-    img_dir = os.path.join(get_data_dir(), pl.value, 'images')
+    img_dir = get_images_dir(pl) # this does not work
+    # img_dir = os.path.join(get_data_dir(), pl.value, 'images')
 
     df['path'] = df['_id'].apply(lambda x: resolve_path(img_dir, x))
 
     present = df[df['path'].notna()].reset_index(drop=True)
     missing = df[df['path'].isna()].reset_index(drop=True)
-   
-    print('PRESENT')
-    print(present)
 
-    print('MISSING')
-    print(missing)
+
+    logging.info('Number Present: %d', len(present))
+    logging.info('Number Missing: %d', len(missing))
 
     return present, missing
 
@@ -155,7 +151,7 @@ def generate_datasets(pl: PLS):
 
     ds = build_dataset(paths, labels)
     
-    save_records(get_train_dataset_path(pl), ds)
+    save_records(get_record_path(pl), ds)
     
     # val_ds = load_records('val_ds.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
     # 
