@@ -40,29 +40,47 @@ def load_and_preprocess(path, label):
 
 # @tf.function
 def augment_zoom_rotate(image, label):
+    # TODO
+    # slightly shrink the image and rotate it within the original bounds
+    # this might not be needed
+    return image, label
+
+# @tf.function
+def augment_rotation(image, label):
+    # TODO
+    # if the image is flipped top to bottom, you also need to flip it left to right (to simulate 180 rotation)
+    # image = tf.image.flip_up_down(image)
     return image, label
 
 # @tf.function
 def augment_blur(image, label):
+    image = tf.image.random_jpeg_quality(image, 75, 95)
     return image, label
 
 # @tf.function
 def augment_saturation(image, label):
-    image = tf.image.stateless_random_saturation(image, 0.5, 1, (1, 2))
+    image = tf.image.random_saturation(image, 0.5, 1)
     return image, label
 
 # @tf.function
 def augment_contrast(image, label):
+    image = tf.image.random_contrast(image, 0.2, 0.5)
     return image, label
 
 # @tf.function
-def augment_sharpness(image, label):
+def augment_hue(image, label):
+    image = tf.image.random_hue(image, 0.2)
+    return image, label
+
+# @tf.function
+def augment_brightness(image, label):
+    image = tf.image.random_brightness(image, 0.2)
     return image, label
 
 # other options for composing all of the augmentations 
 # @tf.function
 def augment_all(image, label):
-    fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_sharpness]
+    fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_hue, augment_brightness, augment_rotation]
 
     for fn in fns:
         image, label = fn(image, label)
