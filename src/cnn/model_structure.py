@@ -3,11 +3,13 @@ import logging
 # from tf.keras import layers, models
 
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, models, Model, Sequential # there is going to be some funky stuff with these imports
 
+# there is going to be some funky stuff with these imports
+from tensorflow.keras import layers, models, Model, Sequential, regularizers
 
-# LAYERS
+##############
+#   LAYERS   #
+##############
 class PreprocessingLayer(layers.Layer):
     '''
     A non-trainable preprocessing layer that handles image resizing, rescaling, and normalization.
@@ -63,8 +65,9 @@ class AugmentLayer(layers.Layer):
         '''
         self.custom_augmentations.append(layer)
 
-
-# BLOCKS
+##############
+#   BLOCKS   #
+##############
 class ConvBlock(layers.Layer):
     '''
     A modular convolutional block: Conv2D -> BatchNorm -> ReLU -> MaxPool
@@ -151,13 +154,6 @@ class GlobalPoolBlock(layers.Layer):
         return self.output_layer(x)
 
 
-def makeCnnSeq(filters, dropout_rate):
-    return Sequential([
-        ConvBlock(filters),
-        ResidualBlock(filters),
-        SEBlock(),
-        DropBlock(rate=dropout_rate)
-        ])
 
 class DropBlock(layers.Layer):
     def __init__(self, rate=0.3, **kwargs):
@@ -168,8 +164,53 @@ class DropBlock(layers.Layer):
         return self.drop(inputs, training=training)
 
 
+class ConvBnLeakyBlock(layers.Layer):
+    '''
+    Conv2D + BatchNorm + LeakyReLU + MaxPool, with L2 regularization.
+    '''
+    def __init__(self, filters, kernel_size=3, pool_size=2, l2=0.01, **kwargs):
+        super().__init__(**kwargs)
+        self.conv = layers.Conv2D(filters, kernel_size, padding='same',
+                                  kernel_regularizer=regularizers.l2(l2))
+        self.bn = layers.BatchNormalization()
+        self.act = layers.LeakyReLU(negative_slope=0.01)
+        self.pool = layers.MaxPooling2D(pool_size)
 
-# MODELS
+    def call(self, inputs, training=False):
+        x = self.conv(inputs)
+        x = self.bn(x, training=training)
+        x = self.act(x)
+        return self.pool(x)
+
+
+class DenseDropoutBlock(layers.Layer):
+    '''
+    Dense + Dropout with L2 regularization, for classifier head.
+    '''
+    def __init__(self, units, dropout_rate=0.5, l2=0.01, **kwargs):
+        super().__init__(**kwargs)
+        self.dense = layers.Dense(units, activation='relu', kernel_regularizer=regularizers.l2(l2))
+        self.dropout = layers.Dropout(dropout_rate)
+
+    def call(self, inputs, training=False):
+        x = self.dense(inputs)
+        return self.dropout(x, training=training)
+
+####################
+#   BLOCK MACROS   #
+####################
+
+def makeCnnSeq(filters, dropout_rate):
+    return Sequential([
+        ConvBlock(filters),
+        ResidualBlock(filters),
+        SEBlock(),
+        DropBlock(rate=dropout_rate)
+        ])
+
+#######################
+#   MODEL TEMPLATES   #
+#######################
 class CnnModel1(Model):
     '''
     Full model: Preprocessing -> Augmentation -> ConvBlocks -> FlattenBlock
@@ -199,3 +240,34 @@ class CnnModel1(Model):
         return self.output_layer(x)
 
 
+class CnnModelClassic15(Model):
+    '''
+    Model that matches the "model_classic_15" architecture using reusable blocks.
+    '''
+    def __init__(self, input_shape, num_classes, **kwargs):
+        super().__init__(**kwargs)
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.augment = AugmentLayer()
+
+        self.blocks = [
+                ConvBnLeakyBlock(40), 
+                ConvBnLeakyBlock(80), 
+                ConvBnLeakyBlock(160), 
+                ConvBnLeakyBlock(320), 
+                ConvBnLeakyBlock(640), 
+                ]
+
+        self.flatten = layers.Flatten()
+        self.dense_dropout = DenseDropoutBlock(640, dropout_rate=0.5)
+        self.output_layer = layers.Dense(num_classes, activation='softmax')
+
+    def call(self, inputs, training=False):
+        x = self.preprocess(inputs)
+        x = self.augment(x, training=training)
+        
+        for block in self.blocks:
+            x = block(x, training=training)
+
+        x = self.flatten(x)
+        x = self.dense_dropout(x, training=training)
+        return self.output_layer(x)
