@@ -275,12 +275,18 @@ def load_record(tfrecord_path, batch_size=32, shuffle=False, augment=False, mult
 
     if augment and multiply > 1:
         # Repeat and augment each image N times
-        def expand(image, label):
-            images = [augment_all(image, label)[0] for _ in range(multiply)]
-            labels = [label for _ in range(multiply)]
-            return tf.data.Dataset.from_tensor_slices((images, labels))
 
-        dataset = parsed_dataset.flat_map(expand)
+        parsed_dataset = parsed_dataset.map(
+                augment_all,  # one random augmentation per sample per epoch
+                num_parallel_calls=tf.data.AUTOTUNE
+                ).repeat(multiply)    
+
+        # def expand(image, label):
+        #     images = [augment_all(image, label)[0] for _ in range(multiply)]
+        #     labels = [label for _ in range(multiply)]
+        #     return tf.data.Dataset.from_tensor_slices((images, labels))
+
+        # dataset = parsed_dataset.flat_map(expand)
     elif augment and multiply == 1:
         dataset = parsed_dataset.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
     else:
