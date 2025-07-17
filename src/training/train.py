@@ -7,7 +7,7 @@ from tensorflow.keras import optimizers, losses, metrics
 # from training.callbacks import ValidationAccuracyThresholdCallback
 from data.dataset import load_record
 from cnn.model_structure import CnnModel1
-from utils.file_handler.dir import get_record_path
+from utils.file_handler.dir import get_record_path 
 from utils.product_lines import PRODUCTLINES as PLS
 
 from training.callbacks import get_callbacks
@@ -29,13 +29,13 @@ def train(pl: PLS):
     logging.info('Loading Model...')
 
     # create object 
-    model = CnnModel1([312, 413], 994) # (NOT 993 because one of them were skipped, but we still want that entry...)
+    model = CnnModel1([437, 313], 994) # (NOT 993 because one of them were skipped, but we still want that entry...)
     
     # build the layers
-    model(tf.zeros([1, 312, 413, 3]))
+    model(tf.zeros([1, 437, 313, 3]))
 
     model.compile(
-        optimizer=optimizers.Adam(learning_rate=1e-3),
+        optimizer=optimizers.Adam(learning_rate=0.0003, beta_1=0.09, beta_2=0.999),
         loss=losses.SparseCategoricalCrossentropy(),
         metrics=[metrics.SparseCategoricalAccuracy()]
     )
@@ -49,6 +49,8 @@ def train(pl: PLS):
               validation_data=val_ds, 
               callbacks=get_callbacks()
               )
+
+    model.save('NEWMODEL.keras')
 
 
 def retrain():

@@ -9,8 +9,8 @@ from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path
 
 from utils.file_handler.pickle import load_ids 
 
-IMG_WIDTH=413
-IMG_HEIGHT=312
+IMG_WIDTH=313
+IMG_HEIGHT=437
 IMG_EXTS=['.jpg']
 
 ###########################################################
