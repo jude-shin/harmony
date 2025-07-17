@@ -55,34 +55,16 @@ def train(pl: PLS):
     logging.info('Finished Loading Validation Dataset!')
    
 
-
-
-
-
-
-
     # =============================
+    # TESTING
     tiny = train_ds.take(16)
-    model = CnnModel1([437, 313], 993)
+    model = CnnModel1([437, 313], 994) # NOTE: there are 994 full classes, but one of them has a missing download
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
     model.fit(tiny.repeat(), epochs=200)
     return
     # =============================
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     #########################
