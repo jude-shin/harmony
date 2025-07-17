@@ -74,7 +74,7 @@ def augment_skew(image, label):
         output_shape=tf.shape(image)[1:3],
         interpolation="BILINEAR",
         fill_mode="CONSTANT",
-        fill_value=random.uniform(0.0, 255.0),  # TODO: make this a random color
+        fill_value=random.uniform[(0.0, 255.0), (0.0, 255.0), (0.0, 255.0)] # TODO: make this a random color
     )
 
     image_skewed = tf.squeeze(image_skewed, 0)
