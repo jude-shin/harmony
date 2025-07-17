@@ -51,7 +51,7 @@ class ClearMemory(callbacks.Callback):
 def get_callbacks():
     # defines when the model will stop training
     accuracy_threshold_callback = EarlyStoppingByValThreshold(
-            monitor='val_sparse_catetgorical_accuracy',
+            monitor='val_sparse_categorical_accuracy',
             threshold=0.98,
             )
 
@@ -78,4 +78,4 @@ def get_callbacks():
 
     clear_memory_callback = ClearMemory()
 
-    return [accuracy_threshold_callback, reduce_lr_callback]
+    return [accuracy_threshold_callback]
