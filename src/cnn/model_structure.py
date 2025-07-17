@@ -1,6 +1,5 @@
 import logging
 
-# from tf.keras import layers, models
 
 import tensorflow as tf
 
@@ -16,7 +15,7 @@ class PreprocessingLayer(layers.Layer):
     This layer is active in both training and inference modes.
     '''
 
-    def __init__(self, target_size=(224, 224), rescale=1./255, **kwargs):
+    def __init__(self, target_size, rescale, **kwargs):
         super().__init__(trainable=False, **kwargs)
         self.target_size = target_size
         self.rescale = rescale
@@ -217,7 +216,7 @@ class CnnModel1(Model):
     '''
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2], rescale=1./255)
         self.augment = AugmentLayer()
 
         self.blocks = [
@@ -246,7 +245,7 @@ class CnnModelClassic15(Model):
     '''
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2], rescale=1./255)
         self.augment = AugmentLayer()
 
         self.blocks = [
