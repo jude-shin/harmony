@@ -48,6 +48,13 @@ def augment_zoom_rotate(image, label):
     return image, label
 
 # @tf.function
+def augment_skew(image, label):
+    # TODO
+    # this would be cool
+    # skewing against one of the 4 axis
+    return image, label
+
+# @tf.function
 def augment_rotation(image, label):
     if random.choice([True, False]):
         image = tf.image.flip_up_down(image)
@@ -56,24 +63,25 @@ def augment_rotation(image, label):
 
 # @tf.function
 def augment_blur(image, label):
-    # 3x3 Gaussian kernel, sigma=1
-    kernel_vals = [[1., 2., 1.],
-                   [2., 4., 2.],
-                   [1., 2., 1.]]
-    kernel = tf.constant(kernel_vals, dtype=tf.float32)
-    kernel = kernel / tf.reduce_sum(kernel)
-    kernel = tf.reshape(kernel, [3, 3, 1, 1])
-    kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
+    for _ in range(random.randint(3, 4)):
+        # 3x3 Gaussian kernel, sigma=1
+        kernel_vals = [[1., 2., 1.],
+                       [2., 4., 2.],
+                       [1., 2., 1.]]
+        kernel = tf.constant(kernel_vals, dtype=tf.float32)
+        kernel = kernel / tf.reduce_sum(kernel)
+        kernel = tf.reshape(kernel, [3, 3, 1, 1])
+        kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
 
-    # Prepare image for convolution
-    img = tf.expand_dims(tf.cast(image, tf.float32), axis=0)
-    blurred = tf.nn.depthwise_conv2d(img, kernel, strides=[1,1,1,1], padding='SAME')
-    blurred = tf.squeeze(blurred, axis=0)
-    blurred = tf.cast(blurred, image.dtype)
-    
-    # Randomly apply blur
-    do_blur = tf.random.uniform([]) > 0.5
-    image = tf.cond(do_blur, lambda: blurred, lambda: image)
+        # Prepare image for convolution
+        img = tf.expand_dims(tf.cast(image, tf.float32), axis=0)
+        blurred = tf.nn.depthwise_conv2d(img, kernel, strides=[1,1,1,1], padding='SAME')
+        blurred = tf.squeeze(blurred, axis=0)
+        blurred = tf.cast(blurred, image.dtype)
+        
+        # Randomly apply blur
+        do_blur = tf.random.uniform([]) > 0.5
+        image = tf.cond(do_blur, lambda: blurred, lambda: image)
     return image, label
 
 # @tf.function
