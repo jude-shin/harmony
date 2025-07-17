@@ -16,6 +16,9 @@ from utils.time import get_current_time
 from training.callbacks import get_callbacks
 
 
+from cnn.sequential_models import model_classic_1, model_classic_15
+
+
 def train(pl: PLS):
     ###########################
     #   keras_models verson   #
@@ -35,6 +38,7 @@ def train(pl: PLS):
     os.mkdir(keras_model_dir)
 
 
+
     ############################
     #   Loading the Datasets   #
     ############################
@@ -43,20 +47,52 @@ def train(pl: PLS):
     # training data should be shuffled and augmented
     # validation can be augmented or shuffled
     logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(get_record_path(pl), batch_size=128, shuffle=True, augment=True, multiply=150)
+    train_ds = load_record(get_record_path(pl), batch_size=16, shuffle=True, augment=True, multiply=5)
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=128, shuffle=False, augment=False, multiply=1)
+    val_ds = load_record(get_record_path(pl), batch_size=16, shuffle=False, augment=False, multiply=1)
     logging.info('Finished Loading Validation Dataset!')
    
+
+
+
+
+
+
+
+    # # =============================
+    # tiny = train_ds.take(16)
+    # model = CnnModelClassic15(437, 313, 994)
+    # model.compile(optimizer='adam',
+    #               loss='sparse_categorical_crossentropy',
+    #               metrics=['accuracy'])
+    # model.fit(tiny.repeat(), epochs=200)
+    # return
+    # # =============================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     #########################
     #   Loading the Model   #
     #########################
     # load the skeleton from cnn/model_structure.py
     # compile the model
     logging.info('Loading Model...')
-    keras_model = CnnModelClassic15([437, 313], 994)
+    # keras_model = CnnModelClassic15([437, 313], 994)
+    keras_model = model_classic_15(437, 313, 994)
     
     # build the layers
     keras_model(tf.zeros([1, 437, 313, 3]))
@@ -88,8 +124,4 @@ def train(pl: PLS):
 def retrain():
     # call train() with small learning for fine tuning
     pass
-
-
-
-
 
