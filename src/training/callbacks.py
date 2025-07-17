@@ -18,14 +18,27 @@ class CsvLoggerCallback(callbacks.Callback):
                 writer.writerow(["epoch"] + list(logs.keys()))
             writer.writerow([epoch] + list(logs.values()))
 
-class ValidationAccuracyThresholdCallback(callbacks.Callback):
-    def __init__(self, threshold):
-        super(ValidationAccuracyThresholdCallback, self).__init__()
+class EarlyStoppingByValThreshold(callbacks.Callback):
+    def __init__(self, monitor='val_accuracy', threshold=0.95, mode='greater'):
+        super(EarlyStoppingByValThreshold, self).__init__()
+        self.monitor = monitor
         self.threshold = threshold
+        if mode not in ['greater', 'less']:
+            raise ValueError("mode must be 'greater' or 'less'")
+        self.mode = mode
 
     def on_epoch_end(self, epoch, logs=None):
-        if logs.get("val_accuracy") >= self.threshold:
+        logs = logs or {}
+        current = logs.get(self.monitor)
+        if current is None:
+            print(f"Warning: Metric '{self.monitor}' is not available. Available metrics: {list(logs.keys())}")
+            return
+        
+        if (self.mode == 'greater' and current >= self.threshold) or \
+           (self.mode == 'less' and current <= self.threshold):
+            print(f"\nEpoch {epoch + 1}: Reached {self.monitor} threshold of {self.threshold}. Stopping training.")
             self.model.stop_training = True
+
 
 
 class ClearMemory(callbacks.Callback):
@@ -37,7 +50,7 @@ class ClearMemory(callbacks.Callback):
 
 def get_callbacks():
     # defines when the model will stop training
-    accuracy_threshold_callback = ValidationAccuracyThresholdCallback(
+    accuracy_threshold_callback = EarlyStoppingByValThreshold(
         threshold=0.98)
 
     # # saves a snapshot of the model while it is training
