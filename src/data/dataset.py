@@ -2,8 +2,6 @@ import pandas as pd
 import os
 import logging
 
-import random
-
 import tensorflow as tf
 
 from utils.product_lines import PRODUCTLINES as PLS
@@ -75,42 +73,36 @@ def augment_skew(image, label):
 
 # @tf.function
 def augment_rotation(image, label):
-    if random.choice([True, False]):
+    if tf.random.uniform([]) > 0.5:
         image = tf.image.flip_up_down(image)
         image = tf.image.flip_left_right(image)
     return image, label
 
 # @tf.function
 def augment_blur(image, label):
-    for _ in range(random.randint(1, 3)): # this 
-        # 3x3 Gaussian kernel, sigma=1
-        # kernel_vals = [[1., 2., 1.],
-        #                [2., 4., 2.],
-        #                [1., 2., 1.]]
+    kernel_vals = [
+        [1.,  4.,  6.,  4., 1.],
+        [4., 16., 24., 16., 4.],
+        [6., 24., 36., 24., 6.],
+        [4., 16., 24., 16., 4.],
+        [1.,  4.,  6.,  4., 1.]
+    ]
 
-        kernel_vals = [
-            [1.,  4.,  6.,  4., 1.],
-            [4., 16., 24., 16., 4.],
-            [6., 24., 36., 24., 6.],
-            [4., 16., 24., 16., 4.],
-            [1.,  4.,  6.,  4., 1.]
-        ]
+    kernel = tf.constant(kernel_vals, dtype=tf.float32)
+    kernel = kernel / tf.reduce_sum(kernel)
+    # kernel = tf.reshape(kernel, [3, 3, 1, 1])
+    kernel = tf.reshape(kernel, [5, 5, 1, 1])
+    kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
 
-        kernel = tf.constant(kernel_vals, dtype=tf.float32)
-        kernel = kernel / tf.reduce_sum(kernel)
-        # kernel = tf.reshape(kernel, [3, 3, 1, 1])
-        kernel = tf.reshape(kernel, [5, 5, 1, 1])
-        kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
-
-        # Prepare image for convolution
-        img = tf.expand_dims(tf.cast(image, tf.float32), axis=0)
-        blurred = tf.nn.depthwise_conv2d(img, kernel, strides=[1,1,1,1], padding='SAME')
-        blurred = tf.squeeze(blurred, axis=0)
-        blurred = tf.cast(blurred, image.dtype)
-        
-        # Randomly apply blur
-        do_blur = tf.random.uniform([]) > 0.5
-        image = tf.cond(do_blur, lambda: blurred, lambda: image)
+    # Prepare image for convolution
+    img = tf.expand_dims(tf.cast(image, tf.float32), axis=0)
+    blurred = tf.nn.depthwise_conv2d(img, kernel, strides=[1,1,1,1], padding='SAME')
+    blurred = tf.squeeze(blurred, axis=0)
+    blurred = tf.cast(blurred, image.dtype)
+    
+    # Randomly apply blur
+    do_blur = tf.random.uniform([]) > 0.5
+    image = tf.cond(do_blur, lambda: blurred, lambda: image)
     return image, label
 
 # @tf.function
@@ -207,10 +199,10 @@ def generate_datasets(pl: PLS):
     df_present = df[df['path'].notna()].reset_index(drop=True)
     df_missing = df[df['path'].isna()].reset_index(drop=True)
 
-    labels = df_present['label']
-    print("Num classes:", labels.nunique())
-    print("Min label:", labels.min(), "Max label:", labels.max())
-    print("Label dtype:", labels.dtype)
+    print("Total classes:", len(_ids))
+    print("Present images:", len(df_present))
+    print("Labels present in data:", df_present['label'].nunique())
+
 
     # make note of the missing ids for later
     missing_out = os.path.join(get_data_dir(), pl.value, f'missing_{pl.value}.csv')
