@@ -79,7 +79,7 @@ def augment_blur(image, label):
 
         kernel = tf.constant(kernel_vals, dtype=tf.float32)
         kernel = kernel / tf.reduce_sum(kernel)
-        kernel = tf.reshape(kernel, [3, 3, 1, 1])
+        kernel = tf.reshape(kernel, [5, 5, 1, 1])
         kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
 
         # Prepare image for convolution
