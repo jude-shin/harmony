@@ -50,7 +50,7 @@ def augment_zoom_rotate(image, label):
 # @tf.function
 def augment_skew(image, label):
     # max_skew: maximum shearing factor, e.g., 0.3 = up to 30% skew
-    max_skew = 0.3
+    max_skew = 0.05
     
     # Randomly pick horizontal and vertical skew values
     skew_x = tf.random.uniform([], -max_skew, max_skew)
@@ -74,7 +74,7 @@ def augment_skew(image, label):
         transforms=[transform],
         output_shape=tf.shape(image)[1:3],
         interpolation="BILINEAR",
-        fill_mode="REFLECT",
+        fill_mode="CONSTANT",
         fill_value=0.0,  # TODO: make this a random color
     )
 
