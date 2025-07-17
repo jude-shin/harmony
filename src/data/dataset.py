@@ -67,6 +67,11 @@ def augment_skew(image, label):
     # Make batch dimension
     image = tf.expand_dims(image, 0)
 
+    # Random Color
+    random_color = tf.random.uniform([3], 0, 256, dtype=tf.int32)
+    random_color = tf.cast(random_color, tf.float32)
+
+
     # Use 'BILINEAR' for smooth skew, 'REFLECT' to fill empty areas
     image_skewed = tf.raw_ops.ImageProjectiveTransformV3(
         images=image,
@@ -74,7 +79,7 @@ def augment_skew(image, label):
         output_shape=tf.shape(image)[1:3],
         interpolation="BILINEAR",
         fill_mode="CONSTANT",
-        fill_value=tf.random.uniform([3], 0, 256, dtype=tf.int32),
+        fill_value=random_color,
     )
 
     image_skewed = tf.squeeze(image_skewed, 0)
