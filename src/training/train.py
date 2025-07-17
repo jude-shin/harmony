@@ -14,26 +14,40 @@ from training.callbacks import get_callbacks
 
 
 def train(pl: PLS):
-    # generate a dataset from the queue
+    ###########################
+    #   keras_models verson   #
+    ###########################
+    # make a folder in the keras_models folder
+    # this will be based on the time and date
+    # training logs, the model.keras, and checkpoiint.keras will be located here
 
-    # (1) load the validation and training datasets from the record
+    ############################
+    #   Loading the Datasets   #
+    ############################
+    # load the validation and training datasets from the record stored on disk
+    # training data should be multiplied more than the validation data
+    # training data should be shuffled and augmented
+    # validation can be augmented or shuffled
     logging.info('Loading Training Dataset from TFRecord...')
     train_ds = load_record(get_record_path(pl), batch_size=32, shuffle=True, augment=True, multiply=10)
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=32, shuffle=False, augment=False, multiply=2)
+    val_ds = load_record(get_record_path(pl), batch_size=32, shuffle=False, augment=False, multiply=1)
     logging.info('Finished Loading Validation Dataset!')
-
-    # (2) load the model
+   
+    #########################
+    #   Loading the Model   #
+    #########################
+    # load the skeleton from cnn/model_structure.py
+    # compile the model
     logging.info('Loading Model...')
-
-    # create object 
-    model = CnnModelClassic15([437, 313], 994) # (NOT 993 because one of them were skipped, but we still want that entry...)
+    model = CnnModelClassic15([437, 313], 994)
     
     # build the layers
     model(tf.zeros([1, 437, 313, 3]))
-
+    
+    # compile the model with learning rates and optimizers
     model.compile(
         optimizer=optimizers.Adam(learning_rate=0.0003, beta_1=0.09, beta_2=0.999),
         loss=losses.SparseCategoricalCrossentropy(),
@@ -41,8 +55,11 @@ def train(pl: PLS):
     )
 
     logging.info('Finished Loading Model!')
-
-    # (3) model.fit with the custom callbacks
+    
+    ################
+    #   Training   #
+    ################
+    # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     model.fit(train_ds,
               epochs=10000000000000,
@@ -54,7 +71,6 @@ def train(pl: PLS):
 
 
 def retrain():
-
     # call train() with small learning for fine tuning
     pass
 
