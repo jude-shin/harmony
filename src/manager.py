@@ -2,7 +2,10 @@ import logging
 import time 
 import gc
 
+# import matplotlib
+# matplotlib.use('TkAgg')  
 import matplotlib.pyplot as plt
+
 import tensorflow as tf 
 
 from tensorflow import keras
@@ -22,7 +25,7 @@ def visualize(img_path):
     
     image_raw = tf.io.read_file(img_path)
     image = tf.image.decode_jpeg(image_raw, channels=3)
-    image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH])
+    # image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH])
     image = tf.image.convert_image_dtype(image, tf.float32)
     
     augmentations = [
@@ -47,7 +50,8 @@ def visualize(img_path):
         axs[idx].axis('off')
     
     plt.tight_layout()
-    plt.show()
+    plt.savefig("augmentation_results.png")
+    # plt.show()
 
 
 
@@ -69,6 +73,6 @@ if __name__ == '__main__':
     # train(PLS.LORCANA)
 
     # ----------------------------------
-    path = ''
+    path = '/home/storepass/harmony/src/Selection_001.png'
     visualize(path)
     # ----------------------------------
