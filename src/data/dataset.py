@@ -63,11 +63,20 @@ def augment_rotation(image, label):
 
 # @tf.function
 def augment_blur(image, label):
-    for _ in range(random.randint(3, 4)):
+    for _ in range(random.randint(1, 3)):
         # 3x3 Gaussian kernel, sigma=1
-        kernel_vals = [[1., 2., 1.],
-                       [2., 4., 2.],
-                       [1., 2., 1.]]
+        # kernel_vals = [[1., 2., 1.],
+        #                [2., 4., 2.],
+        #                [1., 2., 1.]]
+
+        kernel_vals = [
+            [1.,  4.,  6.,  4., 1.],
+            [4., 16., 24., 16., 4.],
+            [6., 24., 36., 24., 6.],
+            [4., 16., 24., 16., 4.],
+            [1.,  4.,  6.,  4., 1.]
+        ]
+
         kernel = tf.constant(kernel_vals, dtype=tf.float32)
         kernel = kernel / tf.reduce_sum(kernel)
         kernel = tf.reshape(kernel, [3, 3, 1, 1])
