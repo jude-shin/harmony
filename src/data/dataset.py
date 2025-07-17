@@ -2,6 +2,8 @@ import pandas as pd
 import os
 import logging
 
+import random
+
 import tensorflow as tf
 
 from utils.product_lines import PRODUCTLINES as PLS
@@ -47,15 +49,18 @@ def augment_zoom_rotate(image, label):
 
 # @tf.function
 def augment_rotation(image, label):
-    # TODO if the image is flipped top to bottom, you also need to flip it left to right (to simulate 180 rotation)
-    image = tf.image.flip_up_down(image)
-    image = tf.image.flip_left_right(image)
+    if random.choice([True, False]):
+        image = tf.image.flip_up_down(image)
+        image = tf.image.flip_left_right(image)
     return image, label
 
 # @tf.function
 def augment_blur(image, label):
     image = tf.image.random_jpeg_quality(image, 60, 90)
     return image, label
+
+
+
 
 # @tf.function
 def augment_saturation(image, label):
