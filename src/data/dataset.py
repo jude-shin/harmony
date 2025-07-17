@@ -269,7 +269,7 @@ def save_record(tfrecord_path, dataset):
                 continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
-def load_record(tfrecord_path, batch_size=32, shuffle=False, augment=False, multiply=1):
+def load_record(tfrecord_path, batch_size, shuffle, augment, multiply):
     raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
     parsed_dataset = raw_dataset.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
