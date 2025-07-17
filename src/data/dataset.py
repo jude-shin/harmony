@@ -51,37 +51,28 @@ def augment_zoom_rotate(image, label):
 def augment_skew(image, label):
     max_skew = 0.03
     
-    # Randomly pick horizontal and vertical skew values
     skew_x = tf.random.uniform([], -max_skew, max_skew)
     skew_y = tf.random.uniform([], -max_skew, max_skew)
-    
-    # Affine transform matrix for skewing (shearing)
-    # [1, skew_x, 0,
-    #  skew_y, 1, 0,
-    #  0, 0]
+
     transform = [1.0, skew_x, 0.0,
                  skew_y, 1.0, 0.0,
                  0.0,    0.0]
-    # The transform is a flat list, as required by TensorFlow
+    transform = tf.convert_to_tensor([transform], dtype=tf.float32)  # batch of 1 transform
 
-    # Make batch dimension
     image = tf.expand_dims(image, 0)
+    output_shape = tf.shape(image)[1:3]
 
-    # Random Color
-    random_color = tf.random.uniform([3], 0, 256, dtype=tf.int32)
-    random_color = tf.cast(random_color, tf.float32)
+    # This must be shape [3], e.g. [R, G, B]
+    fill_value = tf.random.uniform([3], 0, 256, dtype=tf.float32)
 
-
-    # Use 'BILINEAR' for smooth skew, 'REFLECT' to fill empty areas
     image_skewed = tf.raw_ops.ImageProjectiveTransformV3(
         images=image,
-        transforms=[transform],
-        output_shape=tf.shape(image)[1:3],
+        transforms=transform,
+        output_shape=output_shape,
         interpolation="BILINEAR",
         fill_mode="CONSTANT",
-        fill_value=random_color,
+        fill_value=fill_value,
     )
-
     image_skewed = tf.squeeze(image_skewed, 0)
     image_skewed = tf.cast(image_skewed, image.dtype)
     return image_skewed, label
