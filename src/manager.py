@@ -2,18 +2,55 @@ import logging
 import time 
 import gc
 
+import matplotlib.pyplot as plt
 import tensorflow as tf 
+
 from tensorflow import keras
 
 from data.collect import download_images_parallel, collect
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.time import get_elapsed_time 
-
 from data.dataset import generate_datasets
-
 from training.train import train 
 
+from data.dataset import augment_blur, augment_saturation, augment_contrast, augment_hue, augment_brightness, augment_rotation, augment_zoom_rotate, augment_all
+
 logging.getLogger().setLevel(20)
+
+def visualize(img_path):
+    label = 0 # dummy label
+    
+    image_raw = tf.io.read_file(img_path)
+    image = tf.image.decode_jpeg(image_raw, channels=3)
+    image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH])
+    image = tf.image.convert_image_dtype(image, tf.float32)
+    
+    augmentations = [
+        ('Original', lambda img, lbl: (img, lbl)),
+        ('Blur', augment_blur),
+        ('Saturation', augment_saturation),
+        ('Contrast', augment_contrast),
+        ('Hue', augment_hue),
+        ('Brightness', augment_brightness),
+        ('Rotation', augment_rotation),
+        ('Zoom+Rotate', augment_zoom_rotate),
+        ('All Combined', augment_all),
+    ]
+    
+    fig, axs = plt.subplots(2, (len(augmentations) + 1) // 2, figsize=(18, 8))
+    axs = axs.flatten()
+    
+    for idx, (name, fn) in enumerate(augmentations):
+        aug_img, _ = fn(image, label)
+        axs[idx].imshow(tf.clip_by_value(aug_img, 0, 1))
+        axs[idx].set_title(name)
+        axs[idx].axis('off')
+    
+    plt.tight_layout()
+    plt.show()
+
+
+
 
 if __name__ == '__main__':
     # clear tensorflow
@@ -21,12 +58,17 @@ if __name__ == '__main__':
 
     # force garbage collection
     gc.collect()
-
+    
+    # ----------------------------------
     # st = time.time()
-
     # collect(PLS.POKEMON)
     # generate_datasets(PLS.POKEMON)
-
     # logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
+    # ----------------------------------
     
-    train(PLS.LORCANA)
+    # train(PLS.LORCANA)
+
+    # ----------------------------------
+    path = ''
+    visualize(path)
+    # ----------------------------------
