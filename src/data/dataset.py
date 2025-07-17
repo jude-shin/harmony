@@ -62,17 +62,15 @@ def augment_skew(image, label):
     image = tf.expand_dims(image, 0)
     output_shape = tf.shape(image)[1:3]
 
-    # This must be shape [3], e.g. [R, G, B]
-    fill_value = tf.random.uniform([3], 0, 256, dtype=tf.float32)
-
     image_skewed = tf.raw_ops.ImageProjectiveTransformV3(
         images=image,
         transforms=transform,
         output_shape=output_shape,
         interpolation="BILINEAR",
         fill_mode="CONSTANT",
-        fill_value=fill_value,
+        fill_value=0.0
     )
+
     image_skewed = tf.squeeze(image_skewed, 0)
     image_skewed = tf.cast(image_skewed, image.dtype)
     return image_skewed, label
