@@ -61,15 +61,15 @@ def train(pl: PLS):
 
 
 
-    # # =============================
-    # tiny = train_ds.take(16)
-    # model = CnnModelClassic15(437, 313, 994)
-    # model.compile(optimizer='adam',
-    #               loss='sparse_categorical_crossentropy',
-    #               metrics=['accuracy'])
-    # model.fit(tiny.repeat(), epochs=200)
-    # return
-    # # =============================
+    # =============================
+    tiny = train_ds.take(16)
+    model = CnnModel1([437, 313], 993)
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.fit(tiny.repeat(), epochs=200)
+    return
+    # =============================
 
 
 
@@ -91,8 +91,8 @@ def train(pl: PLS):
     # load the skeleton from cnn/model_structure.py
     # compile the model
     logging.info('Loading Model...')
-    # keras_model = CnnModelClassic15([437, 313], 994)
-    keras_model = model_classic_15(437, 313, 994)
+    keras_model = CnnModelClassic15([437, 313], 994)
+    # keras_model = model_classic_15(437, 313, 994)
     
     # build the layers
     keras_model(tf.zeros([1, 437, 313, 3]))

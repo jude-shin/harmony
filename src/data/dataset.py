@@ -23,12 +23,9 @@ IMG_EXTS=['.jpg']
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
     image = tf.image.decode_jpeg(image, channels=3)
-
-    # TODO: resize this to 413 by 312 or whatever the large one is
-    # should this be a constant that we pull from the .env?
     image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
 
-    # image = tf.image.convert_image_dtype(image, tf.float32) # this is already done in the preprocessing layer in the model
+    image = tf.cast(image, tf.float32) / 255.0
 
     return image, label
 
@@ -207,6 +204,12 @@ def generate_datasets(pl: PLS):
     # resolve missing images
     df_present, df_missing = process_df(pl, df)
 
+
+    labels = df_present['label']
+    print("Num classes:", labels.nunique())
+    print("Min label:", labels.min(), "Max label:", labels.max())
+    print("Label dtype:", labels.dtype)
+
     # ========================================== 
     # make note of the missing ids for later
     missing_out = os.path.join(get_data_dir(), pl.value, f'missing_{pl.value}.csv')
@@ -224,7 +227,7 @@ def generate_datasets(pl: PLS):
     labels = tf.convert_to_tensor(df_present['label'].values, dtype=tf.int32)
 
     ds = build_dataset(paths, labels)
-    
+
     save_record(get_record_path(pl), ds)
 
     # usage

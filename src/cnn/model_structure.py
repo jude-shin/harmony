@@ -15,20 +15,14 @@ class PreprocessingLayer(layers.Layer):
     This layer is active in both training and inference modes.
     '''
 
-    def __init__(self, target_size, rescale, **kwargs):
+    def __init__(self, target_size, **kwargs):
         super().__init__(trainable=False, **kwargs)
         self.target_size = target_size
-        self.rescale = rescale
-        # self.mean = mean
-        # self.std = std
-
         self.resize_layer = layers.Resizing(*self.target_size)
-        self.rescale_layer = layers.Rescaling(self.rescale)
         # self.normalize_layer = layers.Normalization(mean=self.mean, variance=self.std**2)
 
     def call(self, inputs):
         x = self.resize_layer(inputs)
-        x = self.rescale_layer(x)
         # x = self.normalize_layer(x)
         return x
 
@@ -216,7 +210,7 @@ class CnnModel1(Model):
     '''
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2], rescale=1./255)
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
         self.augment = AugmentLayer()
 
         self.blocks = [
@@ -245,7 +239,7 @@ class CnnModelClassic15(Model):
     '''
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2], rescale=1./255)
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
         self.augment = AugmentLayer()
 
         self.blocks = [
