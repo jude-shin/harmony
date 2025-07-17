@@ -51,7 +51,9 @@ class ClearMemory(callbacks.Callback):
 def get_callbacks():
     # defines when the model will stop training
     accuracy_threshold_callback = EarlyStoppingByValThreshold(
-        threshold=0.98)
+            monitor='val_sparse_catetgorical_accuracy',
+            threshold=0.98,
+            )
 
     # # saves a snapshot of the model while it is training
     # checkpoint_filepath = os.path.join(fp["MODEL"], "checkpoint.keras")
