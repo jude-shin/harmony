@@ -1,4 +1,4 @@
-import csv
+imodelmport csv
 import gc
 import os
 
@@ -39,34 +39,29 @@ class EarlyStoppingByValThreshold(callbacks.Callback):
             print(f"\nEpoch {epoch + 1}: Reached {self.monitor} threshold of {self.threshold}. Stopping training.")
             self.model.stop_training = True
 
-
-
 class ClearMemory(callbacks.Callback):
     def on_epoch_end(self, batch, logs=None):
         backend.clear_session()
         gc.collect()
 
-
-
-def get_callbacks():
+def get_callbacks(keras_model_dir: str) -> list[callbacks.Callback]:
     # defines when the model will stop training
     accuracy_threshold_callback = EarlyStoppingByValThreshold(
             monitor='val_sparse_categorical_accuracy',
             threshold=0.98,
             )
 
-    # # saves a snapshot of the model while it is training
-    # checkpoint_filepath = os.path.join(fp["MODEL"], "checkpoint.keras")
-    # checkpoint_callback = callbacks.ModelCheckpoint(
-    #     filepath=checkpoint_filepath, save_weights_only=False, save_best_only=True,
-    #     monitor='val_loss',
-    #     mode='min'
-    # )
+    # saves a snapshot of the model while it is training
+    checkpoint_path = os.path.join(keras_model_dir, "checkpoint.keras")
+    checkpoint_callback = callbacks.ModelCheckpoint(
+        filepath=checkpoint_path, save_weights_only=False, save_best_only=True,
+        monitor='val_loss',
+        mode='min'
+    )
 
-    # # logs the epoch, accuracy, and loss for a training session
-    # csv_logger_callback = CsvLoggerCallback(
-    #     os.path.join(fp["MODEL"], "training_logs.csv")
-    # )
+    # logs the epoch, accuracy, and loss for a training session
+    csv_path = os.path.join(keras_model_dir, "training_logs.csv")
+    csv_logger_callback = CsvLoggerCallback(csv_path)
 
     # Define the ReduceLROnPlateau callback
     reduce_lr_callback = callbacks.ReduceLROnPlateau(
@@ -78,4 +73,4 @@ def get_callbacks():
 
     clear_memory_callback = ClearMemory()
 
-    return [accuracy_threshold_callback]
+    return [accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
