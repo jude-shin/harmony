@@ -48,11 +48,38 @@ def augment_zoom_rotate(image, label):
     return image, label
 
 # @tf.function
-def augment_skew(image, label):
-    # TODO
-    # this would be cool
-    # skewing against one of the 4 axis
-    return image, label
+def augment_skew(image, label, max_skew=0.3):
+    # max_skew: maximum shearing factor, e.g., 0.3 = up to 30% skew
+    
+    # Randomly pick horizontal and vertical skew values
+    skew_x = tf.random.uniform([], -max_skew, max_skew)
+    skew_y = tf.random.uniform([], -max_skew, max_skew)
+    
+    # Affine transform matrix for skewing (shearing)
+    # [1, skew_x, 0,
+    #  skew_y, 1, 0,
+    #  0, 0]
+    transform = [1.0, skew_x, 0.0,
+                 skew_y, 1.0, 0.0,
+                 0.0,    0.0]
+    # The transform is a flat list, as required by TensorFlow
+
+    # Make batch dimension
+    image = tf.expand_dims(image, 0)
+
+    # Use 'BILINEAR' for smooth skew, 'REFLECT' to fill empty areas
+    image_skewed = tf.raw_ops.ImageProjectiveTransformV3(
+        images=image,
+        transforms=[transform],
+        output_shape=tf.shape(image)[1:3],
+        interpolation="BILINEAR",
+        fill_mode="REFLECT"
+    )
+
+    image_skewed = tf.squeeze(image_skewed, 0)
+    image_skewed = tf.cast(image_skewed, image.dtype)
+    return image_skewed, label
+
 
 # @tf.function
 def augment_rotation(image, label):
@@ -63,7 +90,7 @@ def augment_rotation(image, label):
 
 # @tf.function
 def augment_blur(image, label):
-    for _ in range(random.randint(1, 3)):
+    for _ in range(random.randint(1, 3)): # this 
         # 3x3 Gaussian kernel, sigma=1
         # kernel_vals = [[1., 2., 1.],
         #                [2., 4., 2.],
@@ -79,6 +106,7 @@ def augment_blur(image, label):
 
         kernel = tf.constant(kernel_vals, dtype=tf.float32)
         kernel = kernel / tf.reduce_sum(kernel)
+        # kernel = tf.reshape(kernel, [3, 3, 1, 1])
         kernel = tf.reshape(kernel, [5, 5, 1, 1])
         kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
 
@@ -104,6 +132,7 @@ def augment_contrast(image, label):
     return image, label
 
 # @tf.function
+# NOTE: I don't think that it is beneficial to change the color of the image. this might hurt us
 def augment_hue(image, label):
     image = tf.image.random_hue(image, 0.1)
     return image, label
@@ -116,7 +145,8 @@ def augment_brightness(image, label):
 # other options for composing all of the augmentations 
 # @tf.function.
 def augment_all(image, label):
-    fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_hue, augment_brightness, augment_rotation]
+    # fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_hue, augment_brightness, augment_rotation]
+    fns = [augment_blur, augment_saturation, augment_contrast, augment_brightness, augment_rotation, augment_skew]
 
     for fn in fns:
         image, label = fn(image, label)
