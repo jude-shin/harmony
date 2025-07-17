@@ -232,35 +232,43 @@ class CnnModel1(Model):
         x = self.pool(x)
         return self.output_layer(x)
 
-
 class CnnModelClassic15(Model):
     '''
-    Model that matches the "model_classic_15" architecture using reusable blocks.
+    Improved model based on "model_classic_15":
+    - Uses Conv + BN + LeakyReLU blocks
+    - Includes spatial downsampling
+    - Ends with GlobalAveragePooling + Dense classification head
     '''
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
+
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
         self.augment = AugmentLayer()
 
+        # Feature extraction backbone with progressive downsampling
         self.blocks = [
-                ConvBnLeakyBlock(40), 
-                ConvBnLeakyBlock(80), 
-                ConvBnLeakyBlock(160), 
-                ConvBnLeakyBlock(320), 
-                ConvBnLeakyBlock(640), 
+                ConvBnLeakyBlock(40, pool_size=2), 
+                ConvBnLeakyBlock(80, pool_size=2), 
+                ConvBnLeakyBlock(160, pool_size=2),
+                ConvBnLeakyBlock(320, pool_size=2),
+                ConvBnLeakyBlock(640, pool_size=2),
                 ]
 
-        self.flatten = layers.Flatten()
-        self.dense_dropout = DenseDropoutBlock(640, dropout_rate=0.5)
+        # Classification head: GAP → Dense → Dropout → Output
+        self.global_pool = layers.GlobalAveragePooling2D()
+        self.hidden = layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.01))
+        self.dropout = layers.Dropout(0.5)
         self.output_layer = layers.Dense(num_classes, activation='softmax')
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
         x = self.augment(x, training=training)
-        
+
         for block in self.blocks:
             x = block(x, training=training)
 
-        x = self.flatten(x)
-        x = self.dense_dropout(x, training=training)
+        x = self.global_pool(x)
+        x = self.hidden(x)
+        x = self.dropout(x, training=training)
         return self.output_layer(x)
+
