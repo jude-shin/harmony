@@ -33,3 +33,4 @@ def get_record_path(pl: PLS) -> str:
 
 def get_images_dir(pl: PLS) -> str:
     return os.path.join(get_data_dir(), pl.value, get_env(IMAGES_PATH_ENV))
+
