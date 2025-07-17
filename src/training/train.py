@@ -3,7 +3,7 @@ import os
 
 import tensorflow as tf
 
-from tensorflow.keras import optimizers, losses, metrics
+from tensorflow.keras import optimizers, losses, metrics, layers, Sequential
 from time import localtime, strftime
 
 # from training.callbacks import ValidationAccuracyThresholdCallback
@@ -47,25 +47,13 @@ def train(pl: PLS):
     # training data should be shuffled and augmented
     # validation can be augmented or shuffled
     logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(get_record_path(pl), batch_size=16, shuffle=True, augment=True, multiply=5)
+    train_ds = load_record(get_record_path(pl), batch_size=4, shuffle=False, augment=False, multiply=1)
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=16, shuffle=False, augment=False, multiply=1)
+    val_ds = load_record(get_record_path(pl), batch_size=4, shuffle=False, augment=False, multiply=1)
     logging.info('Finished Loading Validation Dataset!')
    
-
-    # =============================
-    # TESTING
-    tiny = train_ds.take(16)
-    model = CnnModel1([437, 313], 994) # NOTE: there are 994 full classes, but one of them has a missing download
-    model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
-    model.fit(tiny.repeat(), epochs=200)
-    return
-    # =============================
-
 
     #########################
     #   Loading the Model   #

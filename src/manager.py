@@ -62,15 +62,20 @@ if __name__ == '__main__':
 
     # force garbage collection
     gc.collect()
+
+    # expand the gpus for growth
+    gpus = tf.config.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
     
     # ----------------------------------
     # st = time.time()
-    collect(PLS.LORCANA)
-    generate_datasets(PLS.LORCANA)
+    # collect(PLS.LORCANA)
+    # generate_datasets(PLS.LORCANA)
     # logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
     # ----------------------------------
     
-    # train(PLS.LORCANA)
+    train(PLS.LORCANA)
 
     # ----------------------------------
     # path = '/home/storepass/harmony/src/Selection_001.png'
