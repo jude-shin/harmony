@@ -5,6 +5,7 @@ from utils.product_lines import PRODUCTLINES as PLS
 
 DATA_DIR_ENV= 'DATA_DIR'
 SAVED_MODEL_DIR_ENV = 'SAVED_MODEL_DIR'
+KERAS_MODEL_DIR_ENV = 'KERAS_MODEL_DIR'
 
 # TRAIN_DATASET_PATH_ENV = 'TRAIN_DATASET_PATH_NAME'
 # VAL_DATASET_PATH_ENV = 'VAL_DATASET_PATH_NAME'
@@ -27,6 +28,9 @@ def get_data_dir() -> str:
 
 def get_saved_model_dir() -> str:
     return get_env(SAVED_MODEL_DIR_ENV)
+
+def get_keras_model_dir() -> str:
+    return get_env(KERAS_MODEL_DIR_ENV)
 
 def get_record_path(pl: PLS) -> str:
     return os.path.join(get_data_dir(), pl.value, get_env(RECORD_PATH_ENV))
