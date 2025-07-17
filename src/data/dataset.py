@@ -196,43 +196,38 @@ def generate_datasets(pl: PLS):
 
     _ids = load_ids(pl, 'master', 'rb') 
 
-    df = pd.DataFrame({
-        'label': range(0, len(_ids)),
-        '_id': _ids,
-        })
+    id_to_label = {id_: i for i, id_ in enumerate(_ids)}
 
-    # resolve missing images
-    df_present, df_missing = process_df(pl, df)
+    df = pd.DataFrame({'_id': _ids})
+    df['label'] = df['_id'].map(id_to_label)
 
+    img_dir = get_images_dir(pl)
+    df['path'] = df['_id'].apply(lambda x: resolve_path(img_dir, x))
+
+    df_present = df[df['path'].notna()].reset_index(drop=True)
+    df_missing = df[df['path'].isna()].reset_index(drop=True)
 
     labels = df_present['label']
     print("Num classes:", labels.nunique())
     print("Min label:", labels.min(), "Max label:", labels.max())
     print("Label dtype:", labels.dtype)
 
-    # ========================================== 
     # make note of the missing ids for later
     missing_out = os.path.join(get_data_dir(), pl.value, f'missing_{pl.value}.csv')
-    # pd.concat([train_df_missing, val_df_missing]).to_csv(missing_out, index=False)
     df_missing.to_csv(missing_out, index=False)
     logging.warning(
             'generate_datasets[%s]: %d images are absent; '
             'their IDs are saved to %s',
             pl.name, len(df_missing), missing_out
             )
-    # ========================================== 
 
-    # Create file paths
     paths = tf.convert_to_tensor(df_present['path'], dtype=tf.string)
-    labels = tf.convert_to_tensor(df_present['label'].values, dtype=tf.int32)
-
+    labels = tf.convert_to_tensor(df_present['label'], dtype=tf.int32)
+    
     ds = build_dataset(paths, labels)
-
     save_record(get_record_path(pl), ds)
 
-    # usage
-    # val_ds = load_record('record.tfrecord', batch_size=32, shuffle=False, augment=False, multiply=1)
-    # train_ds = load_record('record.tfrecord', batch_size=32, shuffle=True, augment=True, multiply=10)
+
 
 
 ###############
