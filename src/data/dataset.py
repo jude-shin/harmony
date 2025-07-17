@@ -28,7 +28,7 @@ def load_and_preprocess(path, label):
     # should this be a constant that we pull from the .env?
     image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
 
-    image = tf.image.convert_image_dtype(image, tf.float32)  
+    # image = tf.image.convert_image_dtype(image, tf.float32) # this is already done in the preprocessing layer in the model
 
     return image, label
 
