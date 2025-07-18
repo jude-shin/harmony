@@ -141,11 +141,15 @@ def augment_all(image, label):
 #   datasets   #
 ################
 
-def build_dataset(paths, labels):
+def build_dataset(paths, labels, unique_labels):
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
     ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE, deterministic=False)
 
     ds = ds.apply(tf.data.Dataset.ignore_errors)
+
+    # one hot encode the labels for smooth labels
+    ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=unique_labels)))
+
     return ds
 
 def resolve_path(img_dir: str, file_id: str) -> str | None:
@@ -216,7 +220,11 @@ def generate_datasets(pl: PLS):
     paths = tf.convert_to_tensor(df_present['path'], dtype=tf.string)
     labels = tf.convert_to_tensor(df_present['label'], dtype=tf.int32)
     
-    ds = build_dataset(paths, labels)
+    print("_Ids Total classes:", len(_ids))
+    print("Labels Total classes:", len(labels))
+
+    ds = build_dataset(paths, labels, len(_ids))
+
     save_record(get_record_path(pl), ds)
 
 
@@ -255,7 +263,7 @@ def save_record(tfrecord_path, dataset):
                 writer.write(serialized)
                 count += 1
             except Exception as e:
-                logging.error("Example %d failed: %s", n.numpy(), e)
+                logging.error("Example %d failed: %s", label, e)
                 continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
