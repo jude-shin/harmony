@@ -272,3 +272,41 @@ class CnnModelClassic15(Model):
         x = self.dropout(x, training=training)
         return self.output_layer(x)
 
+
+
+
+
+class CnnModelClassic16(Model):
+    def __init__(self, input_shape, num_classes, **kwargs):
+        super().__init__(**kwargs)
+
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.augment = AugmentLayer()
+
+        # Expanded feature extraction backbone
+        self.blocks = [
+            ConvBnLeakyBlock(64, pool_size=2),
+            ConvBnLeakyBlock(128, pool_size=2),
+            ConvBnLeakyBlock(256, pool_size=2),
+            ConvBnLeakyBlock(512, pool_size=2),
+            ConvBnLeakyBlock(768, pool_size=2),
+            ConvBnLeakyBlock(1024, pool_size=2),
+        ]
+
+        self.global_pool = layers.GlobalAveragePooling2D()
+        self.hidden = layers.Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))
+        self.dropout = layers.Dropout(0.5)
+        self.output_layer = layers.Dense(num_classes, activation='softmax')
+
+    def call(self, inputs, training=False):
+        x = self.preprocess(inputs)
+        x = self.augment(x, training=training)
+
+        for block in self.blocks:
+            x = block(x, training=training)
+
+        x = self.global_pool(x)
+        x = self.hidden(x)
+        x = self.dropout(x, training=training)
+        return self.output_layer(x)
+
