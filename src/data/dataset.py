@@ -17,7 +17,7 @@ IMG_EXTS=['.jpg']
 #   preprocessing the images to be stored in a TFRecord   #
 ###########################################################
 
-# @tf.function
+@tf.function
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
     image = tf.image.decode_jpeg(image, channels=3)
@@ -36,13 +36,13 @@ def load_and_preprocess(path, label):
 # prevents overfitting, stochastic, and decreases disk space
 
 # @tf.function
-def augment_zoom_rotate(image, label):
-    # TODO
-    # slightly shrink the image and rotate it within the original bounds
-    # this might not be needed
-    return image, label
+# def augment_zoom_rotate(image, label):
+#     # TODO
+#     # slightly shrink the image and rotate it within the original bounds
+#     # this might not be needed
+#     return image, label
 
-# @tf.function
+@tf.function
 def augment_skew(image, label):
     max_skew = 0.03
     
@@ -71,14 +71,13 @@ def augment_skew(image, label):
     return image_skewed, label
 
 
-# @tf.function
+@tf.function
 def augment_rotation(image, label):
-    if tf.random.uniform([]) > 0.5:
-        image = tf.image.flip_up_down(image)
-        image = tf.image.flip_left_right(image)
+    image = tf.image.flip_up_down(image)
+    image = tf.image.flip_left_right(image)
     return image, label
 
-# @tf.function
+@tf.function
 def augment_blur(image, label):
     kernel_vals = [
         [1.,  4.,  6.,  4., 1.],
@@ -95,47 +94,53 @@ def augment_blur(image, label):
     kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
 
     # Prepare image for convolution
-    img = tf.expand_dims(tf.cast(image, tf.float32), axis=0)
-    blurred = tf.nn.depthwise_conv2d(img, kernel, strides=[1,1,1,1], padding='SAME')
-    blurred = tf.squeeze(blurred, axis=0)
-    blurred = tf.cast(blurred, image.dtype)
+    tf_img = tf.expand_dims(tf.cast(image, tf.float32), axis=0)
+    image = tf.nn.depthwise_conv2d(tf_img, kernel, strides=[1,1,1,1], padding='SAME')
+    image = tf.squeeze(image, axis=0)
+    image = tf.cast(image, image.dtype)
     
-    # Randomly apply blur
-    do_blur = tf.random.uniform([]) > 0.5
-    image = tf.cond(do_blur, lambda: blurred, lambda: image)
     return image, label
 
-# @tf.function
+@tf.function
 def augment_saturation(image, label):
     image = tf.image.random_saturation(image, 0.5, 1)
     return image, label
 
-# @tf.function
+@tf.function
 def augment_contrast(image, label):
     image = tf.image.random_contrast(image, 0.2, 0.5)
     return image, label
 
 # @tf.function
-# NOTE: I don't think that it is beneficial to change the color of the image. this might hurt us
-def augment_hue(image, label):
-    image = tf.image.random_hue(image, 0.1)
-    return image, label
+# def augment_hue(image, label):
+# # NOTE: I don't think that it is beneficial to change the color of the image. this might hurt us
+#     image = tf.image.random_hue(image, 0.1)
+#     return image, label
 
-# @tf.function
+@tf.function
 def augment_brightness(image, label):
     image = tf.image.random_brightness(image, 0.2)
     return image, label
 
 # other options for composing all of the augmentations 
-# @tf.function.
+
+@tf.function
 def augment_all(image, label):
-    # fns = [augment_zoom_rotate, augment_blur, augment_saturation, augment_contrast, augment_hue, augment_brightness, augment_rotation]
-    fns = [augment_blur, augment_saturation, augment_contrast, augment_brightness, augment_rotation, augment_skew]
+    fns = [
+        augment_blur,
+        augment_saturation,
+        augment_contrast,
+        augment_brightness,
+        augment_rotation,
+        augment_skew
+    ]
 
     for fn in fns:
-        image, label = fn(image, label)
+        apply = tf.random.uniform(()) < 0.5
+        image, label = tf.cond(apply, lambda: fn(image, label), lambda: (image, label))
 
     return image, label
+
 
 ################
 #   datasets   #

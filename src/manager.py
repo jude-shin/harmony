@@ -16,7 +16,7 @@ from utils.time import get_elapsed_time
 from data.dataset import generate_datasets
 from training.train import train 
 
-from data.dataset import augment_blur, augment_saturation, augment_contrast, augment_hue, augment_brightness, augment_rotation, augment_zoom_rotate, augment_all
+from data.dataset import * 
 
 logging.getLogger().setLevel(10)
 
