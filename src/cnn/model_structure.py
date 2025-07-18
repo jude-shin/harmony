@@ -35,7 +35,6 @@ class AugmentLayer(layers.Layer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.augmentations = [
-                layers.RandomFlip('horizontal_and_vertical'),
                 layers.RandomRotation(0.1),
                 layers.RandomZoom(0.1)
                 ]
@@ -211,7 +210,7 @@ class CnnModel1(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        self.augment = AugmentLayer()
+        # self.augment = AugmentLayer()
 
         self.blocks = [
                 makeCnnSeq(32, 0.2),
@@ -244,7 +243,7 @@ class CnnModelClassic15Mini(Model):
         super().__init__(**kwargs)
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        self.augment = AugmentLayer()
+        # self.augment = AugmentLayer()
 
         self.blocks = [
             ConvBnLeakyBlock(16, pool_size=2),
@@ -282,7 +281,7 @@ class CnnModelClassic15(Model):
         super().__init__(**kwargs)
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        self.augment = AugmentLayer()
+        # self.augment = AugmentLayer()
 
         # Feature extraction backbone with progressive downsampling
         self.blocks = [
@@ -316,7 +315,7 @@ class CnnModelClassic15Large(Model):
         super().__init__(**kwargs)
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        self.augment = AugmentLayer()
+        # self.augment = AugmentLayer()
 
         # Expanded feature extraction backbone
         self.blocks = [
