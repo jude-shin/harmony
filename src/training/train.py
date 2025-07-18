@@ -71,7 +71,7 @@ def train(pl: PLS):
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=124, shuffle=False, augment=False, multiply=1, num_classes=num_classes)
+    val_ds = load_record(get_record_path(pl), batch_size=124, shuffle=True, augment=True, multiply=1, num_classes=num_classes)
     logging.info('Finished Loading Validation Dataset!')
    
 
@@ -91,7 +91,7 @@ def train(pl: PLS):
     # compile the model with learning rates and optimizers
     keras_model.compile(
         optimizer=optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.999),
-        loss=losses.CategoricalCrossentropy(label_smoothing=0.1), # Label smoothing
+        loss=losses.CategoricalCrossentropy(from_logits=False, label_smoothing=0.1), # Label smoothing
         metrics=[metrics.CategoricalAccuracy()]
     )
 
