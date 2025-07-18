@@ -47,11 +47,11 @@ def train(pl: PLS):
     # training data should be shuffled and augmented
     # validation can be augmented or shuffled
     logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(get_record_path(pl), batch_size=64, shuffle=True, augment=True, multiply=50)
+    train_ds = load_record(get_record_path(pl), batch_size=124, shuffle=True, augment=True, multiply=100)
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=64, shuffle=False, augment=False, multiply=1)
+    val_ds = load_record(get_record_path(pl), batch_size=124, shuffle=False, augment=False, multiply=1)
     logging.info('Finished Loading Validation Dataset!')
    
 
@@ -69,7 +69,7 @@ def train(pl: PLS):
     
     # compile the model with learning rates and optimizers
     keras_model.compile(
-        optimizer=optimizers.Adam(learning_rate=0.0003, beta_1=0.9, beta_2=0.999),
+        optimizer=optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.999),
         loss=losses.SparseCategoricalCrossentropy(),
         metrics=[metrics.SparseCategoricalAccuracy()]
     )
