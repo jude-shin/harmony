@@ -3,26 +3,45 @@ import os
 
 import tensorflow as tf
 
-from tensorflow.keras import optimizers, losses, metrics, layers, Sequential
+from tensorflow.keras import optimizers, losses, metrics
 from time import localtime, strftime
 
-# from training.callbacks import ValidationAccuracyThresholdCallback
 from data.dataset import load_record
 from cnn.model_structure import * 
 from utils.file_handler.dir import get_record_path, get_keras_model_dir
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.time import get_current_time
-
 from training.callbacks import get_callbacks
 
-
-from cnn.sequential_models import model_classic_1, model_classic_15
-
+# from cnn.sequential_models import model_classic_1, model_classic_15
 
 def train(pl: PLS):
+    #################
+    #   Variables   #
+    #################
+
+    # Training Augmentation Multiplication
+    # Batch Size
+    # Model
+    # [Img_Height, Img_Width]
+    # Number of Unique Classes
+    # Optimizers:
+    #   Adam:
+    #       Learning Rate
+    #       Beta1
+    #       Beta2
+    # Loss:
+    #   Label Smoothing
+    # Metrics
+
+
+    # Callbacks?
+    #   Stopping threshold (at 98 or so for val accuracy)
+
+
     ###########################
     #   keras_models verson   #
     ###########################
+
     # make a folder in the keras_models folder
     # this will be based on the time and date
     # training logs, the model.keras, and checkpoiint.keras will be located here
@@ -38,10 +57,10 @@ def train(pl: PLS):
     os.mkdir(keras_model_dir)
 
 
-
     ############################
     #   Loading the Datasets   #
     ############################
+
     # load the validation and training datasets from the record stored on disk
     # training data should be multiplied more than the validation data
     # training data should be shuffled and augmented
@@ -58,6 +77,7 @@ def train(pl: PLS):
     #########################
     #   Loading the Model   #
     #########################
+
     # load the skeleton from cnn/model_structure.py
     # compile the model
     logging.info('Loading Model...')
@@ -70,15 +90,17 @@ def train(pl: PLS):
     # compile the model with learning rates and optimizers
     keras_model.compile(
         optimizer=optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.999),
-        loss=losses.SparseCategoricalCrossentropy(),
+        loss=losses.CategoricalCrossentropy(label_smoothing=0.1),
         metrics=[metrics.SparseCategoricalAccuracy()]
     )
 
     logging.info('Finished Loading Model!')
-    
+   
+
     ################
     #   Training   #
     ################
+
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     keras_model.fit(train_ds,
