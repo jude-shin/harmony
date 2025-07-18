@@ -223,7 +223,7 @@ class CnnModel1(Model):
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
-        x = self.augment(x, training=training)
+        # x = self.augment(x, training=training)
 
         for block in self.blocks:
             x = block(x, training=training)
@@ -259,7 +259,7 @@ class CnnModelClassic15Mini(Model):
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
-        x = self.augment(x, training=training)
+        # x = self.augment(x, training=training)
 
         for block in self.blocks:
             x = block(x, training=training)
@@ -300,7 +300,7 @@ class CnnModelClassic15(Model):
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
-        x = self.augment(x, training=training)
+        # x = self.augment(x, training=training)
 
         for block in self.blocks:
             x = block(x, training=training)
@@ -334,7 +334,7 @@ class CnnModelClassic15Large(Model):
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
-        x = self.augment(x, training=training)
+        # x = self.augment(x, training=training)
 
         for block in self.blocks:
             x = block(x, training=training)

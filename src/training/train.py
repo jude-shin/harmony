@@ -24,6 +24,7 @@ def train(pl: PLS):
     # Model
     # [Img_Height, Img_Width]
     # Number of Unique Classes
+    num_classes = 994
     # Optimizers:
     #   Adam:
     #       Learning Rate
@@ -66,11 +67,11 @@ def train(pl: PLS):
     # training data should be shuffled and augmented
     # validation can be augmented or shuffled
     logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(get_record_path(pl), batch_size=124, shuffle=True, augment=True, multiply=100)
+    train_ds = load_record(get_record_path(pl), batch_size=124, shuffle=True, augment=True, multiply=100, num_classes=num_classes)
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=124, shuffle=False, augment=False, multiply=1)
+    val_ds = load_record(get_record_path(pl), batch_size=124, shuffle=False, augment=False, multiply=1, num_classes=num_classes)
     logging.info('Finished Loading Validation Dataset!')
    
 
@@ -81,8 +82,8 @@ def train(pl: PLS):
     # load the skeleton from cnn/model_structure.py
     # compile the model
     logging.info('Loading Model...')
-    keras_model = CnnModelClassic15Mini([437, 313], 994)
-    # keras_model = model_classic_15(437, 313, 994)
+    keras_model = CnnModelClassic15Mini([437, 313], num_classes)
+    # keras_model = model_classic_15(437, 313, num_classes)
     
     # build the layers
     keras_model(tf.zeros([1, 437, 313, 3]))

@@ -147,9 +147,6 @@ def build_dataset(paths, labels, unique_labels):
 
     ds = ds.apply(tf.data.Dataset.ignore_errors)
 
-    # one hot encode the labels for smooth labels
-    ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=unique_labels)))
-
     return ds
 
 def resolve_path(img_dir: str, file_id: str) -> str | None:
@@ -267,19 +264,25 @@ def save_record(tfrecord_path, dataset):
                 continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
-def load_record(tfrecord_path, batch_size, shuffle, augment, multiply):
-    raw_dataset = tf.data.TFRecordDataset(tfrecord_path)
-    parsed_dataset = raw_dataset.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
+def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_classes):
+    raw_ds = tf.data.TFRecordDataset(tfrecord_path)
+    parsed_ds = raw_ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
     if augment:
-        parsed_dataset = parsed_dataset.map(augment_all, num_parallel_calls=tf.data.AUTOTUNE)
+        parsed_ds = parsed_ds.map(augment_all, num_parallel_calls=tf.data.AUTOTUNE)
 
     if multiply > 1:
-        parsed_dataset = parsed_dataset.repeat(multiply)
+        parsed_ds = parsed_ds.repeat(multiply)
 
     if shuffle:
-        parsed_dataset = parsed_dataset.shuffle(buffer_size=1000)
+        parsed_ds = parsed_ds.shuffle(buffer_size=1000)
 
-    dataset = parsed_dataset.batch(batch_size)
-    return dataset.prefetch(tf.data.AUTOTUNE)
+    ds = parsed_ds.batch(batch_size)
+
+    # one hot encode the labels for smooth labels
+    ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
+
+    ds = ds.prefetch(tf.data.AUTOTUNE)
+
+    return ds 
 
