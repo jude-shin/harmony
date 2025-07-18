@@ -90,7 +90,7 @@ def train(pl: PLS):
     # compile the model with learning rates and optimizers
     keras_model.compile(
         optimizer=optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.999),
-        loss=losses.CategoricalCrossentropy(label_smoothing=0.1),
+        loss=losses.CategoricalCrossentropy(from_logits=False, label_smoothing=0.1), # Label smoothing
         metrics=[metrics.SparseCategoricalAccuracy()]
     )
 
