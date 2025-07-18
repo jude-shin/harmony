@@ -8,7 +8,7 @@ from time import localtime, strftime
 
 # from training.callbacks import ValidationAccuracyThresholdCallback
 from data.dataset import load_record
-from cnn.model_structure import CnnModel1, CnnModelClassic15
+from cnn.model_structure import * 
 from utils.file_handler.dir import get_record_path, get_keras_model_dir
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.time import get_current_time
@@ -61,7 +61,7 @@ def train(pl: PLS):
     # load the skeleton from cnn/model_structure.py
     # compile the model
     logging.info('Loading Model...')
-    keras_model = CnnModelClassic15([437, 313], 994)
+    keras_model = CnnModelClassic15Mini([437, 313], 994)
     # keras_model = model_classic_15(437, 313, 994)
     
     # build the layers

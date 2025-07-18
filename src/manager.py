@@ -18,7 +18,7 @@ from training.train import train
 
 from data.dataset import augment_blur, augment_saturation, augment_contrast, augment_hue, augment_brightness, augment_rotation, augment_zoom_rotate, augment_all
 
-logging.getLogger().setLevel(20)
+logging.getLogger().setLevel(10)
 
 # def visualize(img_path):
 #     label = 0 # dummy label

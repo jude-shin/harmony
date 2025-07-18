@@ -232,6 +232,45 @@ class CnnModel1(Model):
         x = self.pool(x)
         return self.output_layer(x)
 
+
+class CnnModelClassic15Mini(Model):
+    '''
+    Smaller version of CnnModelClassic15 to reduce overfitting:
+    - Fewer filters per ConvBnLeakyBlock
+    - One less block
+    - Smaller Dense layer in head
+    '''
+    def __init__(self, input_shape, num_classes, **kwargs):
+        super().__init__(**kwargs)
+
+        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.augment = AugmentLayer()
+
+        self.blocks = [
+            ConvBnLeakyBlock(16, pool_size=2),
+            ConvBnLeakyBlock(32, pool_size=2),
+            ConvBnLeakyBlock(64, pool_size=2),
+            ConvBnLeakyBlock(128, pool_size=2),
+        ]
+
+        self.global_pool = layers.GlobalAveragePooling2D()
+        self.hidden = layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.01))
+        self.dropout = layers.Dropout(0.5)
+        self.output_layer = layers.Dense(num_classes, activation='softmax')
+
+    def call(self, inputs, training=False):
+        x = self.preprocess(inputs)
+        x = self.augment(x, training=training)
+
+        for block in self.blocks:
+            x = block(x, training=training)
+
+        x = self.global_pool(x)
+        x = self.hidden(x)
+        x = self.dropout(x, training=training)
+        return self.output_layer(x)
+
+
 class CnnModelClassic15(Model):
     '''
     Improved model based on "model_classic_15":
@@ -272,11 +311,7 @@ class CnnModelClassic15(Model):
         x = self.dropout(x, training=training)
         return self.output_layer(x)
 
-
-
-
-
-class CnnModelClassic16(Model):
+class CnnModelClassic15Large(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
 
