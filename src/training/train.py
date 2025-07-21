@@ -9,20 +9,31 @@ from time import localtime, strftime
 from data.dataset import load_record
 from cnn.model_structure import * 
 from utils.file_handler.dir import get_record_path, get_keras_model_dir
-from utils.file_handler.toml import load_config 
+from utils.file_handler.toml import load_config, save_config
 from utils.product_lines import PRODUCTLINES as PLS
 from training.callbacks import get_callbacks
 
 # from cnn.sequential_models import model_classic_1, model_classic_15
-
-def train(pl: PLS):
-    #################
-    #   Variables   #
-    #################
-    
+def train_product_line(pl: PLS, models: list[str]):
     # load the config.toml based on the model and product line
     config = load_config(pl)
 
+    if not models: # if the list is empty, default and train all of the models in the config
+        models = list(config.keys())
+
+    # TODO: make these run in parallel?
+    for model in models:
+        model_config = config[model]
+        train_model(pl, model, model_config)
+
+    
+
+
+
+def train_model(pl: PLS, model: str, config: dict):
+    #################
+    #   Variables   #
+    #################
 
     # Training Augmentation Multiplication
     batch_size = config['batch_size']
@@ -35,18 +46,9 @@ def train(pl: PLS):
     beta_1 = config['beta_1']
     beta_2 = config['beta_2']
     label_smoothing = config['label_smoothing']
+
     # TODO
     stopping_threshold = config['stopping_threshold']
-
-    # Optimizers:
-    #   Adam:
-    #       Learning Rate
-    #       Beta1
-    #       Beta2
-    # Loss:
-    #   Label Smoothing
-    # Metrics
-
 
     # Callbacks?
     #   Stopping threshold (at 98 or so for val accuracy)
@@ -62,17 +64,19 @@ def train(pl: PLS):
 
     # make the dir name based on the time
     keras_model_dir = strftime('%Y.%m.%d_%H.%M.%S', localtime())
-    keras_model_dir = os.path.join(get_keras_model_dir(), pl.value, keras_model_dir)
+    keras_model_dir = os.path.join(get_keras_model_dir(), pl.value, keras_model_dir, model)
 
     # if the directory exsists, log it as a warning, because I believe it will be overwritten
     if os.path.exists(keras_model_dir):
         logging.warning('keras model path exists already... data may be overwritten')
 
-    os.mkdir(keras_model_dir)
-
-    # TODO: save the model config that was just loaded in this directory so we know what the hell is going on
-
-
+    os.makedirs(keras_model_dir)
+    
+    #############################
+    #   Copy the Model Config   #
+    #############################
+    
+    save_config(keras_model_dir, model, config)
 
     ############################
     #   Loading the Datasets   #

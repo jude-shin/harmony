@@ -14,7 +14,7 @@ from data.collect import download_images_parallel, collect
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.time import get_elapsed_time 
 from data.dataset import generate_datasets
-from training.train import train 
+from training.train import train_product_line 
 
 from data.dataset import * 
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     # logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
     # ----------------------------------
     
-    train(PLS.LORCANA)
+    train_product_line(PLS.LORCANA, [])
 
     # ----------------------------------
     # path = '/home/storepass/harmony/src/Selection_001.png'
