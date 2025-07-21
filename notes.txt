@@ -1,8 +1,0 @@
-
-
-
-
-
-
-scp jude@192.168.1.164:/home/jude/harmony/keras_models/lorcana/m0.keras ./
-

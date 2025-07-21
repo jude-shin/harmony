@@ -9,6 +9,7 @@ from time import localtime, strftime
 from data.dataset import load_record
 from cnn.model_structure import * 
 from utils.file_handler.dir import get_record_path, get_keras_model_dir
+from utils.file_handler.toml import load_config 
 from utils.product_lines import PRODUCTLINES as PLS
 from training.callbacks import get_callbacks
 
@@ -18,13 +19,25 @@ def train(pl: PLS):
     #################
     #   Variables   #
     #################
+    
+    # load the config.toml based on the model and product line
+    config = load_config(pl)
+
 
     # Training Augmentation Multiplication
-    # Batch Size
-    # Model
-    # [Img_Height, Img_Width]
-    # Number of Unique Classes
-    num_classes = 994
+    batch_size = config['batch_size']
+    model_name = config['model_name']
+    img_height = config['img_height']
+    img_width = config['img_width']
+    num_classes = config['num_unique_classes']
+    augment_multiplication = config['augment_multiplication']
+    learning_rate = config['learning_rate']
+    beta_1 = config['beta_1']
+    beta_2 = config['beta_2']
+    label_smoothing = config['label_smoothing']
+    # TODO
+    stopping_threshold = config['stopping_threshold']
+
     # Optimizers:
     #   Adam:
     #       Learning Rate
@@ -57,6 +70,9 @@ def train(pl: PLS):
 
     os.mkdir(keras_model_dir)
 
+    # TODO: save the model config that was just loaded in this directory so we know what the hell is going on
+
+
 
     ############################
     #   Loading the Datasets   #
@@ -67,11 +83,11 @@ def train(pl: PLS):
     # training data should be shuffled and augmented
     # validation can be augmented or shuffled
     logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(get_record_path(pl), batch_size=124, shuffle=True, augment=True, multiply=100, num_classes=num_classes)
+    train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, augment=True, multiply=augment_multiplication, num_classes=num_classes)
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=124, shuffle=True, augment=True, multiply=1, num_classes=num_classes)
+    val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, augment=True, multiply=1, num_classes=num_classes)
     logging.info('Finished Loading Validation Dataset!')
    
 
@@ -79,19 +95,17 @@ def train(pl: PLS):
     #   Loading the Model   #
     #########################
 
-    # load the skeleton from cnn/model_structure.py
     # compile the model
     logging.info('Loading Model...')
-    keras_model = CnnModelClassic15Mini([437, 313], num_classes)
-    # keras_model = model_classic_15(437, 313, num_classes)
+    keras_model = parse_model_name(model_name, [img_height, img_width], num_classes)
     
     # build the layers
-    keras_model(tf.zeros([1, 437, 313, 3]))
+    keras_model(tf.zeros([1, img_height, img_width, 3]))
     
     # compile the model with learning rates and optimizers
     keras_model.compile(
-        optimizer=optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.999),
-        loss=losses.CategoricalCrossentropy(from_logits=False, label_smoothing=0.1), # Label smoothing
+        optimizer=optimizers.Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2),
+        loss=losses.CategoricalCrossentropy(from_logits=False, label_smoothing=label_smoothing), # Label smoothing
         metrics=[metrics.CategoricalAccuracy()]
     )
 

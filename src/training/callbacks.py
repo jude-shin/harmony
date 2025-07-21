@@ -47,7 +47,7 @@ class ClearMemory(callbacks.Callback):
 def get_callbacks(keras_model_dir: str) -> list[callbacks.Callback]:
     # defines when the model will stop training
     accuracy_threshold_callback = EarlyStoppingByValThreshold(
-            monitor='val_sparse_categorical_accuracy',
+            monitor='val_categorical_accuracy',
             threshold=0.98,
             )
 

@@ -6,6 +6,18 @@ import tensorflow as tf
 # there is going to be some funky stuff with these imports
 from tensorflow.keras import layers, models, Model, Sequential, regularizers
 
+#############
+#   PARSE   #
+#############
+def parse_model_name(model_name: str, input_shape, num_classes) -> Model:
+    match model_name:
+        case 'CnnModelClassic15Mini':
+            return CnnModelClassic15Mini(input_shape, num_classes)
+        case 'CnnModelClassic15':
+            return CnnModelClassic15(input_shape, num_classes)
+        case 'CnnModelClassic15Large':
+            return CnnModelClassic15Large(input_shape, num_classes)
+
 ##############
 #   LAYERS   #
 ##############
