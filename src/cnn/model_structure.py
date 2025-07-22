@@ -262,7 +262,7 @@ class CnnModelClassic15Mini(Model):
             ConvBnLeakyBlock(32, pool_size=2),
             ConvBnLeakyBlock(64, pool_size=2),
             ConvBnLeakyBlock(128, pool_size=2),
-        ]
+            ]
 
         self.global_pool = layers.GlobalAveragePooling2D()
         self.hidden = layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.01))
@@ -337,7 +337,7 @@ class CnnModelClassic15Large(Model):
             ConvBnLeakyBlock(512, pool_size=2),
             ConvBnLeakyBlock(768, pool_size=2),
             ConvBnLeakyBlock(1024, pool_size=2),
-        ]
+            ]
 
         self.global_pool = layers.GlobalAveragePooling2D()
         self.hidden = layers.Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))

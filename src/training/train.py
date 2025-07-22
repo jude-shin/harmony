@@ -128,7 +128,7 @@ def train_model(pl: PLS, model: str, config: dict):
               callbacks=get_callbacks(keras_model_dir)
               )
 
-    keras_model_path = os.path.join(keras_model_dir, 'model.keras')
+    keras_model_path = os.path.join(keras_model_dir, model+'.keras')
     keras_model.save(keras_model_path)
 
 
