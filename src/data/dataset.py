@@ -7,8 +7,9 @@ import tensorflow as tf
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path
 
-from utils.file_handler.pickle import load_ids 
+from utils.file_handler.pickle import load_ids # TODO change from master to m0 or something
 
+# TODO use the config file to get these variables
 IMG_WIDTH=313
 IMG_HEIGHT=437
 IMG_EXTS=['.jpg']
@@ -192,7 +193,7 @@ def generate_datasets(pl: PLS):
     Returns:
     '''
 
-    _ids = load_ids(pl, 'master', 'rb') 
+    _ids = load_ids(pl, 'm0', 'rb') 
 
     id_to_label = {id_: i for i, id_ in enumerate(_ids)}
 

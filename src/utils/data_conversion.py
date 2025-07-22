@@ -12,7 +12,7 @@ from utils.file_handler.pickle import load_ids
 # TODO : move this to the processing package
 def label_to_id(label : int, pl : PLS) -> str:
     '''
-    Convert a given label to the deckdrafterprod _id based on the master_labels.toml
+    Convert a given label to the deckdrafterprod _id based on the m0_labels.toml
 
     Args:
         label (str): what the tensorflow model will spit out
@@ -20,14 +20,14 @@ def label_to_id(label : int, pl : PLS) -> str:
     Returns:
         str: _id that is associated with that label
     '''
-    _ids = load_ids(pl, 'master', 'rb')
+    _ids = load_ids(pl, 'm0', 'rb')
     return _ids[label]
 
 
 def id_to_label(_id : str, pl : PLS) -> str:
     # TODO
     '''
-    Convert a given deckdrafterprod _id to the label based on the master_labels.toml
+    Convert a given deckdrafterprod _id to the label based on the m0_labels.toml
 
     Args:
         _id (str): deckdrafterprod _id 
@@ -49,7 +49,7 @@ def label_to_json(label : int, pl : PLS) -> dict:
     Returns:
         dict: json entry that is associated with that label (dict by default)
     '''
-    _ids = load_ids(pl, 'master', 'rb')
+    _ids = load_ids(pl, 'm0', 'rb')
     predicted_id = _ids[label]
     logging.info(' Label: %d -> _id: %s', label, predicted_id)
 
