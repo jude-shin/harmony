@@ -4,8 +4,7 @@ import tomllib
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.dir import * 
 
-def load_config(pl: PLS) -> dict:
-    config_path = get_config_path(pl)
+def load_config(config_path: str) -> dict:
     with open(config_path, 'rb') as f:
         config = tomllib.load(f)
 

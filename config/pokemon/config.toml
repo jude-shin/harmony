@@ -3,7 +3,7 @@
 	model_name='CnnModelClassic15'
 	img_height=437
 	img_width=313
-	num_unique_classes=994
+	num_unique_classes=23675
 	augment_multiplication=200
 	learning_rate=0.00005
 	beta_1=0.9
