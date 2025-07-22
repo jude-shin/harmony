@@ -39,12 +39,12 @@ class EarlyStoppingByValThreshold(callbacks.Callback):
             print(f"\nEpoch {epoch + 1}: Reached {self.monitor} threshold of {self.threshold}. Stopping training.")
             self.model.stop_training = True
 
-class ClearMemory(callbacks.Callback):
+class ClearMemory(callbacks.Callback): # TODO depreciated
     def on_epoch_end(self, batch, logs=None):
         backend.clear_session()
         gc.collect()
 
-def get_callbacks(keras_model_dir: str) -> list[callbacks.Callback]:
+def get_callbacks(keras_model_dir: str) -> list[callbacks.Callback]: # TODO depreciated
     # defines when the model will stop training
     accuracy_threshold_callback = EarlyStoppingByValThreshold(
             monitor='val_categorical_accuracy',

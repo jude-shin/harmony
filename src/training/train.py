@@ -11,7 +11,7 @@ from cnn.model_structure import *
 from utils.file_handler.dir import get_record_path, get_keras_model_dir
 from utils.file_handler.toml import * 
 from utils.product_lines import PRODUCTLINES as PLS
-from training.callbacks import get_callbacks
+from training.callbacks import * 
 
 # from cnn.sequential_models import model_classic_1, model_classic_15
 def train_product_line(pl: PLS, models: list[str]):
@@ -99,10 +99,33 @@ def continue_training(pl: PLS, model: str, version: str):
     keras_model_path = os.path.join(keras_model_dir, model+'.keras')
 
     if not os.path.exists(keras_model_path):
-        keras_model_path = os.path.join(keras_model_dir, 'checkpoint.keras')
+        keras_model_path = os.path.join(keras_model_dir, model+'_checkpoint.keras')
 
     keras_model = models.load_model(keras_model_path)
     logging.info('Finished Loading Model!')
+
+
+    #################
+    #   Callbacks   #
+    #################
+
+    # defines when the model will stop training
+    accuracy_threshold_callback = EarlyStoppingByValThreshold(
+            monitor='val_categorical_accuracy',
+            threshold=stopping_threshold,
+            )
+
+    # saves a snapshot of the model while it is training
+    checkpoint_path = os.path.join(keras_model_dir, model+"_checkpoint.keras")
+    checkpoint_callback = callbacks.ModelCheckpoint(
+        filepath=checkpoint_path, save_weights_only=False, save_best_only=True,
+        monitor='val_loss',
+        mode='min'
+    )
+
+    # logs the epoch, accuracy, and loss for a training session
+    csv_path = os.path.join(keras_model_dir, "training_logs.csv")
+    csv_logger_callback = CsvLoggerCallback(csv_path)
 
 
     ################
@@ -114,7 +137,7 @@ def continue_training(pl: PLS, model: str, version: str):
     keras_model.fit(train_ds,
               epochs=10000000000000,
               validation_data=val_ds, 
-              callbacks=get_callbacks(keras_model_dir)
+              callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
               )
 
     keras_model_path = os.path.join(keras_model_dir, model+'.keras')
@@ -208,6 +231,29 @@ def train_model(pl: PLS, model: str, config: dict):
     )
 
     logging.info('Finished Loading Model!')
+
+
+    #################
+    #   Callbacks   #
+    #################
+
+    # defines when the model will stop training
+    accuracy_threshold_callback = EarlyStoppingByValThreshold(
+            monitor='val_categorical_accuracy',
+            threshold=stopping_threshold,
+            )
+
+    # saves a snapshot of the model while it is training
+    checkpoint_path = os.path.join(keras_model_dir, model+"_checkpoint.keras")
+    checkpoint_callback = callbacks.ModelCheckpoint(
+        filepath=checkpoint_path, save_weights_only=False, save_best_only=True,
+        monitor='val_loss',
+        mode='min'
+    )
+
+    # logs the epoch, accuracy, and loss for a training session
+    csv_path = os.path.join(keras_model_dir, "training_logs.csv")
+    csv_logger_callback = CsvLoggerCallback(csv_path)
    
 
     ################
@@ -219,11 +265,9 @@ def train_model(pl: PLS, model: str, config: dict):
     keras_model.fit(train_ds,
               epochs=10000000000000,
               validation_data=val_ds, 
-              callbacks=get_callbacks(keras_model_dir)
+              callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
               )
 
     keras_model_path = os.path.join(keras_model_dir, model+'.keras')
     keras_model.save(keras_model_path)
-
-
 
