@@ -21,7 +21,7 @@ IMG_EXTS=['.jpg']
 @tf.function
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
-    image = tf.image.decode_jpeg(image, channels=3)
+    image = tf.image.decode_image(image, channels=3)
     image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
 
     image = tf.cast(image, tf.float32) / 255.0
@@ -74,6 +74,7 @@ def augment_skew(image, label):
 
 @tf.function
 def augment_rotation(image, label):
+    # TODO augment rotation should be done at differet angles (not just 180)
     image = tf.image.flip_up_down(image)
     image = tf.image.flip_left_right(image)
     return image, label

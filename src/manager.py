@@ -24,7 +24,7 @@ logging.getLogger().setLevel(10)
 #     label = 0 # dummy label
 #     
 #     image_raw = tf.io.read_file(img_path)
-#     image = tf.image.decode_jpeg(image_raw, channels=3)
+#     image = tf.image.decode_image(image_raw, channels=3)
 #     # image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH])
 #     image = tf.image.convert_image_dtype(image, tf.float32)
 #     
