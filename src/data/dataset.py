@@ -1,8 +1,10 @@
 import pandas as pd 
 import os
 import logging
+import math
 
 import tensorflow as tf
+from tensorflow.keras import layers
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path
@@ -35,13 +37,9 @@ def load_and_preprocess(path, label):
 
 # note: this will be done to the training dataset real time
 # prevents overfitting, stochastic, and decreases disk space
-
-# @tf.function
-# def augment_zoom_rotate(image, label):
-#     # TODO
-#     # slightly shrink the image and rotate it within the original bounds
-#     # this might not be needed
-#     return image, label
+#################
+#   GEOMETRIC   #
+################# 
 
 @tf.function
 def augment_skew(image, label):
@@ -74,10 +72,84 @@ def augment_skew(image, label):
 
 @tf.function
 def augment_rotation(image, label):
-    # TODO augment rotation should be done at differet angles (not just 180)
-    image = tf.image.flip_up_down(image)
-    image = tf.image.flip_left_right(image)
-    return image, label
+    angle_rad = tf.random.uniform([], -math.pi, math.pi)
+
+    # Image dimensions
+    height, width = tf.shape(image)[0], tf.shape(image)[1]
+    height_f, width_f = tf.cast(height, tf.float32), tf.cast(width, tf.float32)
+    center = [width_f / 2, height_f / 2]
+
+    # Rotation matrix
+    cos_angle = tf.cos(angle_rad)
+    sin_angle = tf.sin(angle_rad)
+    rotation_matrix = tf.reshape(
+        [cos_angle, -sin_angle, (1 - cos_angle) * center[0] + sin_angle * center[1],
+         sin_angle, cos_angle, (1 - cos_angle) * center[1] - sin_angle * center[0],
+         0, 0],
+        [8]
+    )
+
+    # Rotate using ImageProjectiveTransformV3
+    rotated = tf.raw_ops.ImageProjectiveTransformV3(
+        images=tf.expand_dims(image, axis=0),
+        transforms=tf.expand_dims(rotation_matrix, axis=0),
+        output_shape=[height, width],
+        interpolation="BILINEAR",
+        fill_mode="CONSTANT",
+        fill_value=0.0
+    )
+
+    rotated_image = tf.squeeze(rotated, axis=0)
+
+    return rotated_image, label
+
+# @tf.function
+# def augment_translation(image, label):
+#     image = tf.expand_dims(image, axis=0)
+#     translated = layers.RandomTranslation(
+#         height_factor=0.2,
+#         width_factor=0.2,
+#         fill_mode='constant',
+#         fill_value=0.0,
+#         interpolation='bilinear'
+#     )(image, training=True)
+#     return tf.squeeze(translated, axis=0), label
+
+
+@tf.function
+def augment_translation(image, label):
+    height, width = tf.shape(image)[0], tf.shape(image)[1]
+    height_f, width_f = tf.cast(height, tf.float32), tf.cast(width, tf.float32)
+
+    # Random translation factors (-20% to 20%)
+    translate_x = tf.random.uniform([], -0.2, 0.2) * width_f
+    translate_y = tf.random.uniform([], -0.2, 0.2) * height_f
+
+    # Translation transform
+    transform = [1.0, 0.0, -translate_x,
+                 0.0, 1.0, -translate_y,
+                 0.0, 0.0]
+
+    # Apply transformation
+    translated = tf.raw_ops.ImageProjectiveTransformV3(
+        images=tf.expand_dims(image, 0),
+        transforms=[transform],
+        output_shape=[height, width],
+        interpolation="BILINEAR",
+        fill_mode="CONSTANT",
+        fill_value=0.0
+    )
+
+    translated_image = tf.squeeze(translated, axis=0)
+
+    return translated_image, label
+
+
+
+
+#####################
+#   NON-GEOMETRIC   # 
+#####################
 
 @tf.function
 def augment_blur(image, label):
@@ -124,17 +196,14 @@ def augment_brightness(image, label):
     image = tf.image.random_brightness(image, 0.2)
     return image, label
 
-# other options for composing all of the augmentations 
 
 @tf.function
-def augment_all(image, label):
+def augment_non_geometric(image, label):
     fns = [
         augment_blur,
         augment_saturation,
         augment_contrast,
         augment_brightness,
-        augment_rotation,
-        augment_skew
     ]
 
     for fn in fns:
@@ -142,6 +211,16 @@ def augment_all(image, label):
         image, label = tf.cond(apply, lambda: fn(image, label), lambda: (image, label))
 
     return image, label
+
+@tf.function
+def augment_geometric(image, label):
+    i = tf.random.uniform(shape=[], minval=0, maxval=3, dtype=tf.int32)
+    return tf.case([
+        (tf.equal(i, 0), lambda: augment_rotation(image, label)),
+        (tf.equal(i, 1), lambda: augment_skew(image, label)),
+        (tf.equal(i, 2), lambda: augment_translation(image, label)),
+    ])
+
 
 
 ################
@@ -276,7 +355,8 @@ def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_class
     parsed_ds = raw_ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
     if augment:
-        parsed_ds = parsed_ds.map(augment_all, num_parallel_calls=tf.data.AUTOTUNE)
+        parsed_ds = parsed_ds.map(augment_geometric, num_parallel_calls=tf.data.AUTOTUNE) 
+        parsed_ds = parsed_ds.map(augment_non_geometric, num_parallel_calls=tf.data.AUTOTUNE)
 
     if multiply > 1:
         parsed_ds = parsed_ds.repeat(multiply)
