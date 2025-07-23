@@ -12,6 +12,9 @@ from utils.file_handler.pickle import load_ids
 # TODO : move to api package?
 # but keep some of the features
 
+# TODO : move to api package?
+# but keep some of the features
+
 def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list[float]]:
     '''
     Identifies a card with multiple models, giving the most confident output.
