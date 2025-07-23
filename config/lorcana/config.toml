@@ -1,0 +1,14 @@
+[m0]
+	batch_size=124
+	model_name='CnnModelClassic15'
+	img_height=437
+	img_width=313
+	num_unique_classes=994
+	augment_multiplication=200
+	learning_rate=0.00005
+	beta_1=0.9
+	beta_2=0.999
+	label_smoothing=0.05
+	stopping_threshold=98
+
+

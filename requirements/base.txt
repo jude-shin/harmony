@@ -2,10 +2,14 @@ typeguard
 numpy
 pandas
 pillow
-python-dotenv
-
 
 tensorflow[and-cuda]
+keras-cv
 scikit-learn
 keras-tuner
 opencv-python
+
+aiohttp
+aiofiles
+tqdm
+tenacity

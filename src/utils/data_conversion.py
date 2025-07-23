@@ -1,21 +1,18 @@
 import json
 import logging
 import os
-import typeguard
 import tomllib
-
-import pandas as pd
-import numpy as np 
 
 from pathlib import Path
 
 from utils.product_lines import PRODUCTLINES as PLS
+from utils.file_handler.json import load_deckdrafterprod
+from utils.file_handler.pickle import load_ids
 
 # TODO : move this to the processing package
-
 def label_to_id(label : int, pl : PLS) -> str:
     '''
-    Convert a given label to the deckdrafterprod _id based on the master_labels.toml
+    Convert a given label to the deckdrafterprod _id based on the m0_labels.toml
 
     Args:
         label (str): what the tensorflow model will spit out
@@ -23,21 +20,14 @@ def label_to_id(label : int, pl : PLS) -> str:
     Returns:
         str: _id that is associated with that label
     '''
-    data_dir = os.getenv('DATA_DIR')
-    if data_dir is None:
-        logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
-        return ''
-    master_labels_path = os.path.join(data_dir, pl.value, 'master_labels.toml')
-    with open(master_labels_path, 'rb') as f:
-        master_labels = tomllib.load(f)
-
-    return master_labels[str(label)]
+    _ids = load_ids(pl, 'm0', 'rb')
+    return _ids[label]
 
 
 def id_to_label(_id : str, pl : PLS) -> str:
     # TODO
     '''
-    Convert a given deckdrafterprod _id to the label based on the master_labels.toml
+    Convert a given deckdrafterprod _id to the label based on the m0_labels.toml
 
     Args:
         _id (str): deckdrafterprod _id 
@@ -59,24 +49,11 @@ def label_to_json(label : int, pl : PLS) -> dict:
     Returns:
         dict: json entry that is associated with that label (dict by default)
     '''
-
-    data_dir = os.getenv('DATA_DIR')
-    if data_dir is None:
-        logging.error(' [label_to_json] DATA_DIR env var not set. Returning empty str.')
-        return ''
-    master_labels_path = os.path.join(data_dir, pl.value, 'master_labels.toml')
-    with open(master_labels_path, 'rb') as f:
-        master_labels = tomllib.load(f)
-
-    predicted_id = master_labels[str(label)]
-
+    _ids = load_ids(pl, 'm0', 'rb')
+    predicted_id = _ids[label]
     logging.info(' Label: %d -> _id: %s', label, predicted_id)
 
-    # deckdrafterprod.json (for _id -> various information)
-    deckdrafterprod_path = Path(data_dir, pl.value, 'deckdrafterprod.json')
-    with open(deckdrafterprod_path, 'r') as deckdrafterprod_file:
-        deckdrafterprod = json.load(deckdrafterprod_file)
-
+    deckdrafterprod: dict = load_deckdrafterprod(pl, 'r')
     card_obj = {}
     for obj in deckdrafterprod:
         if str(obj['_id']) == str(predicted_id):
