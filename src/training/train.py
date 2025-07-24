@@ -16,7 +16,7 @@ from training.callbacks import *
 # from cnn.sequential_models import model_classic_1, model_classic_15
 def train_product_line(pl: PLS, models: list[str]):
     # load the config.toml based on the model and product line
-    config_path = get_config_dir()
+    config_path = get_config_path(pl)
     config = load_config(config_path)
 
     if not models: # if the list is empty, default and train all of the models in the config
