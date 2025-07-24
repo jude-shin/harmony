@@ -4,6 +4,7 @@ pandas
 pillow
 
 tensorflow[and-cuda]
+scann[tf]
 keras-cv
 scikit-learn
 keras-tuner
