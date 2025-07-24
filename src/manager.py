@@ -75,7 +75,7 @@ if __name__ == '__main__':
     # logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
     # ----------------------------------
     
-    train_product_line(PLS.POKEMON, ['m0'])
+    train_product_line(PLS.LORCANA, ['m0'])
 
     # ----------------------------------
     # path = '/home/storepass/harmony/src/Selection_001.png'

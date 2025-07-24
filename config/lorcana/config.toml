@@ -1,6 +1,6 @@
 [m0]
 	batch_size=124
-	model_name='CnnModelClassic15'
+	model_name='CnnModelClassic15Mini'
 	img_height=437
 	img_width=313
 	num_unique_classes=994
