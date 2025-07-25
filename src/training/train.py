@@ -218,10 +218,13 @@ def train_model(pl: PLS, model: str, config: dict):
 
     # compile the model
     logging.info('Loading Model...')
-    keras_model = parse_model_name(model_name, [img_height, img_width], num_classes)
+    input_shape = [1, img_height, img_width, 3]
+
+    logging.info(input_shape)
+    keras_model = parse_model_name(model_name, input_shape, num_classes)
     
     # build the layers
-    # keras_model(tf.zeros([1, img_height, img_width, 3]))
+    keras_model(tf.zeros(input_shape))
     
     # compile the model with learning rates and optimizers
     keras_model.compile(
@@ -263,7 +266,7 @@ def train_model(pl: PLS, model: str, config: dict):
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     keras_model.fit(train_ds,
-              epochs=10000000000000,
+              epochs=1,
               validation_data=val_ds, 
               callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
               )

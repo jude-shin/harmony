@@ -335,7 +335,7 @@ class CnnModel1(Model):
         self.input_shape = input_shape
         self.num_classes = num_classes 
 
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
 
         self.blocks = [
                 makeCnnSeq(input_shape, 32, 0.2),
@@ -402,7 +402,7 @@ class CnnModelClassic15Mini(Model):
         self.input_shape = input_shape
         self.num_classes = num_classes 
 
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
 
         self.blocks = [
             ConvBnLeakyBlock(filters=16, kernel_size=3, pool_size=2, l2=0.01),
@@ -481,7 +481,7 @@ class CnnModelClassic15(Model):
         self.input_shape = input_shape
         self.num_classes = num_classes
 
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
 
         self.blocks = [
                 ConvBnLeakyBlock(filters=40, kernel_size=3, pool_size=2, l2=0.01),
@@ -554,7 +554,7 @@ class CnnModelClassic15Large(Model):
         self.input_shape = input_shape
         self.num_classes = num_classes
 
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
+        self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
 
         self.blocks = [
             ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
@@ -608,7 +608,7 @@ class CnnModelClassic15Large(Model):
         dropout = layers.deserialize(config.pop('dropout'))
         output_layer = layers.deserialize(config.pop('output_layer'))
         input_shape = config.pop('input_shape')
-    
+
         instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
         instance.preprocess = preprocess
         instance.blocks = blocks
