@@ -46,7 +46,10 @@ class PreprocessingLayer(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        resize_layer_config = config.pop('resize_layer')
+        instance = cls(**config)
+        instance.resize_layer = layers.deserialize(resize_layer_config)
+        return instance
 
 
 ##############
@@ -81,7 +84,17 @@ class ConvBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        conv = layers.deserialize(config.pop('conv'))
+        bn = layers.deserialize(config.pop('bn'))
+        act = layers.deserialize(config.pop('act'))
+        pool = layers.deserialize(config.pop('pool'))
+    
+        instance = cls(**config)
+        instance.conv = conv
+        instance.bn = bn
+        instance.act = act
+        instance.pool = pool
+        return instance
 
 
 class SEBlock(layers.Layer):
@@ -107,14 +120,25 @@ class SEBlock(layers.Layer):
         config.update({
             'ratio': self.ratio,
             'global_avg_pool': self.global_avg_pool,
-            'dense1': self.dense2,
+            'dense1': self.dense1,
+            'dense2': self.dense2,
             'reshape': self.reshape,
             })
         return config
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        global_avg_pool = layers.deserialize(config.pop('global_avg_pool'))
+        dense1 = layers.deserialize(config.pop('dense1'))
+        dense2 = layers.deserialize(config.pop('dense2'))
+        reshape = layers.deserialize(config.pop('reshape'))
+    
+        instance = cls(input_shape=(None, None, dense2.units), **config)
+        instance.global_avg_pool = global_avg_pool
+        instance.dense1 = dense1
+        instance.dense2 = dense2
+        instance.reshape = reshape
+        return instance
 
 class ResidualBlock(layers.Layer):
     def __init__(self, filters, kernel_size=3, **kwargs):
@@ -146,7 +170,19 @@ class ResidualBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        conv1 = layers.deserialize(config.pop('conv1'))
+        bn1 = layers.deserialize(config.pop('bn1'))
+        relu = layers.deserialize(config.pop('relu'))
+        conv2 = layers.deserialize(config.pop('conv2'))
+        bn2 = layers.deserialize(config.pop('bn2'))
+    
+        instance = cls(**config)
+        instance.conv1 = conv1
+        instance.bn1 = bn1
+        instance.relu = relu
+        instance.conv2 = conv2
+        instance.bn2 = bn2
+        return instance
 
 
 class DropBlock(layers.Layer):
@@ -166,7 +202,10 @@ class DropBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        drop = layers.deserialize(config.pop('drop'))
+        instance = cls(**config)
+        instance.drop = drop
+        return instance
 
 
 class ConvBnLeakyBlock(layers.Layer):
@@ -199,7 +238,17 @@ class ConvBnLeakyBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        conv = layers.deserialize(config.pop('conv'))
+        bn = layers.deserialize(config.pop('bn'))
+        act = layers.deserialize(config.pop('act'))
+        pool = layers.deserialize(config.pop('pool'))
+    
+        instance = cls(**config)
+        instance.conv = conv
+        instance.bn = bn
+        instance.act = act
+        instance.pool = pool
+        return instance
 
 class DenseDropoutBlock(layers.Layer):
     '''
@@ -224,7 +273,13 @@ class DenseDropoutBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        dense = layers.deserialize(config.pop('dense'))
+        dropout = layers.deserialize(config.pop('dropout'))
+    
+        instance = cls(**config)
+        instance.dense = dense
+        instance.dropout = dropout
+        return instance
 
 ####################
 #   BLOCK MACROS   #
@@ -276,7 +331,17 @@ class CnnModel1(Model):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        preprocess = layers.deserialize(config.pop('preprocess'))
+        blocks = [layers.deserialize(block_cfg) for block_cfg in config.pop('blocks')]
+        pool = layers.deserialize(config.pop('pool'))
+        output_layer = layers.deserialize(config.pop('output_layer'))
+    
+        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance.preprocess = preprocess
+        instance.blocks = blocks
+        instance.pool = pool
+        instance.output_layer = output_layer
+        return instance
 
 
 class CnnModelClassic15Mini(Model):
@@ -328,7 +393,21 @@ class CnnModelClassic15Mini(Model):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        preprocess = layers.deserialize(config.pop('preprocess'))
+        blocks = [layers.deserialize(cfg) for cfg in config.pop('blocks')]
+        global_pool = layers.deserialize(config.pop('global_pool'))
+        hidden = layers.deserialize(config.pop('hidden'))
+        dropout = layers.deserialize(config.pop('dropout'))
+        output_layer = layers.deserialize(config.pop('output_layer'))
+    
+        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance.preprocess = preprocess
+        instance.blocks = blocks
+        instance.global_pool = global_pool
+        instance.hidden = hidden
+        instance.dropout = dropout
+        instance.output_layer = output_layer
+        return instance
 
 
 
@@ -382,7 +461,21 @@ class CnnModelClassic15(Model):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        preprocess = layers.deserialize(config.pop('preprocess'))
+        blocks = [layers.deserialize(cfg) for cfg in config.pop('blocks')]
+        global_pool = layers.deserialize(config.pop('global_pool'))
+        hidden = layers.deserialize(config.pop('hidden'))
+        dropout = layers.deserialize(config.pop('dropout'))
+        output_layer = layers.deserialize(config.pop('output_layer'))
+    
+        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance.preprocess = preprocess
+        instance.blocks = blocks
+        instance.global_pool = global_pool
+        instance.hidden = hidden
+        instance.dropout = dropout
+        instance.output_layer = output_layer
+        return instance
 
 
 class CnnModelClassic15Large(Model):
@@ -430,5 +523,19 @@ class CnnModelClassic15Large(Model):
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        preprocess = layers.deserialize(config.pop('preprocess'))
+        blocks = [layers.deserialize(cfg) for cfg in config.pop('blocks')]
+        global_pool = layers.deserialize(config.pop('global_pool'))
+        hidden = layers.deserialize(config.pop('hidden'))
+        dropout = layers.deserialize(config.pop('dropout'))
+        output_layer = layers.deserialize(config.pop('output_layer'))
+    
+        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance.preprocess = preprocess
+        instance.blocks = blocks
+        instance.global_pool = global_pool
+        instance.hidden = hidden
+        instance.dropout = dropout
+        instance.output_layer = output_layer
+        return instance
 
