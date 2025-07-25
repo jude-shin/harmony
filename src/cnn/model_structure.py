@@ -58,7 +58,7 @@ class ConvBlock(layers.Layer):
     '''
     A modular convolutional block: Conv2D -> BatchNorm -> ReLU -> MaxPool
     '''
-    def __init__(self, filters, kernel_size=3, pool_size=2, **kwargs):
+    def __init__(self, filters, kernel_size, pool_size, **kwargs):
         super().__init__(**kwargs)
         self.conv = layers.Conv2D(filters, kernel_size, padding='same')
         self.bn = layers.BatchNormalization()
@@ -142,7 +142,7 @@ class SEBlock(layers.Layer):
 
 @saving.register_keras_serializable(package='cnn')
 class ResidualBlock(layers.Layer):
-    def __init__(self, filters, kernel_size=3, **kwargs):
+    def __init__(self, filters, kernel_size, **kwargs):
         super().__init__(**kwargs)
         self.conv1 = layers.Conv2D(filters, kernel_size, padding='same')
         self.bn1 = layers.BatchNormalization()
@@ -188,7 +188,7 @@ class ResidualBlock(layers.Layer):
 
 @saving.register_keras_serializable(package='cnn')
 class DropBlock(layers.Layer):
-    def __init__(self, rate=0.3, **kwargs):
+    def __init__(self, rate, **kwargs):
         super().__init__(**kwargs)
         self.drop = layers.SpatialDropout2D(rate)
 
@@ -215,12 +215,12 @@ class ConvBnLeakyBlock(layers.Layer):
     '''
     Conv2D + BatchNorm + LeakyReLU + MaxPool, with L2 regularization.
     '''
-    def __init__(self, filters, kernel_size=3, pool_size=2, l2=0.01, **kwargs):
+    def __init__(self, filters, kernel_size, pool_size, l2, **kwargs):
         super().__init__(**kwargs)
         self.conv = layers.Conv2D(filters, kernel_size, padding='same',
                                   kernel_regularizer=regularizers.l2(l2))
         self.bn = layers.BatchNormalization()
-        self.act = layers.LeakyReLU(negative_slope=0.01)
+        self.act = layers.LeakyReLU(negative_slope=0.01) # TODO: add this?
         self.pool = layers.MaxPooling2D(pool_size)
 
     def call(self, inputs, training=False):
@@ -253,37 +253,37 @@ class ConvBnLeakyBlock(layers.Layer):
         instance.pool = pool
         return instance
 
-@saving.register_keras_serializable(package='cnn')
-class DenseDropoutBlock(layers.Layer):
-    '''
-    Dense + Dropout with L2 regularization, for classifier head.
-    '''
-    def __init__(self, units, dropout_rate=0.5, l2=0.01, **kwargs):
-        super().__init__(**kwargs)
-        self.dense = layers.Dense(units, activation='relu', kernel_regularizer=regularizers.l2(l2))
-        self.dropout = layers.Dropout(dropout_rate)
-
-    def call(self, inputs, training=False):
-        x = self.dense(inputs)
-        return self.dropout(x, training=training)
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'dense': self.dense,
-            'dropout': self.dropout,
-            })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        dense = layers.deserialize(config.pop('dense'))
-        dropout = layers.deserialize(config.pop('dropout'))
-    
-        instance = cls(**config)
-        instance.dense = dense
-        instance.dropout = dropout
-        return instance
+# @saving.register_keras_serializable(package='cnn')
+# class DenseDropoutBlock(layers.Layer):
+#     '''
+#     Dense + Dropout with L2 regularization, for classifier head.
+#     '''
+#     def __init__(self, units, dropout_rate=0.5, l2=0.01, **kwargs):
+#         super().__init__(**kwargs)
+#         self.dense = layers.Dense(units, activation='relu', kernel_regularizer=regularizers.l2(l2))
+#         self.dropout = layers.Dropout(dropout_rate)
+# 
+#     def call(self, inputs, training=False):
+#         x = self.dense(inputs)
+#         return self.dropout(x, training=training)
+# 
+#     def get_config(self):
+#         config = super().get_config()
+#         config.update({
+#             'dense': self.dense,
+#             'dropout': self.dropout,
+#             })
+#         return config
+# 
+#     @classmethod
+#     def from_config(cls, config):
+#         dense = layers.deserialize(config.pop('dense'))
+#         dropout = layers.deserialize(config.pop('dropout'))
+#     
+#         instance = cls(**config)
+#         instance.dense = dense
+#         instance.dropout = dropout
+#         return instance
 
 ####################
 #   BLOCK MACROS   #
@@ -291,8 +291,8 @@ class DenseDropoutBlock(layers.Layer):
 
 def makeCnnSeq(input_shape, filters, dropout_rate):
     return Sequential([
-        ConvBlock(filters),
-        ResidualBlock(filters),
+        ConvBlock(filters=filters, kernel_size=3, pool_size=2),
+        ResidualBlock(filters, kernel_size=3),
         SEBlock(input_shape, 8),
         DropBlock(rate=dropout_rate)
         ])
@@ -363,10 +363,10 @@ class CnnModelClassic15Mini(Model):
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
 
         self.blocks = [
-            ConvBnLeakyBlock(16, pool_size=2),
-            ConvBnLeakyBlock(32, pool_size=2),
-            ConvBnLeakyBlock(64, pool_size=2),
-            ConvBnLeakyBlock(128, pool_size=2),
+            ConvBnLeakyBlock(filters=16, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=32, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
             ]
 
         self.global_pool = layers.GlobalAveragePooling2D()
@@ -431,11 +431,11 @@ class CnnModelClassic15(Model):
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
 
         self.blocks = [
-                ConvBnLeakyBlock(40, pool_size=2), 
-                ConvBnLeakyBlock(80, pool_size=2), 
-                ConvBnLeakyBlock(160, pool_size=2),
-                ConvBnLeakyBlock(320, pool_size=2),
-                ConvBnLeakyBlock(640, pool_size=2),
+                ConvBnLeakyBlock(filters=40, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=80, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=160, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=320, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=640, kernel_size=3, pool_size=2, l2=0.01),
                 ]
 
         self.global_pool = layers.GlobalAveragePooling2D()
@@ -493,12 +493,12 @@ class CnnModelClassic15Large(Model):
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
 
         self.blocks = [
-            ConvBnLeakyBlock(64, pool_size=2),
-            ConvBnLeakyBlock(128, pool_size=2),
-            ConvBnLeakyBlock(256, pool_size=2),
-            ConvBnLeakyBlock(512, pool_size=2),
-            ConvBnLeakyBlock(768, pool_size=2),
-            ConvBnLeakyBlock(1024, pool_size=2),
+            ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=256, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=512, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=768, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=1024, kernel_size=3, pool_size=2, l2=0.01),
             ]
 
         self.global_pool = layers.GlobalAveragePooling2D()
