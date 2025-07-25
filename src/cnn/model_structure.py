@@ -29,8 +29,7 @@ class PreprocessingLayer(layers.Layer):
 
     def __init__(self, target_size, **kwargs):
         super().__init__(trainable=False, **kwargs)
-        self.target_size = target_size # TODO: remove the target_size
-        self.resize_layer = layers.Resizing(*self.target_size)
+        self.resize_layer = layers.Resizing(target_size)
 
     def call(self, inputs):
         x = self.resize_layer(inputs)
@@ -39,7 +38,6 @@ class PreprocessingLayer(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
-            'target_size': self.target_size,
             'resize_layer': self.resize_layer,
             })
         return config
