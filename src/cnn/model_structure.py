@@ -41,18 +41,12 @@ class PreprocessingLayer(layers.Layer):
         config = super().get_config()
         config.update({
             'target_size': self.target_size,
-            # 'resize_layer': self.resize_layer,
             })
         return config
 
     @classmethod
     def from_config(cls, config):
-        # target_size = layers.deserialize(config.pop('target_size'))
-        # resize_layer = layers.deserialize(config.pop('resize_layer'))
-
         instance = cls(**config)
-        # instance.target_size = target_size
-        # instance.resize_layer = resize_layer
         return instance
 
 
