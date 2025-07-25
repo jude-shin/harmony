@@ -1,10 +1,9 @@
 import logging
 
-
 import tensorflow as tf
 
 # there is going to be some funky stuff with these imports
-from tensorflow.keras import layers, models, Model, Sequential, regularizers
+from tensorflow.keras import layers, models, Model, Sequential, regularizers, saving
 
 #############
 #   PARSE   #
@@ -21,6 +20,7 @@ def parse_model_name(model_name: str, input_shape, num_classes) -> Model:
 ##############
 #   LAYERS   #
 ##############
+@saving.register_keras_serializable(package='cnn')
 class PreprocessingLayer(layers.Layer):
     '''
     A non-trainable preprocessing layer that handles image resizing, rescaling, and normalization.
@@ -28,8 +28,10 @@ class PreprocessingLayer(layers.Layer):
     '''
 
     def __init__(self, target_size, **kwargs):
-        super().__init__(trainable=False, **kwargs)
-        self.resize_layer = layers.Resizing(target_size)
+        super().__init__(**kwargs)
+        self.trainable = False
+        self.target_size = target_size
+        self.resize_layer = layers.Resizing(*self.target_size)
 
     def call(self, inputs):
         x = self.resize_layer(inputs)
@@ -38,21 +40,26 @@ class PreprocessingLayer(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
-            'resize_layer': self.resize_layer,
+            'target_size': self.target_size,
+            # 'resize_layer': self.resize_layer,
             })
         return config
 
     @classmethod
     def from_config(cls, config):
-        resize_layer_config = config.pop('resize_layer')
+        # target_size = layers.deserialize(config.pop('target_size'))
+        # resize_layer = layers.deserialize(config.pop('resize_layer'))
+
         instance = cls(**config)
-        instance.resize_layer = layers.deserialize(resize_layer_config)
+        # instance.target_size = target_size
+        # instance.resize_layer = resize_layer
         return instance
 
 
 ##############
 #   BLOCKS   #
 ##############
+@saving.register_keras_serializable(package='cnn')
 class ConvBlock(layers.Layer):
     '''
     A modular convolutional block: Conv2D -> BatchNorm -> ReLU -> MaxPool
@@ -95,6 +102,7 @@ class ConvBlock(layers.Layer):
         return instance
 
 
+@saving.register_keras_serializable(package='cnn')
 class SEBlock(layers.Layer):
     def __init__(self, input_shape, ratio, **kwargs):
         super().__init__(**kwargs)
@@ -138,6 +146,7 @@ class SEBlock(layers.Layer):
         instance.reshape = reshape
         return instance
 
+@saving.register_keras_serializable(package='cnn')
 class ResidualBlock(layers.Layer):
     def __init__(self, filters, kernel_size=3, **kwargs):
         super().__init__(**kwargs)
@@ -183,6 +192,7 @@ class ResidualBlock(layers.Layer):
         return instance
 
 
+@saving.register_keras_serializable(package='cnn')
 class DropBlock(layers.Layer):
     def __init__(self, rate=0.3, **kwargs):
         super().__init__(**kwargs)
@@ -206,6 +216,7 @@ class DropBlock(layers.Layer):
         return instance
 
 
+@saving.register_keras_serializable(package='cnn')
 class ConvBnLeakyBlock(layers.Layer):
     '''
     Conv2D + BatchNorm + LeakyReLU + MaxPool, with L2 regularization.
@@ -248,6 +259,7 @@ class ConvBnLeakyBlock(layers.Layer):
         instance.pool = pool
         return instance
 
+@saving.register_keras_serializable(package='cnn')
 class DenseDropoutBlock(layers.Layer):
     '''
     Dense + Dropout with L2 regularization, for classifier head.
@@ -294,6 +306,7 @@ def makeCnnSeq(input_shape, filters, dropout_rate):
 #######################
 #   MODEL TEMPLATES   #
 #######################
+@saving.register_keras_serializable()
 class CnnModel1(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
@@ -342,6 +355,7 @@ class CnnModel1(Model):
         return instance
 
 
+@saving.register_keras_serializable()
 class CnnModelClassic15Mini(Model):
     '''
     Smaller version of CnnModelClassic15 to reduce overfitting:
@@ -409,6 +423,7 @@ class CnnModelClassic15Mini(Model):
 
 
 
+@saving.register_keras_serializable()
 class CnnModelClassic15(Model):
     '''
     Improved model based on "model_classic_15":
@@ -476,6 +491,7 @@ class CnnModelClassic15(Model):
         return instance
 
 
+@saving.register_keras_serializable()
 class CnnModelClassic15Large(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)

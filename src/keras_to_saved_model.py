@@ -5,6 +5,8 @@ import tensorflow as tf
 
 from tensorflow.keras import models
 
+from cnn.model_structure import *
+
 
 def keras_to_saved_model(source: str, target: str): 
     # load the tf keras model
@@ -14,8 +16,8 @@ def keras_to_saved_model(source: str, target: str):
     model.export(target, format='tf_saved_model')
 
 
-keras_to_saved_model('/home/jude/m0.keras', '/home/jude/harmony/saved_models/save_lorcana/m0/2/')
-keras_to_saved_model('/home/jude/harmony/keras_models/lorcana/2025.07.24_18.22.30/m0/m0_checkpoint.kerass', '/home/jude/harmony/saved_models/save_lorcana/m0/2/')
+# keras_to_saved_model('/home/jude/m0.keras', '/home/jude/harmony/saved_models/save_lorcana/m0/2/')
+keras_to_saved_model('/home/jude/harmony/keras_models/lorcana/2025.07.25_18.01.32/m0/m0_checkpoint.keras', '/home/jude/harmony/saved_models/save_lorcana/m0/2/')
 
 # keras_to_saved_model('/home/jude/harmony/saved_models/pokemon/m0.keras', '/home/jude/harmony/saved_models/save_pokemon/m0/1/')
 # keras_to_saved_model('/home/jude/harmony/saved_models/pokemon/m1.keras', '/home/jude/harmony/saved_models/save_pokemon/m1/1/')
