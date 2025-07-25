@@ -29,8 +29,9 @@ class PreprocessingLayer(layers.Layer):
 
     def __init__(self, target_size, **kwargs):
         super().__init__(**kwargs)
-        self.trainable = False
         self.target_size = target_size
+
+        self.trainable = False
         self.resize_layer = layers.Resizing(*self.target_size)
 
     def call(self, inputs):
@@ -43,7 +44,8 @@ class PreprocessingLayer(layers.Layer):
             'target_size': self.target_size,
             })
         return config
-
+    
+    # TODO: I think I can just get rid of this entirely
     @classmethod
     def from_config(cls, config):
         instance = cls(**config)
@@ -60,6 +62,10 @@ class ConvBlock(layers.Layer):
     '''
     def __init__(self, filters, kernel_size, pool_size, **kwargs):
         super().__init__(**kwargs)
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.pool_size = pool_size
+
         self.conv = layers.Conv2D(filters, kernel_size, padding='same')
         self.bn = layers.BatchNormalization()
         self.act = layers.ReLU() # could be LeakyReLu
@@ -74,6 +80,9 @@ class ConvBlock(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
+            'filters': self.filters,
+            'kernel_size': self.kernel_size,
+            'pool_size': self.pool_size,
             'conv': self.conv,
             'bn': self.bn,
             'act': self.act,
@@ -100,6 +109,7 @@ class ConvBlock(layers.Layer):
 class SEBlock(layers.Layer):
     def __init__(self, input_shape, ratio, **kwargs):
         super().__init__(**kwargs)
+        self.input_shape = input_shape
         self.ratio = ratio
 
         channel_dim = input_shape[-1]
@@ -118,6 +128,7 @@ class SEBlock(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
+            'input_shape': self.input_shape,
             'ratio': self.ratio,
             'global_avg_pool': self.global_avg_pool,
             'dense1': self.dense1,
@@ -144,6 +155,9 @@ class SEBlock(layers.Layer):
 class ResidualBlock(layers.Layer):
     def __init__(self, filters, kernel_size, **kwargs):
         super().__init__(**kwargs)
+        self.filters = filters
+        self.kernel_size = kernel_size
+
         self.conv1 = layers.Conv2D(filters, kernel_size, padding='same')
         self.bn1 = layers.BatchNormalization()
         self.relu = layers.ReLU()
@@ -161,6 +175,8 @@ class ResidualBlock(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
+            'filters': self.filters,
+            'kernel_size': self.kernel_size,
             'conv1': self.conv1,
             'bn1': self.bn1,
             'relu': self.relu,
@@ -190,6 +206,8 @@ class ResidualBlock(layers.Layer):
 class DropBlock(layers.Layer):
     def __init__(self, rate, **kwargs):
         super().__init__(**kwargs)
+        self.rate = rate
+
         self.drop = layers.SpatialDropout2D(rate)
 
     def call(self, inputs, training=False):
@@ -198,6 +216,7 @@ class DropBlock(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
+            'rate': self.rate,
             'drop': self.drop,
             })
         return config
@@ -217,8 +236,12 @@ class ConvBnLeakyBlock(layers.Layer):
     '''
     def __init__(self, filters, kernel_size, pool_size, l2, **kwargs):
         super().__init__(**kwargs)
-        self.conv = layers.Conv2D(filters, kernel_size, padding='same',
-                                  kernel_regularizer=regularizers.l2(l2))
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.pool_size = pool_size 
+        self.l2 = l2
+
+        self.conv = layers.Conv2D(filters, kernel_size, padding='same', kernel_regularizer=regularizers.l2(l2))
         self.bn = layers.BatchNormalization()
         self.act = layers.LeakyReLU(negative_slope=0.01) # TODO: add this?
         self.pool = layers.MaxPooling2D(pool_size)
@@ -232,6 +255,10 @@ class ConvBnLeakyBlock(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
+            'filters': self.filters,
+            'kernel_size': self.kernel_size,
+            'pool_size': self.pool_size,
+            'l2': self.l2,
             'conv': self.conv,
             'bn': self.bn,
             'act': self.act,
