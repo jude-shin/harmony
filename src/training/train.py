@@ -221,7 +221,7 @@ def train_model(pl: PLS, model: str, config: dict):
     keras_model = parse_model_name(model_name, [img_height, img_width], num_classes)
     
     # build the layers
-    keras_model(tf.zeros([1, img_height, img_width, 3]))
+    # keras_model(tf.zeros([1, img_height, img_width, 3]))
     
     # compile the model with learning rates and optimizers
     keras_model.compile(

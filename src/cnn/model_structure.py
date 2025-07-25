@@ -143,8 +143,9 @@ class SEBlock(layers.Layer):
         dense1 = layers.deserialize(config.pop('dense1'))
         dense2 = layers.deserialize(config.pop('dense2'))
         reshape = layers.deserialize(config.pop('reshape'))
+        input_shape = config.pop('input_shape')
     
-        instance = cls(input_shape=(None, None, dense2.units), **config)
+        instance = cls(input_shape=input_shape, **config)
         instance.global_avg_pool = global_avg_pool
         instance.dense1 = dense1
         instance.dense2 = dense2
@@ -331,6 +332,9 @@ def makeCnnSeq(input_shape, filters, dropout_rate):
 class CnnModel1(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
+        self.input_shape = input_shape
+        self.num_classes = num_classes 
+
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
 
         self.blocks = [
@@ -351,9 +355,15 @@ class CnnModel1(Model):
         x = self.pool(x)
         return self.output_layer(x)
 
+    def build(self, input_shape):
+        dummy_input = tf.zeros(input_shape)
+        self.call(dummy_input, training=False)
+        super().build(input_shape)
+
     def get_config(self):
         config = super().get_config()
         config.update({
+            'input_shape': self.input_shape,
             'preprocess': self.preprocess,
             'blocks': self.blocks,
             'pool': self.pool,
@@ -367,12 +377,15 @@ class CnnModel1(Model):
         blocks = [layers.deserialize(block_cfg) for block_cfg in config.pop('blocks')]
         pool = layers.deserialize(config.pop('pool'))
         output_layer = layers.deserialize(config.pop('output_layer'))
+        input_shape = config.pop('input_shape')
     
-        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
         instance.preprocess = preprocess
         instance.blocks = blocks
         instance.pool = pool
         instance.output_layer = output_layer
+
+        instance.build(input_shape)
         return instance
 
 
@@ -386,6 +399,8 @@ class CnnModelClassic15Mini(Model):
     '''
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
+        self.input_shape = input_shape
+        self.num_classes = num_classes 
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
 
@@ -412,9 +427,15 @@ class CnnModelClassic15Mini(Model):
         x = self.dropout(x, training=training)
         return self.output_layer(x)
 
+    def build(self, input_shape):
+        dummy_input = tf.zeros(input_shape)
+        self.call(dummy_input, training=False)
+        super().build(input_shape)
+
     def get_config(self):
         config = super().get_config()
         config.update({
+            'input_shape': self.input_shape,
             'preprocess': self.preprocess,
             'blocks': self.blocks,
             'global_pool': self.global_pool,
@@ -432,14 +453,17 @@ class CnnModelClassic15Mini(Model):
         hidden = layers.deserialize(config.pop('hidden'))
         dropout = layers.deserialize(config.pop('dropout'))
         output_layer = layers.deserialize(config.pop('output_layer'))
+        input_shape = config.pop('input_shape')
     
-        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
         instance.preprocess = preprocess
         instance.blocks = blocks
         instance.global_pool = global_pool
         instance.hidden = hidden
         instance.dropout = dropout
         instance.output_layer = output_layer
+
+        instance.build(input_shape)
         return instance
 
 
@@ -454,6 +478,8 @@ class CnnModelClassic15(Model):
     '''
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
+        self.input_shape = input_shape
+        self.num_classes = num_classes
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
 
@@ -481,9 +507,15 @@ class CnnModelClassic15(Model):
         x = self.dropout(x, training=training)
         return self.output_layer(x)
 
+    def build(self, input_shape):
+        dummy_input = tf.zeros(input_shape)
+        self.call(dummy_input, training=False)
+        super().build(input_shape)
+
     def get_config(self):
         config = super().get_config()
         config.update({
+            'input_shape': self.input_shape,
             'preprocess': self.preprocess,
             'blocks': self.blocks,
             'global_pool': self.global_pool,
@@ -501,14 +533,17 @@ class CnnModelClassic15(Model):
         hidden = layers.deserialize(config.pop('hidden'))
         dropout = layers.deserialize(config.pop('dropout'))
         output_layer = layers.deserialize(config.pop('output_layer'))
+        input_shape = config.pop('input_shape')
     
-        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
         instance.preprocess = preprocess
         instance.blocks = blocks
         instance.global_pool = global_pool
         instance.hidden = hidden
         instance.dropout = dropout
         instance.output_layer = output_layer
+
+        instance.build(input_shape)
         return instance
 
 
@@ -516,6 +551,8 @@ class CnnModelClassic15(Model):
 class CnnModelClassic15Large(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
+        self.input_shape = input_shape
+        self.num_classes = num_classes
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
 
@@ -544,9 +581,15 @@ class CnnModelClassic15Large(Model):
         x = self.dropout(x, training=training)
         return self.output_layer(x)
 
+    def build(self, input_shape):
+        dummy_input = tf.zeros(input_shape)
+        self.call(dummy_input, training=False)
+        super().build(input_shape)
+
     def get_config(self):
         config = super().get_config()
         config.update({
+            'input_shape': self.input_shape,
             'preprocess': self.preprocess,
             'blocks': self.blocks,
             'global_pool': self.global_pool,
@@ -564,13 +607,16 @@ class CnnModelClassic15Large(Model):
         hidden = layers.deserialize(config.pop('hidden'))
         dropout = layers.deserialize(config.pop('dropout'))
         output_layer = layers.deserialize(config.pop('output_layer'))
+        input_shape = config.pop('input_shape')
     
-        instance = cls(input_shape=(None, None, 3), num_classes=output_layer.units, **config)
+        instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
         instance.preprocess = preprocess
         instance.blocks = blocks
         instance.global_pool = global_pool
         instance.hidden = hidden
         instance.dropout = dropout
         instance.output_layer = output_layer
+
+        instance.build(input_shape)
         return instance
 
