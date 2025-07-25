@@ -258,7 +258,7 @@ class CnnModel1(Model):
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
 
-        for block in self.blocks:
+        for block in self.blocks: 
             x = block(x, training=training)
 
         x = self.pool(x)
