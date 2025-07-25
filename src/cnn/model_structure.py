@@ -92,16 +92,16 @@ class ConvBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        conv = layers.deserialize(config.pop('conv'))
-        bn = layers.deserialize(config.pop('bn'))
-        act = layers.deserialize(config.pop('act'))
-        pool = layers.deserialize(config.pop('pool'))
+        # conv = layers.deserialize(config.pop('conv'))
+        # bn = layers.deserialize(config.pop('bn'))
+        # act = layers.deserialize(config.pop('act'))
+        # pool = layers.deserialize(config.pop('pool'))
     
         instance = cls(**config)
-        instance.conv = conv
-        instance.bn = bn
-        instance.act = act
-        instance.pool = pool
+        # instance.conv = conv
+        # instance.bn = bn
+        # instance.act = act
+        # instance.pool = pool
         return instance
 
 
@@ -114,6 +114,13 @@ class SEBlock(layers.Layer):
         self.dense1 = None
         self.dense2 = None
         self.reshape = None
+
+    def call(self, inputs):
+        x = self.global_avg(inputs)
+        x = self.dense1(x)
+        x = self.dense2(x)
+        x = self.reshape(x)
+        return inputs * x
 
     def build(self, input_shape):
         ch = input_shape[-1]
@@ -169,18 +176,18 @@ class ResidualBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        conv1 = layers.deserialize(config.pop('conv1'))
-        bn1 = layers.deserialize(config.pop('bn1'))
-        relu = layers.deserialize(config.pop('relu'))
-        conv2 = layers.deserialize(config.pop('conv2'))
-        bn2 = layers.deserialize(config.pop('bn2'))
+        # conv1 = layers.deserialize(config.pop('conv1'))
+        # bn1 = layers.deserialize(config.pop('bn1'))
+        # relu = layers.deserialize(config.pop('relu'))
+        # conv2 = layers.deserialize(config.pop('conv2'))
+        # bn2 = layers.deserialize(config.pop('bn2'))
     
         instance = cls(**config)
-        instance.conv1 = conv1
-        instance.bn1 = bn1
-        instance.relu = relu
-        instance.conv2 = conv2
-        instance.bn2 = bn2
+        # instance.conv1 = conv1
+        # instance.bn1 = bn1
+        # instance.relu = relu
+        # instance.conv2 = conv2
+        # instance.bn2 = bn2
         return instance
 
 
@@ -205,9 +212,9 @@ class DropBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        drop = layers.deserialize(config.pop('drop'))
+        # drop = layers.deserialize(config.pop('drop'))
         instance = cls(**config)
-        instance.drop = drop
+        # instance.drop = drop
         return instance
 
 
@@ -250,16 +257,16 @@ class ConvBnLeakyBlock(layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        conv = layers.deserialize(config.pop('conv'))
-        bn = layers.deserialize(config.pop('bn'))
-        act = layers.deserialize(config.pop('act'))
-        pool = layers.deserialize(config.pop('pool'))
+        # conv = layers.deserialize(config.pop('conv'))
+        # bn = layers.deserialize(config.pop('bn'))
+        # act = layers.deserialize(config.pop('act'))
+        # pool = layers.deserialize(config.pop('pool'))
     
         instance = cls(**config)
-        instance.conv = conv
-        instance.bn = bn
-        instance.act = act
-        instance.pool = pool
+        # instance.conv = conv
+        # instance.bn = bn
+        # instance.act = act
+        # instance.pool = pool
         return instance
 
 # @saving.register_keras_serializable(package='cnn')
@@ -422,36 +429,42 @@ class CnnModelClassic15Mini(Model):
         config = super().get_config()
         config.update({
             'input_shape': self.input_shape,
-            'preprocess': self.preprocess,
-            'blocks': self.blocks,
-            'global_pool': self.global_pool,
-            'hidden': self.hidden,
-            'dropout': self.dropout,
-            'output_layer': self.output_layer,
+            'num_classes': self.num_classes,
+            # 'preprocess': self.preprocess,
+            # 'blocks': self.blocks,
+            # 'global_pool': self.global_pool,
+            # 'hidden': self.hidden,
+            # 'dropout': self.dropout,
+            # 'output_layer': self.output_layer,
             })
         return config
 
     @classmethod
     def from_config(cls, config):
-        preprocess = layers.deserialize(config.pop('preprocess'))
-        blocks = [layers.deserialize(cfg) for cfg in config.pop('blocks')]
-        global_pool = layers.deserialize(config.pop('global_pool'))
-        hidden = layers.deserialize(config.pop('hidden'))
-        dropout = layers.deserialize(config.pop('dropout'))
-        output_layer = layers.deserialize(config.pop('output_layer'))
+        # preprocess = layers.deserialize(config.pop('preprocess'))
+        # blocks = [layers.deserialize(cfg) for cfg in config.pop('blocks')]
+        # global_pool = layers.deserialize(config.pop('global_pool'))
+        # hidden = layers.deserialize(config.pop('hidden'))
+        # dropout = layers.deserialize(config.pop('dropout'))
+        # output_layer = layers.deserialize(config.pop('output_layer'))
 
-        input_shape = config.pop('input_shape')
-        input_shape = [1, *input_shape[-3:]]
+        # input_shape = config.pop('input_shape')
+        # input_shape = [1, *input_shape[-3:]]
     
-        instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
-        instance.preprocess = preprocess
-        instance.blocks = blocks
-        instance.global_pool = global_pool
-        instance.hidden = hidden
-        instance.dropout = dropout
-        instance.output_layer = output_layer
+        # instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
+        # instance.preprocess = preprocess
+        # instance.blocks = blocks
+        # instance.global_pool = global_pool
+        # instance.hidden = hidden
+        # instance.dropout = dropout
+        # instance.output_layer = output_layer
 
-        instance.build(input_shape)
+        # instance.build(input_shape)
+
+
+
+        instance = cls(**config)
+
         return instance
 
 
