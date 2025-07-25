@@ -47,22 +47,21 @@ def continue_training(pl: PLS, model: str, version: str):
 
     config = load_config(keras_model_dir)
 
-
     #################
     #   Variables   #
     #################
 
     # Training Augmentation Multiplication
     batch_size = config['batch_size']
-    model_name = config['model_name']
-    img_height = config['img_height']
-    img_width = config['img_width']
+    # model_name = config['model_name']
+    # img_height = config['img_height']
+    # img_width = config['img_width']
     num_classes = config['num_unique_classes']
     augment_multiplication = config['augment_multiplication']
-    learning_rate = config['learning_rate']
-    beta_1 = config['beta_1']
-    beta_2 = config['beta_2']
-    label_smoothing = config['label_smoothing']
+    # learning_rate = config['learning_rate']
+    # beta_1 = config['beta_1']
+    # beta_2 = config['beta_2']
+    # label_smoothing = config['label_smoothing']
 
     # TODO
     stopping_threshold = config['stopping_threshold']
@@ -135,7 +134,7 @@ def continue_training(pl: PLS, model: str, version: str):
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     keras_model.fit(train_ds,
-              epochs=10000000000000,
+              epochs=1,
               validation_data=val_ds, 
               callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
               )
