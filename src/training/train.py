@@ -265,7 +265,7 @@ def train_model(pl: PLS, model: str, config: dict):
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     keras_model.fit(train_ds,
-              epochs=1,
+              epochs=1000000000,
               validation_data=val_ds, 
               callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
               )

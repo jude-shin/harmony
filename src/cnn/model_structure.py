@@ -101,14 +101,8 @@ class ConvBnLeakyBlock(layers.Layer):
 #######################
 #   MODEL TEMPLATES   #
 #######################
-@saving.register_keras_serializable()
-class CnnModelClassic15Mini(Model):
-    '''
-    Smaller version of CnnModelClassic15 to reduce overfitting:
-    - Fewer filters per ConvBnLeakyBlock
-    - One less block
-    - Smaller Dense layer in head
-    '''
+@saving.register_keras_serializable(package='cnn')
+class CnnModelClassicBase(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
         self.input_shape = input_shape
@@ -116,15 +110,10 @@ class CnnModelClassic15Mini(Model):
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
 
-        self.blocks = [
-            ConvBnLeakyBlock(filters=16, kernel_size=3, pool_size=2, l2=0.01),
-            ConvBnLeakyBlock(filters=32, kernel_size=3, pool_size=2, l2=0.01),
-            ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
-            ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
-            ]
+        self.blocks = [] 
 
         self.global_pool = layers.GlobalAveragePooling2D()
-        self.hidden = layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.01))
+        self.hidden = layers.Dense() # TODO problematic? change to None
         self.dropout = layers.Dropout(0.5)
         self.output_layer = layers.Dense(num_classes, activation='softmax')
 
@@ -160,156 +149,50 @@ class CnnModelClassic15Mini(Model):
         return cls(**config)
 
 
-# @saving.register_keras_serializable()
-# class CnnModelClassic15(Model):
-#     '''
-#     Improved model based on "model_classic_15":
-#     - Uses Conv + BN + LeakyReLU blocks
-#     - Includes spatial downsampling
-#     - Ends with GlobalAveragePooling + Dense classification head
-#     '''
-#     def __init__(self, input_shape, num_classes, **kwargs):
-#         super().__init__(**kwargs)
-#         self.input_shape = input_shape
-#         self.num_classes = num_classes
-# 
-#         self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
-# 
-#         self.blocks = [
-#                 ConvBnLeakyBlock(filters=40, kernel_size=3, pool_size=2, l2=0.01),
-#                 ConvBnLeakyBlock(filters=80, kernel_size=3, pool_size=2, l2=0.01),
-#                 ConvBnLeakyBlock(filters=160, kernel_size=3, pool_size=2, l2=0.01),
-#                 ConvBnLeakyBlock(filters=320, kernel_size=3, pool_size=2, l2=0.01),
-#                 ConvBnLeakyBlock(filters=640, kernel_size=3, pool_size=2, l2=0.01),
-#                 ]
-# 
-#         self.global_pool = layers.GlobalAveragePooling2D()
-#         self.hidden = layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.01))
-#         self.dropout = layers.Dropout(0.5)
-#         self.output_layer = layers.Dense(num_classes, activation='softmax')
-# 
-#     def call(self, inputs, training=False):
-#         x = self.preprocess(inputs)
-# 
-#         for block in self.blocks:
-#             x = block(x, training=training)
-# 
-#         x = self.global_pool(x)
-#         x = self.hidden(x)
-#         x = self.dropout(x, training=training)
-#         return self.output_layer(x)
-# 
-#     def build(self, input_shape):
-#         dummy_input = tf.zeros(input_shape)
-#         self.call(dummy_input, training=False)
-#         super().build(input_shape)
-# 
-#     def get_config(self):
-#         config = super().get_config()
-#         config.update({
-#             'input_shape': self.input_shape,
-#             'preprocess': self.preprocess,
-#             'blocks': self.blocks,
-#             'global_pool': self.global_pool,
-#             'hidden': self.hidden,
-#             'dropout': self.dropout,
-#             'output_layer': self.output_layer,
-#             })
-#         return config
-# 
-#     @classmethod
-#     def from_config(cls, config):
-#         preprocess = layers.deserialize(config.pop('preprocess'))
-#         blocks = [layers.deserialize(cfg) for cfg in config.pop('blocks')]
-#         global_pool = layers.deserialize(config.pop('global_pool'))
-#         hidden = layers.deserialize(config.pop('hidden'))
-#         dropout = layers.deserialize(config.pop('dropout'))
-#         output_layer = layers.deserialize(config.pop('output_layer'))
-# 
-#         input_shape = [1, *config.pop('input_shape')]
-#     
-#         instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
-#         instance.preprocess = preprocess
-#         instance.blocks = blocks
-#         instance.global_pool = global_pool
-#         instance.hidden = hidden
-#         instance.dropout = dropout
-#         instance.output_layer = output_layer
-# 
-#         instance.build(input_shape)
-#         return instance
-# 
-# 
-# @saving.register_keras_serializable()
-# class CnnModelClassic15Large(Model):
-#     def __init__(self, input_shape, num_classes, **kwargs):
-#         super().__init__(**kwargs)
-#         self.input_shape = input_shape
-#         self.num_classes = num_classes
-# 
-#         self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
-# 
-#         self.blocks = [
-#             ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
-#             ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
-#             ConvBnLeakyBlock(filters=256, kernel_size=3, pool_size=2, l2=0.01),
-#             ConvBnLeakyBlock(filters=512, kernel_size=3, pool_size=2, l2=0.01),
-#             ConvBnLeakyBlock(filters=768, kernel_size=3, pool_size=2, l2=0.01),
-#             ConvBnLeakyBlock(filters=1024, kernel_size=3, pool_size=2, l2=0.01),
-#             ]
-# 
-#         self.global_pool = layers.GlobalAveragePooling2D()
-#         self.hidden = layers.Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))
-#         self.dropout = layers.Dropout(0.5)
-#         self.output_layer = layers.Dense(num_classes, activation='softmax')
-# 
-#     def call(self, inputs, training=False):
-#         x = self.preprocess(inputs)
-# 
-#         for block in self.blocks:
-#             x = block(x, training=training)
-# 
-#         x = self.global_pool(x)
-#         x = self.hidden(x)
-#         x = self.dropout(x, training=training)
-#         return self.output_layer(x)
-# 
-#     def build(self, input_shape):
-#         dummy_input = tf.zeros(input_shape)
-#         self.call(dummy_input, training=False)
-#         super().build(input_shape)
-# 
-#     def get_config(self):
-#         config = super().get_config()
-#         config.update({
-#             'input_shape': self.input_shape,
-#             'preprocess': self.preprocess,
-#             'blocks': self.blocks,
-#             'global_pool': self.global_pool,
-#             'hidden': self.hidden,
-#             'dropout': self.dropout,
-#             'output_layer': self.output_layer,
-#             })
-#         return config
-# 
-#     @classmethod
-#     def from_config(cls, config):
-#         preprocess = layers.deserialize(config.pop('preprocess'))
-#         blocks = [layers.deserialize(cfg) for cfg in config.pop('blocks')]
-#         global_pool = layers.deserialize(config.pop('global_pool'))
-#         hidden = layers.deserialize(config.pop('hidden'))
-#         dropout = layers.deserialize(config.pop('dropout'))
-#         output_layer = layers.deserialize(config.pop('output_layer'))
-#         input_shape = [1, *config.pop('input_shape')]
-# 
-#         instance = cls(input_shape=input_shape, num_classes=output_layer.units, **config)
-#         instance.preprocess = preprocess
-#         instance.blocks = blocks
-#         instance.global_pool = global_pool
-#         instance.hidden = hidden
-#         instance.dropout = dropout
-#         instance.output_layer = output_layer
-# 
-#         instance.build(input_shape)
-#         return instance
-# 
+@saving.register_keras_serializable(package='cnn')
+class CnnModelClassic15Mini(CnnModelClassicBase):
+    def __init__(self, input_shape, num_classes, **kwargs):
+        super().__init__(input_shape, num_classes, **kwargs)
+
+        self.blocks = [
+            ConvBnLeakyBlock(filters=16, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=32, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
+            ]
+
+        self.hidden = layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.01)) 
+
+
+@saving.register_keras_serializable()
+class CnnModelClassic15(CnnModelClassicBase):
+    def __init__(self, input_shape, num_classes, **kwargs):
+        super().__init__(input_shape, num_classes, **kwargs)
+
+        self.blocks = [
+                ConvBnLeakyBlock(filters=40, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=80, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=160, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=320, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=640, kernel_size=3, pool_size=2, l2=0.01),
+                ]
+
+        self.hidden = layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.01))
+
+
+@saving.register_keras_serializable()
+class CnnModelClassic15Large(CnnModelClassicBase):
+    def __init__(self, input_shape, num_classes, **kwargs):
+        super().__init__(input_shape, num_classes, **kwargs)
+
+        self.blocks = [
+            ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=256, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=512, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=768, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=1024, kernel_size=3, pool_size=2, l2=0.01),
+            ]
+
+        self.hidden = layers.Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))
+
