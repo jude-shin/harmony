@@ -8,9 +8,7 @@ import numpy as np
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
 from utils.file_handler.pickle import load_ids
-
-# TODO : move to api package?
-# but keep some of the features
+from utils.file_handler.dir import get_saved_model_dir 
 
 # TODO : move to api package?
 # but keep some of the features
@@ -33,7 +31,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
-    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
+    url = f'http://tfs-{pl.value}:{TFS_PORT}/v2/models/{model_name}:predict'
 
     try:
         response = requests.post(url, json={'instances': instances}, timeout=10)
@@ -133,7 +131,6 @@ def get_model_config(pl: PLS) -> dict:
     try:
         toml_path = 'config.toml'
 
-
         saved_model_dir = get_saved_model_dir()
         full_toml_path = os.path.join(saved_model_dir, pl.value, toml_path)
 
@@ -150,6 +147,7 @@ def get_model_config(pl: PLS) -> dict:
 class CachedConfigs(metaclass=Singleton):
     # TODO: pickled information may be easier?
     def __init__(self):
+
         self.cached_configs = {}
         for pl in PLS:
             self.cached_configs[pl.value] = get_model_config(pl)
@@ -160,8 +158,16 @@ class CachedConfigs(metaclass=Singleton):
             # this is for efficiency. why else should we be training the models off of different sized images?A
             # this might bite me in the butt when it comes to versioning... 
             metadata = get_model_metadata('m0', pl)
-            input_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
-            input_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
+
+            logging.debug(metadata)
+
+            metadata = metadata['metadata']['signature_def']['signature_def']['serve']['inputs']
+            metadata = metadata.get('input_layer') or metadata.get('args_0')
+            metadata = metadata['tensor_shape']['dim']
+
+            input_width = int(metadata[1]['size'])
+
+            input_height = int(metadata[2]['size'])
 
             self.cached_configs[pl.value]['m0']['input_width'] = input_width
             self.cached_configs[pl.value]['m0']['input_height'] = input_height 
