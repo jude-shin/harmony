@@ -13,7 +13,7 @@ from utils.file_handler.dir import get_saved_model_dir
 # TODO : move to api package?
 # but keep some of the features
 
-def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list[float]]:
+def identify(instances: list, model_name: str, pl: PLS, version: int) -> tuple[list[str], list[float]]:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
@@ -31,7 +31,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
-    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}/versions/2:predict'
+    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}/versions/{version}:predict'
 
     try:
         response = requests.post(url, json={'instances': instances}, timeout=10)
@@ -85,7 +85,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
     # Recurse into submodels
     for next_model, sub_instances in submodel_inputs.items():
         try:
-            sub_labels, sub_confidences = identify(sub_instances, next_model, pl)
+            sub_labels, sub_confidences = identify(sub_instances, next_model, pl, version)
         except Exception as e:
             logging.warning('Submodel [%s] failed to identify batch: %s', next_model, str(e))
             sub_labels = [None] * len(sub_instances)

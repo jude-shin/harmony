@@ -59,7 +59,8 @@ async def ping() -> dict[str, str]:
 async def predict(
         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
         images: list[UploadFile] = File(..., description='image scans from client that are to be identified'),
-        threshold: float = Form(..., description='what percent confidence that is deemed correct')
+        threshold: float = Form(..., description='what percent confidence that is deemed correct'),
+        version: int = Form(..., description='the model version that is to be used in the given product line')
         ):
 
     pl = string_to_product_line(product_line_string)
@@ -89,7 +90,7 @@ async def predict(
         instance = img_tensor.numpy().tolist()
         instances.append(instance)
 
-    predictions, confidences = identify(instances, 'm0', pl)
+    predictions, confidences = identify(instances, 'm0', pl, version)
 
     json_prediction_obj = {
             'predictions': [label_to_id(int(p), pl) if p is not None else None for p in predictions],
