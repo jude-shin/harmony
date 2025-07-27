@@ -31,7 +31,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
-    url = f'http://tfs-{pl.value}:{TFS_PORT}/v2/models/{model_name}:predict'
+    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}/versions/2:predict'
 
     try:
         response = requests.post(url, json={'instances': instances}, timeout=10)
