@@ -3,19 +3,11 @@ services:
     build: 
       context: .
       dockerfile: docker/api/Dockerfile
+    env_file:
+      - path: ./.env
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app/src
-
-      - MODEL_DIR=${MODEL_DIR}
-      - DATA_DIR=${DATA_DIR}
-      - SAVED_MODEL_DIR=${SAVED_MODEL_DIR}
-
-      - API_PORT=${API_PORT}
-      - TFS_PORT=${TFS_PORT}
-      - LORCANA_PORT=${LORCANA_PORT}
-      - POKEMON_PORT=${POKEMON_PORT}
-
       - TF_FORCE_GPU_ALLOW_GROWTH=true
     ports:
       - "${API_PORT}:5000"
@@ -23,6 +15,7 @@ services:
       - ./keras_models:/keras_models
       - ./saved_models:/saved_models
       - ./data:/data
+      - ./config:/config
     deploy:
       resources:
         reservations:

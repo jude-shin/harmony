@@ -7,14 +7,12 @@ from processing.image_processing import get_tensor_from_image # TODO: THIS shoul
 
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
-from utils.tfs_models import identify, CachedConfigs
-
-from data.collect import generate_keys
-from data.collect import download_images_parallel
+from utils.tfs_models import identify
+from utils.file_handler.dir import get_config_path
+from utils.file_handler.toml import load_config 
 
 logging.getLogger().setLevel(0) # 20
 
-CachedConfigs()
 
 app = FastAPI(
         title='Harmony ML API',
@@ -25,35 +23,6 @@ app = FastAPI(
 @app.get('/ping', summary='testing')
 async def ping() -> dict[str, str]:
     return {'ping': 'pong'}
-
-# @app.get('/validate', summary='validates the structure of our application')
-# async def validate():
-#     logging.warning('validate endpoint not implemented yet')
-#     return {'validate endpoint not implemented yet'}
-# 
-# @app.post('/process', summary='processes deckdrafterprod for the first time')
-# async def process(
-#         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
-#         ):
-#     pl = string_to_product_line(product_line_string)
-#     process_deckdrafterprod(pl)
-#     return {}
-# 
-# @app.post('/process_images', summary='pickles the labels from the deckdrafterprod')
-# async def process_images(
-#         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
-#         ):
-#     pl = string_to_product_line(product_line_string)
-#     download_images_parallel(pl)
-#     return {}
-# 
-# @app.post('/process_keys', summary='pickles the labels from the deckdrafterprod')
-# async def process_keys(
-#         product_line_string: str = Form(..., description='productLine name (e.g., locrana, mtg)'),
-#         ):
-#     pl = string_to_product_line(product_line_string)
-#     generate_keys(pl)
-#     return {}
 
 @app.post('/predict')
 async def predict(
@@ -80,9 +49,14 @@ async def predict(
         pil_images.append(pil_image)
 
     instances = []
+
+
+    config_path = get_config_path(pl)
+    config = load_config(config_path)
+
     # NOTE: for simplicity we need the models to all comply to the same width and height
-    input_width = CachedConfigs().request_config(pl)['m0']['input_width']
-    input_height  = CachedConfigs().request_config(pl)['m0']['input_height']
+    input_width = config['m0']['img_width']
+    input_height = config['m0']['img_height']
 
     for pil_image in pil_images:
         img_tensor = get_tensor_from_image(pil_image, input_width, input_height) # TODO: use the custom data.dataset.tensor_from_image

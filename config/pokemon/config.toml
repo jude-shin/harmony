@@ -10,5 +10,6 @@
 	beta_2=0.999
 	label_smoothing=0.05
 	stopping_threshold=98
+	is_final=true
 
 
