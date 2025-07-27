@@ -92,7 +92,9 @@ def generate_keys(pl: PLS):
 
 
     # TODO: use the file_management module in utils
-    pickle_path = 'master_ids.pkl'
+    # TODO: add the model name in the generate_keys as a parameter
+    # pickle_path = '{prefix}_ids.pkl'
+    pickle_path = 'm0_ids.pkl'
 
     label_to_id_path = os.path.join(data_dir, pl.value, pickle_path)
     with open(label_to_id_path, 'wb+') as f:
