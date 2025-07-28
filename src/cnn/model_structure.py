@@ -113,7 +113,7 @@ class CnnModelClassicBase(Model):
         self.blocks = [] 
 
         self.global_pool = layers.GlobalAveragePooling2D()
-        self.hidden = layers.Dense() # TODO problematic? change to None
+        self.hidden = None 
         self.dropout = layers.Dropout(0.5)
         self.output_layer = layers.Dense(num_classes, activation='softmax')
 

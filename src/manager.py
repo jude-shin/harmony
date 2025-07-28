@@ -71,7 +71,7 @@ if __name__ == '__main__':
     # ----------------------------------
     # st = time.time()
     # collect(PLS.POKEMON)
-    # generate_datasets(PLS.POKEMON)
+    generate_datasets(PLS.LORCANA)
     # logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
     # ----------------------------------
     
