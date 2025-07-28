@@ -14,6 +14,7 @@ from utils.file_handler.pickle import load_ids # TODO change from master to m0 o
 # TODO use the config file to get these variables
 IMG_WIDTH=313
 IMG_HEIGHT=437
+
 IMG_EXTS=['.jpg']
 
 ###########################################################
@@ -23,7 +24,8 @@ IMG_EXTS=['.jpg']
 @tf.function
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
-    image = tf.image.decode_image(image, channels=3)
+    image = tf.image.decode_image(image, channels=3) # decode_jpg or decode_png
+    image.set_shape([None, None, 3]) 
     image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
 
     image = tf.cast(image, tf.float32) / 255.0
@@ -249,20 +251,20 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
     return None
 
 
-def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    img_dir = get_images_dir(pl) # this does not work
-    # img_dir = os.path.join(get_data_dir(), pl.value, 'images')
-
-    df['path'] = df['_id'].apply(lambda x: resolve_path(img_dir, x))
-
-    present = df[df['path'].notna()].reset_index(drop=True)
-    missing = df[df['path'].isna()].reset_index(drop=True)
-
-
-    logging.info('Number Present: %d', len(present))
-    logging.info('Number Missing: %d', len(missing))
-
-    return present, missing
+# def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+#     img_dir = get_images_dir(pl) # this does not work
+#     # img_dir = os.path.join(get_data_dir(), pl.value, 'images')
+# 
+#     df['path'] = df['_id'].apply(lambda x: resolve_path(img_dir, x))
+# 
+#     present = df[df['path'].notna()].reset_index(drop=True)
+#     missing = df[df['path'].isna()].reset_index(drop=True)
+# 
+# 
+#     logging.info('Number Present: %d', len(present))
+#     logging.info('Number Missing: %d', len(missing))
+# 
+#     return present, missing
 
 
 def generate_datasets(pl: PLS):
