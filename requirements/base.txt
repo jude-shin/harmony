@@ -1,9 +1,7 @@
 typeguard
-numpy
 pandas
 pillow
 
-tensorflow[and-cuda]
 keras-cv
 scikit-learn
 keras-tuner

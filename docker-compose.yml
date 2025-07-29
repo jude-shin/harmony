@@ -1,4 +1,32 @@
 services:
+  training:
+    build:
+      context: .
+      dockerfile: ./docker/api/Dockerfile
+    env_file: 
+      - path: ./.env.development
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - TF_CPP_MIN_LOG_LEVEL=1
+      - TF_CUDNN_DETERMINISTIC=true
+      - TF_XLA_FLAGS=--tf_xla_enable_xla_devices
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./:/harmony
+    runtime: nvidia
+    restart: unless-stopped
+    container_name: training 
+    stdin_open: true
+    tty: true
+    command: bash
+
   api:
     build: 
       context: .

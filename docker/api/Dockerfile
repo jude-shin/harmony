@@ -1,6 +1,7 @@
 # Start from a standard Python image
 FROM python:3.11-slim AS base
-WORKDIR /app
+# TODO: make this use a env var from the docker-compose
+WORKDIR /app 
 
 # Install system dependencies
 RUN apt-get update && \
@@ -11,9 +12,12 @@ RUN apt-get update && \
 # Copy and install Python dependencies
 COPY requirements/base.txt .
 COPY requirements/api.txt .
-RUN pip install --no-cache-dir -r base.txt -r api.txt
+COPY requirements/tf.txt .
+RUN pip install --no-cache-dir -r base.txt -r api.txt -r tf.txt
 
 # Copy your app code
+# TODO: make this use a env var from the docker-compose
+# TODO: I could also try and mount this as a volume so that we don't have to copy and paset it all the time
 COPY src/ /app/src
 
 # Expose port and start app
