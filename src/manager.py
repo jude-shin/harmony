@@ -9,6 +9,7 @@ import gc
 import tensorflow as tf 
 
 from tensorflow import keras
+from tensorflow.keras import mixed_precision 
 
 from data.collect import download_images_parallel, collect
 from utils.product_lines import PRODUCTLINES as PLS
@@ -63,19 +64,26 @@ if __name__ == '__main__':
     # force garbage collection
     gc.collect()
 
-    # expand the gpus for growth
+    # expand all gpus for growth
     gpus = tf.config.list_physical_devices('GPU')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     
-    # ----------------------------------
-    # st = time.time()
-    collect(PLS.POKEMON)
-    generate_datasets(PLS.POKEMON)
-    # logging.warning(' ----> ELAPSED TIME: ' + get_elapsed_time(st))
-    # ----------------------------------
+    # distribute the workload across all gpus
+    strategy = tf.distribute.MirroredStrategy()
     
-    train_product_line(PLS.POKEMON, ['m0'])
+    # makes things faster?
+    mixed_precision.set_global_policy("mixed_float16")
+
+    # DOWNLOAD THE IMAGES
+    collect(PLS.LORCANA)
+    
+    with strategy.scope():
+        # GENERATE THE DATASETS
+        generate_datasets(PLS.LORCANA)
+        
+        # TRAIN THE MODEL
+        train_product_line(PLS.LORCANA, ['m0'])
 
     # ----------------------------------
     # path = '/home/storepass/harmony/src/Selection_001.png'
