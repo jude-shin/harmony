@@ -229,7 +229,7 @@ def train_model(pl: PLS, model: str, config: dict):
     keras_model.compile(
         optimizer=optimizers.Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2),
         loss=losses.CategoricalCrossentropy(from_logits=False, label_smoothing=label_smoothing), # Label smoothing
-        metrics=[metrics.CategoricalAccuracy()]
+        metrics=[metrics.CategoricalAccuracy()],
     )
 
     logging.info('Finished Loading Model!')
@@ -250,7 +250,7 @@ def train_model(pl: PLS, model: str, config: dict):
     checkpoint_callback = callbacks.ModelCheckpoint(
         filepath=checkpoint_path, save_weights_only=False, save_best_only=True,
         monitor='val_loss',
-        mode='min'
+        mode='min',
     )
 
     # logs the epoch, accuracy, and loss for a training session
