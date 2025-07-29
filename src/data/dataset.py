@@ -354,19 +354,19 @@ def save_record(tfrecord_path, dataset):
 
 def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_classes):
     raw_ds = tf.data.TFRecordDataset(tfrecord_path)
-    parsed_ds = raw_ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
+    ds = raw_ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
     if augment:
-        parsed_ds = parsed_ds.map(augment_geometric, num_parallel_calls=tf.data.AUTOTUNE) 
-        parsed_ds = parsed_ds.map(augment_non_geometric, num_parallel_calls=tf.data.AUTOTUNE)
+        ds = ds.map(augment_geometric, num_parallel_calls=tf.data.AUTOTUNE) 
+        ds = ds.map(augment_non_geometric, num_parallel_calls=tf.data.AUTOTUNE)
 
     if multiply > 1:
-        parsed_ds = parsed_ds.repeat(multiply)
+        ds = ds.repeat(multiply)
 
     if shuffle:
-        parsed_ds = parsed_ds.shuffle(buffer_size=1000)
+        ds = ds.shuffle(buffer_size=1000)
 
-    ds = parsed_ds.batch(batch_size)
+    ds = ds.batch(batch_size)
 
     # one hot encode the labels for smooth labels
     ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
