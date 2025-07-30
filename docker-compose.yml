@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/training/Dockerfile
+    command: tail -f /dev/null
     environment:
       - PYTHONPATH=/harmony/src
       - NVIDIA_VISIBLE_DEVICES=all
@@ -25,7 +26,7 @@ services:
       - ./saved_models/:/volumes/saved_models/
       - ./config/:/volumes/config/
     runtime: nvidia
-    restart: unless-stopped
+    restart: no 
     container_name: training 
 
   api:

@@ -12,5 +12,3 @@ COPY src/manager.py src/manager.py
 COPY src/data src/data
 COPY src/training src/training
 COPY src/utils src/utils
-
-CMD ["python3", "src/manager.py"]

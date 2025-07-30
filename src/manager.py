@@ -65,9 +65,10 @@ if __name__ == '__main__':
     gc.collect()
 
     # expand all gpus for growth
-    gpus = tf.config.list_physical_devices('GPU')
-    for gpu in gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
+    # TODO: for some reason after putting this in a docker container, you can't change the devices after they have been initalized or something
+    # gpus = tf.config.list_physical_devices('GPU')
+    # for gpu in gpus:
+    #     tf.config.experimental.set_memory_growth(gpu, True)
     
     # distribute the workload across all gpus
     strategy = tf.distribute.MirroredStrategy()
@@ -76,7 +77,7 @@ if __name__ == '__main__':
     mixed_precision.set_global_policy("mixed_float16")
 
     # DOWNLOAD THE IMAGES
-    collect(PLS.LORCANA)
+    # collect(PLS.LORCANA)
     
     with strategy.scope():
         # GENERATE THE DATASETS

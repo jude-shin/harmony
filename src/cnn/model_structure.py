@@ -83,7 +83,7 @@ class ConvBnLeakyBlock(layers.Layer):
 
         self.conv = layers.Conv2D(filters, kernel_size, padding='same', kernel_regularizer=regularizers.l2(l2))
         self.bn = layers.BatchNormalization()
-        self.act = layers.LeakyReLU(negative_slope=0.01) # TODO: add this?
+        self.act = layers.LeakyReLU(alpha=0.01) 
         self.pool = layers.MaxPooling2D(pool_size)
 
     def call(self, inputs, training=False):
@@ -118,12 +118,12 @@ class ConvBnLeakyBlock(layers.Layer):
 class CnnModelClassicBase(Model):
     def __init__(self, input_shape, num_classes, **kwargs):
         super().__init__(**kwargs)
-        self.input_shape = input_shape
+        self.my_input_shape = input_shape
         self.num_classes = num_classes 
 
-        self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
-
-        # TODO: augment layer
+        self.preprocess = PreprocessingLayer(target_size=self.my_input_shape[1:3])
+        
+        self.augment = data_augmentation # trying new augmentation layer that will work on gpu
  
         self.blocks = [] 
 
@@ -134,7 +134,8 @@ class CnnModelClassicBase(Model):
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
-        # x = augment(x, training=training)
+
+        x = self.augment(x, training=training) # trying new augmentation layer that will work on gpu
 
         for block in self.blocks:
             x = block(x, training=training)
