@@ -51,11 +51,24 @@ class PreprocessingLayer(layers.Layer):
         instance = cls(**config)
         return instance
 
+####################
+#   AUGMENTAITON   #
+####################
+data_augmentation = Sequential([
+    # RandomSkew(max_skew=0.03), # TODO
+    layers.RandomRotation(1.0),
+    layers.RandomTranslation(0.2, 0.2),
+    layers.RandomFlip('horizontal'),
+    layers.RandomFlip('vertical'),
+    # RandomGaussianBlur(), # TODO
+    layers.RandomContrast(0.3),
+    layers.RandomBrightness(0.2)
+], name="data_augmentation")
+
 
 ##############
 #   BLOCKS   #
 ##############
-
 @saving.register_keras_serializable(package='cnn')
 class ConvBnLeakyBlock(layers.Layer):
     '''
@@ -110,6 +123,8 @@ class CnnModelClassicBase(Model):
 
         self.preprocess = PreprocessingLayer(target_size=input_shape[1:3])
 
+        # TODO: augment layer
+ 
         self.blocks = [] 
 
         self.global_pool = layers.GlobalAveragePooling2D()
@@ -119,6 +134,7 @@ class CnnModelClassicBase(Model):
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
+        # x = augment(x, training=training)
 
         for block in self.blocks:
             x = block(x, training=training)

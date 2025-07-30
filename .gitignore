@@ -13,6 +13,3 @@ saved_models/**
 testing/
 
 **/__pycache__/
-
-.env
-.env.development
