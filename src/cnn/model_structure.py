@@ -3,8 +3,11 @@ import logging
 import tensorflow as tf
 import keras_cv
 
+from keras_cv import layers as keras_layers
+
 # there is going to be some funky stuff with these imports
 from tensorflow.keras import layers, models, Model, Sequential, regularizers, saving
+
 
 #############
 #   PARSE   #
@@ -179,19 +182,49 @@ class CnnModelClassicBase(Model):
 
         self.preprocess = PreprocessingLayer(target_size=[height, width])
         
-        self.augment = Sequential([
-            # RandomSkew(height=self.height, width=self.width, max_skew=0.03), 
-            layers.RandomRotation(1.0),
-            layers.RandomTranslation(0.2, 0.2),
-            layers.RandomFlip('horizontal'),
-            layers.RandomFlip('vertical'),
-            # RandomGaussianBlur(),
-            layers.RandomContrast(0.3),
-            layers.RandomBrightness(0.2),
+        # self.augment = Sequential([
+        #     # RandomSkew(height=self.height, width=self.width, max_skew=0.03), 
+        #     layers.RandomRotation(1.0),
+        #     layers.RandomTranslation(0.2, 0.2),
+        #     layers.RandomFlip('horizontal'),
+        #     layers.RandomFlip('vertical'),
+        #     # RandomGaussianBlur(),
+        #     layers.RandomContrast(0.3),
+        #     layers.RandomBrightness(0.2),
 
-            keras_cv.layers.RandomShear(x_factor=0.2, y_factor=0.1),
-            keras_cv.layers.RandomColorJitter(value_range=(0, 1), brightness_factor=0.2, contrast_factor=0.3, saturation_factor=0.2, hue_factor=0.1),
-            keras_cv.layers.RandomGaussianBlur(factor=(0.5, 1.0), kernel_size=5)], name="data_augmentation")
+        #     keras_cv.layers.RandomShear(x_factor=0.2, y_factor=0.1),
+        #     keras_cv.layers.RandomColorJitter(value_range=(0, 1), brightness_factor=0.2, contrast_factor=0.3, saturation_factor=0.2, hue_factor=0.1),
+        #     keras_cv.layers.RandomGaussianBlur(factor=(0.5, 1.0), kernel_size=5)
+        #     ], name="data_augmentation")
+
+
+        self.augment = Sequential([
+            keras_layers.RandomFlip("horizontal"),
+            keras_layers.RandomRotation(0.10, fill_mode="reflect"),
+            keras_layers.RandomTranslation(0.10, 0.10),
+            keras_layers.RandomZoom(height_factor=(-0.1, 0.1), width_factor=(-0.1, 0.1)),
+            keras_layers.RandomApply(keras_layers.RandomContrast(value_range=(0, 1), factor=0.20), rate=0.5),
+            keras_layers.RandomApply(keras_layers.RandomBrightness(0.10), rate=0.5),
+            keras_layers.RandomApply(
+                keras_layers.RandomColorJitter(
+                    value_range=(0, 1),
+                    brightness_factor=0.15,
+                    contrast_factor=0.20,
+                    saturation_factor=0.15,
+                    hue_factor=0.05
+                ),
+                rate=0.3,
+            ),
+            keras_layers.RandomApply(
+                keras_layers.RandomGaussianBlur(factor=(0.15, 0.4), kernel_size=3),
+                rate=0.25,
+            ),
+            keras_layers.RandomApply(
+                keras_layers.RandomShear(x_factor=0.10, y_factor=0.05),
+                rate=0.3,
+            ),
+        ], name="data_augmentation")
+    
 
         self.blocks = [] 
 
