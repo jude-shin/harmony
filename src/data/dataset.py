@@ -143,7 +143,7 @@ def parse_example(example_proto):
 
 # TODO: remove augment argument 
 def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_classes):
-    ds = tf.data.TFRecordDataset(tfrecord_path)
+    ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE) # IMPORTANT TO PREVENT CPU READS FROM BEING SLOW
     ds = ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
     # if augment:
@@ -161,5 +161,8 @@ def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_class
     ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
     ds = ds.prefetch(tf.data.AUTOTUNE)
 
+    # ds = ds.cache() # TODO: try this?
+
     return ds 
+
 
