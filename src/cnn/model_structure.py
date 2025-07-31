@@ -58,69 +58,59 @@ class PreprocessingLayer(layers.Layer):
 ####################
 #   AUGMENTAITON   #
 ####################
-class RandomSkew(layers.Layer):
-    """Affine shear in x & y; runs on whichever device the model runs."""
-    def __init__(self, height, width, max_skew, **kwargs):
-        super().__init__(**kwargs)
-        self.max_skew = max_skew
-        self.height = height
-        self.width = width
 
-    def call(self, images, training=False):
-        if not training:
-            return images
-
-        batch_size = tf.shape(images)[0]
-
-        # Random shear factors
-        skew_x = tf.random.uniform([batch_size], -self.max_skew, self.max_skew)
-        skew_y = tf.random.uniform([batch_size], -self.max_skew, self.max_skew)
-
-        # Build a transform for each image in the batch
-        transforms = tf.stack([
-            tf.ones_like(skew_x),                # a0
-            skew_x,                              # a1
-            tf.zeros_like(skew_x),               # a2
-            skew_y,                              # b0
-            tf.ones_like(skew_x),                # b1
-            tf.zeros_like(skew_x),               # b2
-            tf.zeros_like(skew_x),               # c0
-            tf.zeros_like(skew_x)                # c1
-        ], axis=1)
-
-        output = tf.raw_ops.ImageProjectiveTransformV3(
-            images       = images,
-            transforms   = transforms,
-            output_shape = [self.height, self.width],
-            interpolation= "BILINEAR",
-            fill_mode    = "CONSTANT",
-            fill_value   = 0.0
+flip = keras_layers.RandomFlip(
+        "horizontal"
         )
-        return output
 
+upsidedown = keras_layers.RandomRotation(
+        factor=(0.5, 0.5), 
+        fill_mode='constant',
+        fill_value=0,
+        )
 
-class RandomGaussianBlur(layers.Layer):
-    """Depth‑wise 5×5 Gaussian blur, applied with 50 % probability."""
-    def __init__(self, prob=0.5, **kwargs):
-        super().__init__(**kwargs)
-        self.prob = prob
-        kernel_vals = tf.constant([
-            [1.,  4.,  6.,  4., 1.],
-            [4., 16., 24., 16., 4.],
-            [6., 24., 36., 24., 6.],
-            [4., 16., 24., 16., 4.],
-            [1.,  4.,  6.,  4., 1.]], dtype=tf.float16)
-        kernel = kernel_vals / tf.reduce_sum(kernel_vals)
-        kernel = tf.reshape(kernel, [5, 5, 1, 1])      # [kH, kW, inC, depthwise_mult]
-        self.kernel = tf.tile(kernel, [1, 1, 3, 1])    # 3‑channel
+rotate = keras_layers.RandomRotation(
+        factor=(-0.01, 0.01), 
+        fill_mode='constant',
+        fill_value=0,
+        )
 
-    def call(self, images, training=False):
-        if (not training) or tf.random.uniform(()) > self.prob:
-            return images
-        return tf.nn.depthwise_conv2d(images,
-                                      self.kernel,
-                                      strides=[1, 1, 1, 1],
-                                      padding='SAME')
+translate = keras_layers.RandomTranslation(
+        height_factor=(-0.07, 0.07),
+        width_factor=(-0.07, 0.07),
+        fill_mode='constant',
+        fill_value=0,
+        )
+
+shear = keras_layers.RandomShear(
+        x_factor=0.10, 
+        y_factor=0.05,
+        fill_mode='constant',
+        fill_value=0,
+        )
+
+contrast = keras_layers.RandomContrast(
+        value_range=(0, 1), 
+        factor=0.50,
+        )
+
+brightness = keras_layers.RandomBrightness(
+        value_range=(0, 1), 
+        factor=0.10,
+        )
+
+blur = keras_layers.RandomGaussianBlur(
+        factor=(1.0, 1.0), 
+        kernel_size=15,
+        )
+
+pipeline = Sequential([
+    keras_layers.RandomApply(contrast, rate=0.7),
+    keras_layers.RandomApply(brightness, rate=0.7),
+    keras_layers.RandomApply(blur, rate=0.7),
+    keras_layers.RandomApply(upsidedown, rate=0.5),
+    shear, rotate, translate, flip, 
+    ])
 
 
 ##############
@@ -196,35 +186,9 @@ class CnnModelClassicBase(Model):
         #     keras_cv.layers.RandomColorJitter(value_range=(0, 1), brightness_factor=0.2, contrast_factor=0.3, saturation_factor=0.2, hue_factor=0.1),
         #     keras_cv.layers.RandomGaussianBlur(factor=(0.5, 1.0), kernel_size=5)
         #     ], name="data_augmentation")
+        
+        self.augment = pipeline
 
-
-        self.augment = Sequential([
-            keras_layers.RandomFlip("horizontal"),
-            keras_layers.RandomRotation(0.10, fill_mode="reflect"),
-            keras_layers.RandomTranslation(0.10, 0.10),
-            keras_layers.RandomZoom(height_factor=(-0.1, 0.1), width_factor=(-0.1, 0.1)),
-            keras_layers.RandomApply(keras_layers.RandomContrast(value_range=(0, 1), factor=0.20), rate=0.5),
-            keras_layers.RandomApply(keras_layers.RandomBrightness(0.10), rate=0.5),
-            keras_layers.RandomApply(
-                keras_layers.RandomColorJitter(
-                    value_range=(0, 1),
-                    brightness_factor=0.15,
-                    contrast_factor=0.20,
-                    saturation_factor=0.15,
-                    hue_factor=0.05
-                ),
-                rate=0.3,
-            ),
-            keras_layers.RandomApply(
-                keras_layers.RandomGaussianBlur(factor=(0.15, 0.4), kernel_size=3),
-                rate=0.25,
-            ),
-            keras_layers.RandomApply(
-                keras_layers.RandomShear(x_factor=0.10, y_factor=0.05),
-                rate=0.3,
-            ),
-        ], name="data_augmentation")
-    
 
         self.blocks = [] 
 

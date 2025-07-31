@@ -10,7 +10,6 @@ RUN pip install "numpy<2"
 
 COPY src/cnn src/cnn
 COPY src/manager.py src/manager.py
-COPY src/visualize_augmentations.py src/visualize_augmentations.py
 COPY src/data src/data
 COPY src/training src/training
 COPY src/utils src/utils
