@@ -1,5 +1,5 @@
-# FROM nvcr.io/nvidia/tensorflow:25.02-tf2-py3
-FROM tensorflow/tensorflow:2.15.0-gpu
+FROM nvcr.io/nvidia/tensorflow:25.02-tf2-py3
+# FROM tensorflow/tensorflow:2.15.0-gpu
 WORKDIR /harmony
 
 COPY requirements/base.txt /harmony/requirements/base.txt

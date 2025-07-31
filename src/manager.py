@@ -66,9 +66,9 @@ if __name__ == '__main__':
 
     # expand all gpus for growth
     # TODO: for some reason after putting this in a docker container, you can't change the devices after they have been initalized or something
-    # gpus = tf.config.list_physical_devices('GPU')
-    # for gpu in gpus:
-    #     tf.config.experimental.set_memory_growth(gpu, True)
+    gpus = tf.config.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
     
     # distribute the workload across all gpus
     strategy = tf.distribute.MirroredStrategy()
