@@ -25,6 +25,7 @@ IMG_EXTS=['.jpg']
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
     image = tf.image.decode_image(image, channels=3) # decode_jpg or decode_png
+    image = tf.image.decode_jpeg(image)
     image.set_shape([None, None, 3]) # do I need this?
     image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
 
@@ -146,10 +147,6 @@ def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_class
     ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE) # IMPORTANT TO PREVENT CPU READS FROM BEING SLOW
     ds = ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
-    # if augment:
-    #     ds = ds.map(augment_geometric, num_parallel_calls=tf.data.AUTOTUNE) 
-    #     ds = ds.map(augment_non_geometric, num_parallel_calls=tf.data.AUTOTUNE)
-
     if multiply > 1:
         ds = ds.repeat(multiply)
 
@@ -157,11 +154,10 @@ def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_class
         ds = ds.shuffle(buffer_size=1000)
 
     ds = ds.batch(batch_size)
-    # one hot encode the labels for smooth labels
     ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
+    ds = ds.cache()
     ds = ds.prefetch(tf.data.AUTOTUNE)
 
-    # ds = ds.cache() # TODO: try this?
 
     return ds 
 

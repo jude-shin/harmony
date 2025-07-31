@@ -41,20 +41,15 @@ if __name__ == '__main__':
         # Memory growth must be set before GPUs have been initialized
         logging.error(e)
     
-    # distribute the workload across all gpus
-    strategy = tf.distribute.MirroredStrategy()
-    
     # makes things faster?
-    mixed_precision.set_global_policy("mixed_float16")
+    mixed_precision.set_global_policy("mixed_bfloat16")
 
     # DOWNLOAD THE IMAGES
     # collect(PLS.LORCANA)
-    
-    with strategy.scope():
-        # GENERATE THE DATASETS
-        generate_datasets(PLS.LORCANA)
-        
-        # TRAIN THE MODEL
-        train_product_line(PLS.LORCANA, ['m0'])
 
+    # GENERATE THE DATASETS
+    generate_datasets(PLS.LORCANA)
+    
+    # TRAIN THE MODEL
+    train_product_line(PLS.LORCANA, ['m0'])
 
