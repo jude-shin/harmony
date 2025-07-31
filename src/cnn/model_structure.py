@@ -191,7 +191,7 @@ class CnnModelClassicBase(Model):
 
             keras_cv.layers.RandomShear(x_factor=0.2, y_factor=0.1),
             keras_cv.layers.RandomColorJitter(value_range=(0, 1), brightness_factor=0.2, contrast_factor=0.3, saturation_factor=0.2, hue_factor=0.1),
-            keras_cv.layers.RandomGaussianBlur(factor=(0.5, 1.0), kernel_size=5, value_range=(0, 1))], name="data_augmentation")
+            keras_cv.layers.RandomGaussianBlur(factor=(0.5, 1.0), kernel_size=5)], name="data_augmentation")
 
         self.blocks = [] 
 
