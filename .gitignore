@@ -14,4 +14,4 @@ testing/
 
 **/__pycache__/
 
-!./augmentedimg.png
+!augmentedimg.png
