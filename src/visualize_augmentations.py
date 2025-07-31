@@ -1,64 +1,122 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from keras_cv import layers as keras_layers
 from pathlib import Path
+from keras_cv import layers as keras_layers
 
-# ---------------- 1. Define augmentation pipeline --------------------
-augment = tf.keras.Sequential([
-    keras_layers.RandomFlip("horizontal"),
-    keras_layers.RandomRotation(factor=0.10, fill_mode="reflect"),
-    keras_layers.RandomTranslation(height_factor=0.10, width_factor=0.10),
-    keras_layers.RandomZoom(height_factor=(-0.1, 0.1), width_factor=(-0.1, 0.1)),
-    keras_layers.RandomApply(
-        keras_layers.RandomContrast(value_range=(0, 1), factor=0.20), rate=0.5
-        ),
-    keras_layers.RandomApply(
-        keras_layers.RandomBrightness(value_range=(0, 1), factor=0.10), rate=0.5
-        ),
-    keras_layers.RandomApply(
-        keras_layers.RandomColorJitter(
-            value_range=(0, 1),
-            brightness_factor=0.15,
-            contrast_factor=0.20,
-            saturation_factor=0.15,
-            hue_factor=0.05,
-            ),
-        rate=0.3,
-        ),
-    keras_layers.RandomApply(
-        keras_layers.RandomGaussianBlur(factor=(0.15, 0.4), kernel_size=3), rate=0.25
-        ),
-    keras_layers.RandomApply(
-        keras_layers.RandomShear(x_factor=0.10, y_factor=0.05), rate=0.3
-        ),
-    ], name="data_augmentation")
+IMAGE_PATH = './Selection_001.png'
+SAVE_PATH = './augmented.png'
+TARGET_SIZE = (413, 313)
 
-# ---------------- 2. Load sample data --------------------------------
-(x_train, _), _ = tf.keras.datasets.cifar10.load_data()
-x_train = x_train.astype("float32") / 255.0
-dataset = tf.data.Dataset.from_tensor_slices(x_train).batch(8)
+img = tf.io.read_file(IMAGE_PATH)
+img = tf.image.decode_image(img, channels=3)
+img = tf.image.convert_image_dtype(img, tf.float32)
+img = tf.image.resize(img, TARGET_SIZE)
+img = tf.expand_dims(img, 0)
 
-# ---------------- 3. Preview and save --------------------------------
-def preview_and_save(batch, save_path="/volumes/data/augmentedimg.png"):
-    aug_batch = augment(batch, training=True)
+flip = keras_layers.RandomFlip(
+        "horizontal"
+        )
 
-    n_cols = 4
-    n_rows = len(batch) // n_cols
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2.5, n_rows * 2.5))
-    for ax, img in zip(axes.flatten(), aug_batch):
-        ax.imshow(img.numpy().clip(0, 1))
-        ax.axis("off")
+# rotate from 180 to 180 
+upsidedown = keras_layers.RandomRotation(
+        factor=(0.5, 0.5), 
+        fill_mode='constant',
+        fill_value=0,
+        )
 
-    fig.suptitle("Augmentation preview", y=0.92, fontsize=14)
-    plt.tight_layout()
+rotate = keras_layers.RandomRotation(
+        factor=(-0.01, 0.01), 
+        fill_mode='constant',
+        fill_value=0,
+        )
 
-    # Ensure target directory exists and save the file
-    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(save_path, dpi=300, bbox_inches="tight")
-    print(f"Saved preview to {save_path}")
+translate = keras_layers.RandomTranslation(
+        height_factor=(-0.07, 0.07),
+        width_factor=(-0.07, 0.07),
+        fill_mode='constant',
+        fill_value=0,
+        )
 
-    plt.show()
+shear = keras_layers.RandomShear(
+        x_factor=0.10, 
+        y_factor=0.05,
+        fill_mode='constant',
+        fill_value=0,
+        )
 
-for batch in dataset.take(1):
-    preview_and_save(batch)
+contrast = keras_layers.RandomContrast(
+        value_range=(0, 1), 
+        factor=0.50,
+        )
+
+brightness = keras_layers.RandomBrightness(
+        value_range=(0, 1), 
+        factor=0.10,
+        )
+
+# colorjit = keras_layers.RandomColorJitter(
+#         value_range=(0, 1),
+#         brightness_factor=0.15,
+#         contrast_factor=0.20,
+#         saturation_factor=0.15,
+#         hue_factor=0.05,
+#         )
+
+blur = keras_layers.RandomGaussianBlur(
+        factor=(1.0, 1.0), 
+        kernel_size=15,
+        )
+
+# erase = keras_layers.RandomErasing(
+#         factor=1.0,
+#         scale=(0.02, 0.33),
+#         fill_value=None,
+#         value_range=(0, 255),
+#         seed=None,
+#         data_format=None,
+#         **kwargs
+#         )
+
+
+pipeline = tf.keras.Sequential([
+    keras_layers.RandomApply(contrast, rate=0.7),
+    keras_layers.RandomApply(brightness, rate=0.7),
+    keras_layers.RandomApply(blur, rate=0.7),
+    # keras_layers.RandomApply(erase, rate=0.7),
+    keras_layers.RandomApply(upsidedown, rate=0.5),
+    shear, rotate, translate, flip, 
+    ])
+
+layers_list = [
+        ('Original', img),
+        ('Rotate', rotate(img, training=True)),
+        ('Flip', flip(img, training=True)),
+        ('Translate', translate(img, training=True)),
+        ('Contrast', contrast(img, training=True)),
+        ('Brightness', brightness(img, training=True)),
+        ('Blur', blur(img, training=True)),
+        ('Shear', shear(img, training=True)),
+        # ('Erase', erase(img, training=True)),
+        ('Upsidedown', upsidedown(img, training=True)),
+        ('Combined', pipeline(img, training=True)),
+        ]
+
+cols = 4
+rows = (len(layers_list) + cols - 1) // cols
+fig, axes = plt.subplots(rows, cols, figsize=(cols * 3, rows * 3))
+axes = axes.flatten()
+
+for ax, (title, img_batch) in zip(axes, layers_list):
+    ax.imshow(tf.squeeze(img_batch).numpy().clip(0, 1))
+    ax.set_title(title, fontsize=9)
+    ax.axis('off')
+
+for ax in axes[len(layers_list):]:
+    ax.axis('off')
+
+plt.tight_layout()
+Path(SAVE_PATH).parent.mkdir(parents=True, exist_ok=True)
+fig.savefig(SAVE_PATH, dpi=300, bbox_inches='tight')
+print(f'Saved augmentation grid to {SAVE_PATH}')
+plt.show()
 
