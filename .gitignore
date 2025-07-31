@@ -13,3 +13,5 @@ saved_models/**
 testing/
 
 **/__pycache__/
+
+!./augmentedimg.png

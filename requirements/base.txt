@@ -11,3 +11,4 @@ aiohttp
 aiofiles
 tqdm
 tenacity
+matplotlib
