@@ -1,6 +1,7 @@
 import logging
 
 import tensorflow as tf
+import keras_cv
 
 # there is going to be some funky stuff with these imports
 from tensorflow.keras import layers, models, Model, Sequential, regularizers, saving
@@ -8,14 +9,14 @@ from tensorflow.keras import layers, models, Model, Sequential, regularizers, sa
 #############
 #   PARSE   #
 #############
-def parse_model_name(model_name: str, input_shape, num_classes) -> Model:
+def parse_model_name(model_name: str, height, width, num_classes) -> Model:
     match model_name:
         case 'CnnModelClassic15Mini':
-            return CnnModelClassic15Mini(input_shape, num_classes)
+            return CnnModelClassic15Mini(height, width, num_classes)
         case 'CnnModelClassic15':
-            return CnnModelClassic15(input_shape, num_classes)
+            return CnnModelClassic15(height, width, num_classes)
         case 'CnnModelClassic15Large':
-            return CnnModelClassic15Large(input_shape, num_classes)
+            return CnnModelClassic15Large(height, width, num_classes)
 
 ##############
 #   LAYERS   #
@@ -54,16 +55,69 @@ class PreprocessingLayer(layers.Layer):
 ####################
 #   AUGMENTAITON   #
 ####################
-data_augmentation = Sequential([
-    # RandomSkew(max_skew=0.03), # TODO
-    layers.RandomRotation(1.0),
-    layers.RandomTranslation(0.2, 0.2),
-    layers.RandomFlip('horizontal'),
-    layers.RandomFlip('vertical'),
-    # RandomGaussianBlur(), # TODO
-    layers.RandomContrast(0.3),
-    layers.RandomBrightness(0.2)
-], name="data_augmentation")
+class RandomSkew(layers.Layer):
+    """Affine shear in x & y; runs on whichever device the model runs."""
+    def __init__(self, height, width, max_skew, **kwargs):
+        super().__init__(**kwargs)
+        self.max_skew = max_skew
+        self.height = height
+        self.width = width
+
+    def call(self, images, training=False):
+        if not training:
+            return images
+
+        batch_size = tf.shape(images)[0]
+
+        # Random shear factors
+        skew_x = tf.random.uniform([batch_size], -self.max_skew, self.max_skew)
+        skew_y = tf.random.uniform([batch_size], -self.max_skew, self.max_skew)
+
+        # Build a transform for each image in the batch
+        transforms = tf.stack([
+            tf.ones_like(skew_x),                # a0
+            skew_x,                              # a1
+            tf.zeros_like(skew_x),               # a2
+            skew_y,                              # b0
+            tf.ones_like(skew_x),                # b1
+            tf.zeros_like(skew_x),               # b2
+            tf.zeros_like(skew_x),               # c0
+            tf.zeros_like(skew_x)                # c1
+        ], axis=1)
+
+        output = tf.raw_ops.ImageProjectiveTransformV3(
+            images       = images,
+            transforms   = transforms,
+            output_shape = [self.height, self.width],
+            interpolation= "BILINEAR",
+            fill_mode    = "CONSTANT",
+            fill_value   = 0.0
+        )
+        return output
+
+
+class RandomGaussianBlur(layers.Layer):
+    """Depth‑wise 5×5 Gaussian blur, applied with 50 % probability."""
+    def __init__(self, prob=0.5, **kwargs):
+        super().__init__(**kwargs)
+        self.prob = prob
+        kernel_vals = tf.constant([
+            [1.,  4.,  6.,  4., 1.],
+            [4., 16., 24., 16., 4.],
+            [6., 24., 36., 24., 6.],
+            [4., 16., 24., 16., 4.],
+            [1.,  4.,  6.,  4., 1.]], dtype=tf.float16)
+        kernel = kernel_vals / tf.reduce_sum(kernel_vals)
+        kernel = tf.reshape(kernel, [5, 5, 1, 1])      # [kH, kW, inC, depthwise_mult]
+        self.kernel = tf.tile(kernel, [1, 1, 3, 1])    # 3‑channel
+
+    def call(self, images, training=False):
+        if (not training) or tf.random.uniform(()) > self.prob:
+            return images
+        return tf.nn.depthwise_conv2d(images,
+                                      self.kernel,
+                                      strides=[1, 1, 1, 1],
+                                      padding='SAME')
 
 
 ##############
@@ -116,15 +170,29 @@ class ConvBnLeakyBlock(layers.Layer):
 #######################
 @saving.register_keras_serializable(package='cnn')
 class CnnModelClassicBase(Model):
-    def __init__(self, input_shape, num_classes, **kwargs):
+    def __init__(self, height, width, num_classes, **kwargs):
         super().__init__(**kwargs)
-        self.my_input_shape = input_shape
+        # self.my_input_shape = (1, height, width, 3)
+        self.height = height
+        self.width = width
         self.num_classes = num_classes 
 
-        self.preprocess = PreprocessingLayer(target_size=self.my_input_shape[1:3])
+        self.preprocess = PreprocessingLayer(target_size=[height, width])
         
-        self.augment = data_augmentation # trying new augmentation layer that will work on gpu
- 
+        self.augment = Sequential([
+            # RandomSkew(height=self.height, width=self.width, max_skew=0.03), 
+            layers.RandomRotation(1.0),
+            layers.RandomTranslation(0.2, 0.2),
+            layers.RandomFlip('horizontal'),
+            layers.RandomFlip('vertical'),
+            # RandomGaussianBlur(),
+            layers.RandomContrast(0.3),
+            layers.RandomBrightness(0.2),
+
+            keras_cv.layers.RandomShear(x_factor=0.2, y_factor=0.1),
+            keras_cv.layers.RandomColorJitter(value_range=(0, 1), brightness_factor=0.2, contrast_factor=0.3, saturation_factor=0.2, hue_factor=0.1),
+            keras_cv.layers.RandomGaussianBlur(factor=(0.5, 1.0), kernel_size=5, value_range=(0, 1))], name="data_augmentation")
+
         self.blocks = [] 
 
         self.global_pool = layers.GlobalAveragePooling2D()
@@ -156,7 +224,8 @@ class CnnModelClassicBase(Model):
     def get_config(self):
         config = super().get_config()
         config.update({
-            'input_shape': self.input_shape,
+            'height': self.height,
+            'width': self.width,
             'num_classes': self.num_classes,
             })
         return config
@@ -168,8 +237,8 @@ class CnnModelClassicBase(Model):
 
 @saving.register_keras_serializable(package='cnn')
 class CnnModelClassic15Mini(CnnModelClassicBase):
-    def __init__(self, input_shape, num_classes, **kwargs):
-        super().__init__(input_shape, num_classes, **kwargs)
+    def __init__(self, height, width, num_classes, **kwargs):
+        super().__init__(height, width, num_classes, **kwargs)
 
         self.blocks = [
             ConvBnLeakyBlock(filters=16, kernel_size=3, pool_size=2, l2=0.01),
@@ -183,8 +252,8 @@ class CnnModelClassic15Mini(CnnModelClassicBase):
 
 @saving.register_keras_serializable()
 class CnnModelClassic15(CnnModelClassicBase):
-    def __init__(self, input_shape, num_classes, **kwargs):
-        super().__init__(input_shape, num_classes, **kwargs)
+    def __init__(self, height, width, num_classes, **kwargs):
+        super().__init__(height, width, num_classes, **kwargs)
 
         self.blocks = [
                 ConvBnLeakyBlock(filters=40, kernel_size=3, pool_size=2, l2=0.01),
@@ -199,8 +268,8 @@ class CnnModelClassic15(CnnModelClassicBase):
 
 @saving.register_keras_serializable()
 class CnnModelClassic15Large(CnnModelClassicBase):
-    def __init__(self, input_shape, num_classes, **kwargs):
-        super().__init__(input_shape, num_classes, **kwargs)
+    def __init__(self, height, width, num_classes, **kwargs):
+        super().__init__(height, width, num_classes, **kwargs)
 
         self.blocks = [
             ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),

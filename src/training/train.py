@@ -220,7 +220,7 @@ def train_model(pl: PLS, model: str, config: dict):
     input_shape = [1, img_height, img_width, 3]
 
     logging.info(input_shape)
-    keras_model = parse_model_name(model_name, input_shape, num_classes)
+    keras_model = parse_model_name(model_name, img_height, img_width, num_classes)
     
     # build the layers
     keras_model(tf.zeros(input_shape))
