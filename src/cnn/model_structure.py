@@ -146,10 +146,6 @@ class ConvBnLeakyBlock(layers.Layer):
             'kernel_size': self.kernel_size,
             'pool_size': self.pool_size,
             'l2': self.l2,
-            # 'conv': self.conv,
-            # 'bn': self.bn,
-            # 'act': self.act,
-            # 'pool': self.pool,
             })
         return config
 
@@ -172,23 +168,7 @@ class CnnModelClassicBase(Model):
 
         self.preprocess = PreprocessingLayer(target_size=[height, width])
         
-        # self.augment = Sequential([
-        #     # RandomSkew(height=self.height, width=self.width, max_skew=0.03), 
-        #     layers.RandomRotation(1.0),
-        #     layers.RandomTranslation(0.2, 0.2),
-        #     layers.RandomFlip('horizontal'),
-        #     layers.RandomFlip('vertical'),
-        #     # RandomGaussianBlur(),
-        #     layers.RandomContrast(0.3),
-        #     layers.RandomBrightness(0.2),
-
-        #     keras_cv.layers.RandomShear(x_factor=0.2, y_factor=0.1),
-        #     keras_cv.layers.RandomColorJitter(value_range=(0, 1), brightness_factor=0.2, contrast_factor=0.3, saturation_factor=0.2, hue_factor=0.1),
-        #     keras_cv.layers.RandomGaussianBlur(factor=(0.5, 1.0), kernel_size=5)
-        #     ], name="data_augmentation")
-        
         self.augment = pipeline
-
 
         self.blocks = [] 
 
