@@ -191,40 +191,39 @@ def train_model(pl: PLS, model: str, config: dict):
     
     save_config(keras_model_dir, model, config)
 
-    ############################
-    #   Loading the Datasets   #
-    ############################
-    # TODO: make an internal function
+    # distribute the workload across ALL gpus
+    strategy = tf.distribute.MirroredStrategy(
+            cross_device_ops=tf.distribute.NcclAllReduce()
+            )
 
-    # load the validation and training datasets from the record stored on disk
-    # training data should be multiplied more than the validation data
-    # training data should be shuffled and augmented
-    # validation can be augmented or shuffled
-    logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, multiply=augment_multiplication, num_classes=num_classes)
-    logging.info('Finished Loading Training Dataset!')
+    with strategy.scope():
+        ############################
+        #   Loading the Datasets   #
+        ############################
 
-    logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, multiply=1, num_classes=num_classes)
-    logging.info('Finished Loading Validation Dataset!')
+        # TODO: make an internal function
+        # load the validation and training datasets from the record stored on disk
+        # training data should be multiplied more than the validation data
+        # training data should be shuffled and augmented
+        # validation can be augmented or shuffled
+        logging.info('Loading Training Dataset from TFRecord...')
+        train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, multiply=augment_multiplication, num_classes=num_classes)
+        logging.info('Finished Loading Training Dataset!')
+
+        logging.info('Loading Validation Dataset from TFRecord...')
+        val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, multiply=1, num_classes=num_classes)
+        logging.info('Finished Loading Validation Dataset!')
    
 
-    #########################
-    #   Loading the Model   #
-    #########################
-    # TODO: make an internal function
+        #########################
+        #   Loading the Model   #
+        #########################
+        # TODO: make an internal function
 
-    # compile the model
-    logging.info('Loading Model...')
-    input_shape = [1, img_height, img_width, 3]
+        # compile the model
+        logging.info('Loading Model...')
+        input_shape = [1, img_height, img_width, 3]
 
-    logging.info(input_shape)
-
-
-    
-    # distribute the workload across ALL gpus
-    strategy = tf.distribute.MirroredStrategy()
-    with strategy.scope():
         keras_model = parse_model_name(model_name, img_height, img_width, num_classes)
     
         # build the layers
@@ -237,7 +236,7 @@ def train_model(pl: PLS, model: str, config: dict):
             metrics=[metrics.CategoricalAccuracy()],
         )
 
-    logging.info('Finished Loading Model!')
+        logging.info('Finished Loading Model!')
 
 
     #################
