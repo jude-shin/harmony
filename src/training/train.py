@@ -202,11 +202,11 @@ def train_model(pl: PLS, model: str, config: dict):
     # training data should be shuffled and augmented
     # validation can be augmented or shuffled
     logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, augment=True, multiply=augment_multiplication, num_classes=num_classes)
+    train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, multiply=augment_multiplication, num_classes=num_classes)
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, augment=True, multiply=1, num_classes=num_classes)
+    val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, multiply=1, num_classes=num_classes)
     logging.info('Finished Loading Validation Dataset!')
    
 

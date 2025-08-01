@@ -142,8 +142,7 @@ def parse_example(example_proto):
     label = parsed_example['label']
     return image, label
 
-# TODO: remove augment argument 
-def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_classes):
+def load_record(tfrecord_path, batch_size, shuffle, multiply, num_classes):
     ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE) # IMPORTANT TO PREVENT CPU READS FROM BEING SLOW
     ds = ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
