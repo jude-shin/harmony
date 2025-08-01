@@ -25,7 +25,15 @@ IMG_EXTS=['.jpg']
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
     # image = tf.image.decode_image(image, channels=3) # decode_jpg or decode_png
-    image = tf.image.decode_jpeg(image)
+    # image = tf.image.decode_jpeg(image)
+
+    image = tf.io.decode_jpeg(
+        image ,
+        channels=3,
+        fancy_upscaling=False,
+        dct_method='INTEGER_FAST'
+    )
+
     image.set_shape([None, None, 3]) # do I need this?
     image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
 
