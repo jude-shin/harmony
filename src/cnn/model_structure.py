@@ -6,7 +6,7 @@ import keras_cv
 from keras_cv import layers as keras_layers
 
 # there is going to be some funky stuff with these imports
-from tensorflow.keras import layers, models, Model, Sequential, regularizers, saving
+from tensorflow.keras import layers, models, Model, Sequential, regularizers, saving, applications
 
 
 #############
@@ -20,6 +20,14 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             return CnnModelClassic15(height, width, num_classes)
         case 'CnnModelClassic15Large':
             return CnnModelClassic15Large(height, width, num_classes)
+        # NOTE: extremely large
+        case 'ResNet152':
+            base = applications.ResNet152(
+                include_top=False, weights=None,
+                input_shape=(height, width, 3))
+            x = layers.GlobalAveragePooling2D()(base.output)
+            out = layers.Dense(num_classes, activation='softmax')(x)
+            return Model(base.input, out)
 
 ##############
 #   LAYERS   #

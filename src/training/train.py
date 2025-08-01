@@ -207,35 +207,37 @@ def train_model(pl: PLS, model: str, config: dict):
         # training data should be shuffled and augmented
         # validation can be augmented or shuffled
 
-        # # =====================================================
-        # logging.info('Loading Training Dataset from TFRecord...')
-        # train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, multiply=augment_multiplication, num_classes=num_classes)
-        # logging.info('Finished Loading Training Dataset!')
+        # =====================================================
+        logging.info('Loading Training Dataset from TFRecord...')
+        train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, multiply=augment_multiplication, num_classes=num_classes)
+        logging.info('Finished Loading Training Dataset!')
 
-        # logging.info('Loading Validation Dataset from TFRecord...')
-        # val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, multiply=1, num_classes=num_classes)
-        # logging.info('Finished Loading Validation Dataset!')
-        # # =====================================================
-        logging.warning("⚠ Using synthetic data (no disk I/O).")
-        def make_fake_batch():
-            images = tf.random.uniform(
-                shape=[batch_size, img_height, img_width, 3],
-                minval=0, maxval=1, dtype=tf.float32
-            )
-            labels = tf.random.uniform(
-                shape=[batch_size],
-                minval=0, maxval=num_classes, dtype=tf.int32
-            )
-            labels = tf.one_hot(labels, num_classes)
-            return images, labels
+        logging.info('Loading Validation Dataset from TFRecord...')
+        val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, multiply=1, num_classes=num_classes)
+        logging.info('Finished Loading Validation Dataset!')
+        # =====================================================
+        # logging.warning("⚠ Using synthetic data (no disk I/O).")
+        # def make_fake_batch():
+        #     images = tf.random.uniform(
+        #         shape=[batch_size, img_height, img_width, 3],
+        #         minval=0, maxval=1, dtype=tf.float32
+        #     )
+        #     labels = tf.random.uniform(
+        #         shape=[batch_size],
+        #         minval=0, maxval=num_classes, dtype=tf.int32
+        #     )
+        #     labels = tf.one_hot(labels, num_classes)
+        #     return images, labels
 
-        train_ds = (tf.data.Dataset
-                    .from_tensors(make_fake_batch())
-                    .repeat()
-                    .prefetch(tf.data.AUTOTUNE))
+        # train_ds = (tf.data.Dataset
+        #             .from_tensors(make_fake_batch())
+        #             .repeat()
+        #             .prefetch(tf.data.AUTOTUNE))
 
-        # Minimal validation set (optional)
-        val_ds   = train_ds.take(16) 
+        # val_ds = (tf.data.Dataset
+        #             .from_tensors(make_fake_batch())
+        #             .repeat()
+        #             .prefetch(tf.data.AUTOTUNE))
         # =====================================================
 
         #########################
@@ -292,10 +294,12 @@ def train_model(pl: PLS, model: str, config: dict):
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     keras_model.fit(train_ds,
-              epochs=1000000000,
-              validation_data=val_ds, 
-              callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
-              )
+                    epochs=1000000000,
+                    # steps_per_epoch=2000,
+                    validation_data=val_ds, 
+                    # validation_steps=10,
+                    callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
+                    )
 
     keras_model_path = os.path.join(keras_model_dir, model+'.keras')
     keras_model.save(keras_model_path)
