@@ -24,7 +24,7 @@ IMG_EXTS=['.jpg']
 @tf.function
 def load_and_preprocess(path, label):
     image = tf.io.read_file(path)
-    image = tf.image.decode_image(image, channels=3) # decode_jpg or decode_png
+    # image = tf.image.decode_image(image, channels=3) # decode_jpg or decode_png
     image = tf.image.decode_jpeg(image)
     image.set_shape([None, None, 3]) # do I need this?
     image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
@@ -154,9 +154,8 @@ def load_record(tfrecord_path, batch_size, shuffle, multiply, num_classes):
 
     ds = ds.batch(batch_size)
     ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
-    ds = ds.cache()
+    # ds = ds.cache()
     ds = ds.prefetch(tf.data.AUTOTUNE)
-
 
     return ds 
 

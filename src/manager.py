@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # collect(PLS.LORCANA)
 
     # GENERATE THE DATASETS
-    generate_datasets(PLS.LORCANA)
+    # generate_datasets(PLS.LORCANA)
     
     # TRAIN THE MODEL
     train_product_line(PLS.LORCANA, ['m0'])

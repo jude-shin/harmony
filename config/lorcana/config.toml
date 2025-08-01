@@ -1,5 +1,5 @@
 [m0]
-	batch_size=64
+	batch_size=128
 	model_name='CnnModelClassic15Mini'
 	img_height=437
 	img_width=313

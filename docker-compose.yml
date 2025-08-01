@@ -8,9 +8,17 @@ services:
       - PYTHONPATH=/harmony/src
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - TF_GPU_ALLOCATOR=cuda_malloc_async
+
+      - TF_ENABLE_BF_CONVERSION=1
+      # - TF_ENABLE_AUTO_MIXED_PRECISION=1
+
+      - NCCL_LAUNCH_MODE=GROUP
+      - NCCL_IB_PCI_RELAXED_ORDERING=1
+      - NCCL_DEBUG=WARN
+
+      # - TF_CUDNN_DETERMINISTIC=true # will slow down performance
       - TF_CPP_MIN_LOG_LEVEL=1
-      - TF_CUDNN_DETERMINISTIC=true
-      - TF_XLA_FLAGS=--tf_xla_enable_xla_devices
     env_file: 
       - path: ./.env
     deploy:
