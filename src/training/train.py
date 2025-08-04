@@ -299,9 +299,9 @@ def train_model(pl: PLS, model: str, config: dict):
                     validation_data=val_ds, 
                     # validation_steps=10,
                     callbacks=[
-                        # accuracy_threshold_callback, 
-                        # checkpoint_callback,
-                        # csv_logger_callback,
+                        accuracy_threshold_callback, 
+                        checkpoint_callback,
+                        csv_logger_callback,
                         ]
                     )
 
