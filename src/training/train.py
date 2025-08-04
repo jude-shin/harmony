@@ -298,7 +298,11 @@ def train_model(pl: PLS, model: str, config: dict):
                     # steps_per_epoch=2000,
                     validation_data=val_ds, 
                     # validation_steps=10,
-                    callbacks=[accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]
+                    callbacks=[
+                        # accuracy_threshold_callback, 
+                        # checkpoint_callback,
+                        # csv_logger_callback,
+                        ]
                     )
 
     keras_model_path = os.path.join(keras_model_dir, model+'.keras')
