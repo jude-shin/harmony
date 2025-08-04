@@ -18,16 +18,33 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             return CnnModelClassic15Mini(height, width, num_classes)
         case 'CnnModelClassic15':
             return CnnModelClassic15(height, width, num_classes)
-        case 'CnnModelClassic15Large':
-            return CnnModelClassic15Large(height, width, num_classes)
+        case 'CnnModelClassic15Large': return CnnModelClassic15Large(height, width, num_classes)
         # NOTE: extremely large
         case 'ResNet152':
+            # base = applications.ResNet152(
+            #     include_top=False, weights=None,
+            #     input_shape=(height, width, 3))
+            # x = layers.GlobalAveragePooling2D()(base.output)
+            # out = layers.Dense(num_classes, activation='softmax')(x)
+            # return Model(base.input, out)
+
+            inputs = layers.Input(shape=(height, width, 3))
+
+            x = PreprocessingLayer(target_size=[height, width])(inputs)
+            x = augmentation_pipeline(x)
+            
             base = applications.ResNet152(
-                include_top=False, weights=None,
-                input_shape=(height, width, 3))
+                include_top=False,
+                weights=None,
+                input_tensor=x
+            )
+
             x = layers.GlobalAveragePooling2D()(base.output)
-            out = layers.Dense(num_classes, activation='softmax')(x)
-            return Model(base.input, out)
+            outputs = layers.Dense(num_classes,
+                                   activation='softmax',
+                                   dtype='float32')(x)
+
+            return Model(inputs, outputs)
 
 ##############
 #   LAYERS   #
@@ -112,7 +129,7 @@ blur = keras_layers.RandomGaussianBlur(
         kernel_size=15,
         )
 
-pipeline = Sequential([
+augmentation_pipeline = Sequential([
     keras_layers.RandomApply(contrast, rate=0.7),
     keras_layers.RandomApply(brightness, rate=0.7),
     keras_layers.RandomApply(blur, rate=0.7),
@@ -176,7 +193,7 @@ class CnnModelClassicBase(Model):
 
         self.preprocess = PreprocessingLayer(target_size=[height, width])
         
-        self.augment = pipeline
+        self.augment = augmentation_pipeline
 
         self.blocks = [] 
 
@@ -235,7 +252,7 @@ class CnnModelClassic15Mini(CnnModelClassicBase):
         self.hidden = layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.01)) 
 
 
-@saving.register_keras_serializable()
+@saving.register_keras_serializable(package='cnn')
 class CnnModelClassic15(CnnModelClassicBase):
     def __init__(self, height, width, num_classes, **kwargs):
         super().__init__(height, width, num_classes, **kwargs)
@@ -251,7 +268,7 @@ class CnnModelClassic15(CnnModelClassicBase):
         self.hidden = layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.01))
 
 
-@saving.register_keras_serializable()
+@saving.register_keras_serializable(package='cnn')
 class CnnModelClassic15Large(CnnModelClassicBase):
     def __init__(self, height, width, num_classes, **kwargs):
         super().__init__(height, width, num_classes, **kwargs)

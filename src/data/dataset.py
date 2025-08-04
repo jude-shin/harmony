@@ -151,7 +151,7 @@ def parse_example(example_proto):
     return image, label
 
 def load_record(tfrecord_path, batch_size, shuffle, multiply, num_classes):
-    ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE) # IMPORTANT TO PREVENT CPU READS FROM BEING SLOW
+    ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
     ds = ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
 
     if multiply > 1:
