@@ -10,6 +10,7 @@ class PRODUCTLINES(Enum):
     # MTG = 'mtg'
     LORCANA = 'lorcana' 
     POKEMON = 'pokemon'
+    YUGIOH = 'yugioh'
 
 def string_to_product_line(s : str) -> PRODUCTLINES:
     '''
@@ -30,6 +31,7 @@ def string_to_product_line(s : str) -> PRODUCTLINES:
             # 'mtg': PRODUCTLINES.MTG,
             'lorcana': PRODUCTLINES.LORCANA,
             'pokemon': PRODUCTLINES.POKEMON,
+            'yugioh': PRODUCTLINES.YUGIOH,
         }
 
     return product_line_names[s]
