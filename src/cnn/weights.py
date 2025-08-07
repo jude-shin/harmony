@@ -8,8 +8,6 @@ from keras_cv import layers as keras_layers
 # there is going to be some funky stuff with these imports
 from tensorflow.keras import layers, models, Model, Sequential, regularizers, saving, applications
 
-# TODO: rename this file to just model.py
-
 
 #############
 #   PARSE   #
@@ -21,19 +19,12 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
         case 'CnnModelClassic15':
             return CnnModelClassic15(height, width, num_classes)
         case 'CnnModelClassic15Large': return CnnModelClassic15Large(height, width, num_classes)
-        # NOTE: extremely large
         case 'ResNet152':
-            # base = applications.ResNet152(
-            #     include_top=False, weights=None,
-            #     input_shape=(height, width, 3))
-            # x = layers.GlobalAveragePooling2D()(base.output)
-            # out = layers.Dense(num_classes, activation='softmax')(x)
-            # return Model(base.input, out)
-
             inputs = layers.Input(shape=(height, width, 3))
 
             x = PreprocessingLayer(target_size=[height, width])(inputs)
-            x = augmentation_pipeline(x)
+
+            # x = augmentation_pipeline(x)
             
             base = applications.ResNet152(
                 include_top=False,
@@ -81,64 +72,6 @@ class PreprocessingLayer(layers.Layer):
     def from_config(cls, config):
         instance = cls(**config)
         return instance
-
-####################
-#   AUGMENTAITON   #
-####################
-
-flip = keras_layers.RandomFlip(
-        "horizontal"
-        )
-
-upsidedown = keras_layers.RandomRotation(
-        factor=(0.5, 0.5), 
-        fill_mode='constant',
-        fill_value=0,
-        )
-
-rotate = keras_layers.RandomRotation(
-        factor=(-0.01, 0.01), 
-        fill_mode='constant',
-        fill_value=0,
-        )
-
-translate = keras_layers.RandomTranslation(
-        height_factor=(-0.07, 0.07),
-        width_factor=(-0.07, 0.07),
-        fill_mode='constant',
-        fill_value=0,
-        )
-
-shear = keras_layers.RandomShear(
-        x_factor=0.10, 
-        y_factor=0.05,
-        fill_mode='constant',
-        fill_value=0,
-        )
-
-contrast = keras_layers.RandomContrast(
-        value_range=(0, 1), 
-        factor=0.50,
-        )
-
-brightness = keras_layers.RandomBrightness(
-        value_range=(0, 1), 
-        factor=0.10,
-        )
-
-blur = keras_layers.RandomGaussianBlur(
-        factor=(1.0, 1.0), 
-        kernel_size=15,
-        )
-
-augmentation_pipeline = Sequential([
-    keras_layers.RandomApply(contrast, rate=0.7),
-    keras_layers.RandomApply(brightness, rate=0.7),
-    keras_layers.RandomApply(blur, rate=0.7),
-    keras_layers.RandomApply(upsidedown, rate=0.5),
-    shear, rotate, translate, flip, 
-    ])
-
 
 ##############
 #   BLOCKS   #
@@ -195,7 +128,7 @@ class CnnModelClassicBase(Model):
 
         self.preprocess = PreprocessingLayer(target_size=[height, width])
         
-        self.augment = augmentation_pipeline
+        # self.augment = augmentation_pipeline
 
         self.blocks = [] 
 
@@ -207,7 +140,7 @@ class CnnModelClassicBase(Model):
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
 
-        x = self.augment(x, training=training) # trying new augmentation layer that will work on gpu
+        # x = self.augment(x, training=training) # trying new augmentation layer that will work on gpu
 
         for block in self.blocks:
             x = block(x, training=training)

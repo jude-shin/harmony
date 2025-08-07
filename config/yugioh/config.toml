@@ -3,7 +3,7 @@
 	model_name='ResNet152'
 	img_height=437
 	img_width=313
-	num_unique_classes=23675
+	num_unique_classes=27795
 	augment_multiplication=10
 	learning_rate=0.00005
 	beta_1=0.9

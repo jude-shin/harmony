@@ -10,6 +10,7 @@ RUN pip install "numpy<2"
 
 COPY src/cnn src/cnn
 COPY src/manager.py src/manager.py
+COPY src/keras_to_saved_model.py src/keras_to_saved_model.py
 COPY src/data src/data
 COPY src/training src/training
 COPY src/utils src/utils

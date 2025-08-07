@@ -4,4 +4,4 @@ uvicorn
 fastapi
 python-multipart
 jsonify
-
+httpx
