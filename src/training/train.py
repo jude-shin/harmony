@@ -208,11 +208,11 @@ def train_model(pl: PLS, model: str, config: dict):
 
         # =====================================================
         logging.info('Loading Training Dataset from TFRecord...')
-        train_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=True, multiply=augment_multiplication, num_classes=num_classes)
+        train_ds = load_record(pl, batch_size=batch_size, shuffle=True, multiply=augment_multiplication, num_classes=num_classes)
         logging.info('Finished Loading Training Dataset!')
 
         logging.info('Loading Validation Dataset from TFRecord...')
-        val_ds = load_record(get_record_path(pl), batch_size=batch_size, shuffle=False, multiply=1, num_classes=num_classes)
+        val_ds = load_record(pl, batch_size=batch_size, shuffle=False, multiply=1, num_classes=num_classes)
         logging.info('Finished Loading Validation Dataset!')
         # =====================================================
         # logging.warning("⚠ Using synthetic data (no disk I/O).")

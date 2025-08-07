@@ -43,8 +43,9 @@ def load_and_preprocess(path, label, img_height: int, img_width: int):
 ################
 
 def build_dataset(paths, labels, unique_labels, pl: PLS):
-    img_height = 
-    img_width = 
+    config = load_model_config(pl)
+    img_height = config['img_height']
+    img_width = config['img_width']
 
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
     ds = ds.map(lambda x, y: load_and_preprocess(x, y, img_height, img_width), num_parallel_calls=tf.data.AUTOTUNE, deterministic=False)
@@ -151,9 +152,12 @@ def parse_example(example_proto, img_height: int, img_width: int):
     label = parsed_example['label']
     return image, label
 
-def load_record(tfrecord_path, batch_size, shuffle, multiply, num_classes, pl.PLS):
-    img_height = get_config_path(pl)
-    img_width = (get_config_path(pl))[]
+def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes):
+    tfrecord_path = get_record_path(pl)
+
+    config = load_model_config(pl)
+    img_height = config['img_height']
+    img_width = config['img_width']
 
     ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
     ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
