@@ -14,7 +14,7 @@ from utils.file_handler.toml import *
 
 def collect(pl: PLS):
     generate_keys(pl)
-    download_images_parallel(pl, 'large', 64)
+    download_images_parallel(pl, 64)
 
 
 #############################################
