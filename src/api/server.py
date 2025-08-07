@@ -14,7 +14,7 @@ from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
 from utils.tfs_models import identify
 from utils.file_handler.dir import get_config_path
-from utils.file_handler.toml import load_config
+from utils.file_handler.toml import * 
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -127,8 +127,7 @@ async def predict(
         raise HTTPException(status_code=400, detail="no valid images provided")
 
     # Model config
-    config_path = get_config_path(pl)
-    config = load_config(config_path)
+    config = load_model_config(pl)
     input_width = config["m0"]["img_width"]
     input_height = config["m0"]["img_height"]
 

@@ -35,4 +35,3 @@ def string_to_product_line(s : str) -> PRODUCTLINES:
         }
 
     return product_line_names[s]
-

@@ -16,8 +16,7 @@ from training.callbacks import *
 # from cnn.sequential_models import model_classic_1, model_classic_15
 def train_product_line(pl: PLS, models: list[str]):
     # load the config.toml based on the model and product line
-    config_path = get_config_path(pl)
-    config = load_config(config_path)
+    config = load_model_config(pl)
 
     if not models: # if the list is empty, default and train all of the models in the config
         models = list(config.keys())
@@ -45,7 +44,7 @@ def train_product_line(pl: PLS, models: list[str]):
 #     #   Load the Model Config   #
 #     #############################
 # 
-#     config = load_config(keras_model_dir)
+#     config = load_toml(keras_model_dir)
 # 
 #     #################
 #     #   Variables   #
@@ -189,7 +188,7 @@ def train_model(pl: PLS, model: str, config: dict):
     #   Copy the Model Config   #
     #############################
     
-    save_config(keras_model_dir, model, config)
+    save_model_config(keras_model_dir, model, config)
 
     # distribute the workload across ALL gpus
     strategy = tf.distribute.MirroredStrategy(

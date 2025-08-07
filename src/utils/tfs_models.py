@@ -9,7 +9,7 @@ from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
 from utils.file_handler.pickle import load_ids
 from utils.file_handler.dir import get_saved_model_dir, get_config_path
-from utils.file_handler.toml import load_config 
+from utils.file_handler.toml import * 
 
 # TODO : move to api package?
 # but keep some of the features
@@ -45,8 +45,7 @@ def identify(instances: list, model_name: str, pl: PLS, version: int) -> tuple[l
     final_prediction_labels = [None] * len(instances)
     confidences = [0.0] * len(instances)
 
-    config_path = get_config_path(pl)
-    config = load_config(config_path)
+    config = load_model_config(pl)
 
     if config[model_name]['is_final']: 
         for i, p in enumerate(predictions):

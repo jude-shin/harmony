@@ -7,7 +7,8 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path
+from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path, get_config_path
+from utils.file_handler.toml import *
 
 from utils.file_handler.pickle import load_ids # TODO change from master to m0 or something
 
@@ -151,8 +152,8 @@ def parse_example(example_proto, img_height: int, img_width: int):
     return image, label
 
 def load_record(tfrecord_path, batch_size, shuffle, multiply, num_classes, pl.PLS):
-    img_height = 
-    img_width = 
+    img_height = get_config_path(pl)
+    img_width = (get_config_path(pl))[]
 
     ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
     ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
