@@ -39,10 +39,10 @@ if __name__ == '__main__':
     tf.config.optimizer.set_jit(True)
 
     # DOWNLOAD THE IMAGES
-    collect(PLS.LORCANA)
+    collect(PLS.YUGIOH)
 
     # GENERATE THE DATASETS
-    generate_datasets(PLS.LORCANA)
+    generate_datasets(PLS.YUGIOH)
     
     # TRAIN THE MODEL
     # train_product_line(PLS.POKEMON, ['m0'])
