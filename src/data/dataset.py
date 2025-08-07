@@ -44,6 +44,7 @@ def load_and_preprocess(path, label, img_height: int, img_width: int):
 
 def build_dataset(paths, labels, unique_labels, pl: PLS):
     config = load_model_config(pl)
+    config = config['m0']
     img_height = config['img_height']
     img_width = config['img_width']
 
@@ -156,6 +157,7 @@ def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes):
     tfrecord_path = get_record_path(pl)
 
     config = load_model_config(pl)
+    config = config['m0']
     img_height = config['img_height']
     img_width = config['img_width']
 

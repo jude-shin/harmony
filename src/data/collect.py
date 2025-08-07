@@ -62,7 +62,8 @@ def download_images_parallel(pl: PLS, max_workers):
     deckdrafterprod = load_deckdrafterprod(pl, 'r')
     
     config = load_model_config(pl)
-    img_keys = config['deckdrafterprod_img_keys']
+    config = config['m0']
+    img_keys = ['deckdrafterprod_img_keys']
 
     data_dir = get_data_dir()
     images_dir = os.path.join(data_dir, pl.value, 'images')
