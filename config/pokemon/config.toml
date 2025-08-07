@@ -12,6 +12,6 @@
 	img_height=437
 	img_width=313
 
-	deckdrafterprod_img_keys=['card_images', 'image_url']
+	deckdrafterprod_img_keys=['images', 'large']
 
 	is_final=true
