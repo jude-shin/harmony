@@ -11,31 +11,26 @@ from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path
 
 from utils.file_handler.pickle import load_ids # TODO change from master to m0 or something
 
-# TODO use the config file to get these variables
-IMG_WIDTH=313
-IMG_HEIGHT=437
-
-IMG_EXTS=['.jpg']
+IMG_EXTS=['.jpg', '.png']
 
 ###########################################################
 #   preprocessing the images to be stored in a TFRecord   #
 ###########################################################
 
-@tf.function
-def load_and_preprocess(path, label):
+# @tf.function
+def load_and_preprocess(path, label, img_height: int, img_width: int):
     image = tf.io.read_file(path)
-    # image = tf.image.decode_image(image, channels=3) # decode_jpg or decode_png
-    # image = tf.image.decode_jpeg(image)
+    image = tf.image.decode_image(image, channels=3)
 
-    image = tf.io.decode_jpeg(
-        image ,
-        channels=3,
-        fancy_upscaling=False,
-        dct_method='INTEGER_FAST'
-    )
+    # image = tf.io.decode_jpeg(
+    #     image ,
+    #     channels=3,
+    #     fancy_upscaling=False,
+    #     dct_method='INTEGER_FAST'
+    # )
 
-    image.set_shape([None, None, 3]) # do I need this?
-    image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
+    image.set_shape([None, None, 3]) # TODO: do I even need this?
+    # image = tf.image.resize(image, [img_height, img_width]) # TODO: try without this
 
     image = tf.cast(image, tf.float32) / 255.0
 
@@ -46,9 +41,12 @@ def load_and_preprocess(path, label):
 #   datasets   #
 ################
 
-def build_dataset(paths, labels, unique_labels):
+def build_dataset(paths, labels, unique_labels, pl: PLS):
+    img_height = 
+    img_width = 
+
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
-    ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE, deterministic=False)
+    ds = ds.map(lambda x, y: load_and_preprocess(x, y, img_height, img_width), num_parallel_calls=tf.data.AUTOTUNE, deterministic=False)
 
     ds = ds.apply(tf.data.Dataset.ignore_errors)
 
@@ -108,7 +106,7 @@ def generate_datasets(pl: PLS):
     print("_Ids Total classes:", len(_ids))
     print("Labels Total classes:", len(labels))
 
-    ds = build_dataset(paths, labels, len(_ids))
+    ds = build_dataset(paths, labels, len(_ids), pl)
 
     save_record(get_record_path(pl), ds)
 
@@ -138,7 +136,7 @@ def save_record(tfrecord_path, dataset):
                 continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
-def parse_example(example_proto):
+def parse_example(example_proto, img_height: int, img_width: int):
     feature_description = {
         'image': tf.io.FixedLenFeature([], tf.string),
         'label': tf.io.FixedLenFeature([], tf.int64),
@@ -146,13 +144,18 @@ def parse_example(example_proto):
     parsed_example = tf.io.parse_single_example(example_proto, feature_description)
     
     image = tf.io.parse_tensor(parsed_example['image'], out_type=tf.float32)
-    image = tf.reshape(image, [IMG_HEIGHT, IMG_WIDTH, 3])  # use the same size used in preprocessing
+
+    image = tf.reshape(image, [img_height, img_width, 3])  # use the same size used in preprocessing
+
     label = parsed_example['label']
     return image, label
 
-def load_record(tfrecord_path, batch_size, shuffle, multiply, num_classes):
+def load_record(tfrecord_path, batch_size, shuffle, multiply, num_classes, pl.PLS):
+    img_height = 
+    img_width = 
+
     ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
-    ds = ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
 
     if multiply > 1:
         ds = ds.repeat(multiply)

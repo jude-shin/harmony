@@ -23,7 +23,12 @@ def download_image(item, i, size, images_dir, max_retries=5, backoff_base=2):
     try:
         _id = item['_id']
         # TODO: have a list of keys for the config that match to the product lines (yugioh uses 'card_images' for some horrible reason)
-        url = item['images'][size]
+        url = item['card_images']['image_url']
+        # url = item
+        # for (key in keys):
+        #   # will simulate item['card_images']['image_url']
+        #   url = url.get(key)
+
     except KeyError as e:
         logging.warning(f'[{i}] Missing _id or url. Skipping. Item: {item}')
         return
