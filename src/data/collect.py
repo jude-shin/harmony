@@ -26,9 +26,11 @@ def download_image(item, i, img_keys, images_dir, max_retries=5, backoff_base=2)
         # TODO: have a list of keys for the config that match to the product lines (yugioh uses 'card_images' for some horrible reason)
         # url = item['card_images']['image_url']
         url = item
-        for key in img_keys:
+        for k in img_keys:
           # will simulate item['card_images']['image_url']
-          url = url.get(key)
+          url = url.get(k)
+
+        if url is None: raise KeyError
 
     except KeyError as e:
         logging.warning(f'[{i}] Missing _id or url. Skipping. Item: {item}')
@@ -63,7 +65,7 @@ def download_images_parallel(pl: PLS, max_workers):
     
     config = load_model_config(pl)
     config = config['m0']
-    img_keys = ['deckdrafterprod_img_keys']
+    img_keys = config['deckdrafterprod_img_keys']
 
     data_dir = get_data_dir()
     images_dir = os.path.join(data_dir, pl.value, 'images')
