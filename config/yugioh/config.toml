@@ -16,5 +16,3 @@
 	deckdrafterprod_img_keys=['card_images', 'image_url']
 
 	is_final=true
-
-

@@ -38,13 +38,13 @@ if __name__ == '__main__':
     tf.config.optimizer.set_jit(True)
 
     # DOWNLOAD THE IMAGES
-    collect(PLS.POKEMON)
+    collect(PLS.LORCANA)
 
     # GENERATE THE DATASETS
-    generate_datasets(PLS.POKEMON)
+    generate_datasets(PLS.LORCANA)
     
     # TRAIN THE MODEL
-    train_product_line(PLS.POKEMON, ['m0'])
+    # train_product_line(PLS.POKEMON, ['m0'])
 
 
 def conservative_gpu_usage():
