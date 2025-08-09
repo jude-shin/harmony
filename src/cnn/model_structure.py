@@ -20,8 +20,8 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             return CnnModelClassic15Mini(height, width, num_classes)
         case 'CnnModelClassic15':
             return CnnModelClassic15(height, width, num_classes)
-        case 'CnnModelClassic15Large': return CnnModelClassic15Large(height, width, num_classes)
-        # NOTE: extremely large
+        case 'CnnModelClassic15Large': 
+            return CnnModelClassic15Large(height, width, num_classes)
         case 'ResNet152':
             # base = applications.ResNet152(
             #     include_top=False, weights=None,

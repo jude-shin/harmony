@@ -31,7 +31,7 @@ def load_and_preprocess(path, label, img_height: int, img_width: int):
     # )
 
     image.set_shape([None, None, 3]) # TODO: do I even need this?
-    # image = tf.image.resize(image, [img_height, img_width]) # TODO: try without this
+    image = tf.image.resize(image, [img_height, img_width])
 
     image = tf.cast(image, tf.float32) / 255.0
 
@@ -148,7 +148,7 @@ def parse_example(example_proto, img_height: int, img_width: int):
     
     image = tf.io.parse_tensor(parsed_example['image'], out_type=tf.float32)
 
-    image = tf.reshape(image, [img_height, img_width, 3])  # use the same size used in preprocessing
+    image = tf.reshape(image, [img_height, img_width, 3])
 
     label = parsed_example['label']
     return image, label

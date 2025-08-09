@@ -43,7 +43,7 @@ class ClearMemory(callbacks.Callback): # TODO depreciated
         backend.clear_session()
         gc.collect()
 
-def get_callbacks(keras_model_dir: str, model: str, stopping_threshold: float) -> list[callbacks.Callback]:
+def get_callbacks(keras_model_dir: str, checkpoint_name: str, stopping_threshold: float) -> list[callbacks.Callback]:
     # defines when the model will stop training
     accuracy_threshold_callback = EarlyStoppingByValThreshold(
             monitor='val_categorical_accuracy',
@@ -51,7 +51,7 @@ def get_callbacks(keras_model_dir: str, model: str, stopping_threshold: float) -
             )
 
     # saves a snapshot of the model while it is training
-    checkpoint_path = os.path.join(keras_model_dir, model+"checkpoint.keras")
+    checkpoint_path = os.path.join(keras_model_dir, checkpoint_name)
     checkpoint_callback = callbacks.ModelCheckpoint(
         filepath=checkpoint_path, save_weights_only=False, save_best_only=True,
         monitor='val_loss',

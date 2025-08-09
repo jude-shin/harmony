@@ -1,13 +1,13 @@
 [m0]
-	batch_size=3072
-	model_name='ResNet152'
+	batch_size=8
+	model_name='CnnModelClassic15Mini'
 	num_unique_classes=994
-	augment_multiplication=500
+	augment_multiplication=3
 	learning_rate=0.00005
 	beta_1=0.9
 	beta_2=0.999
 	label_smoothing=0.05
-	stopping_threshold=98
+	stopping_threshold=50
 
 	img_height=437
 	img_width=313

@@ -15,7 +15,7 @@ from data.collect import download_images_parallel, collect
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.time import get_elapsed_time 
 from data.dataset import generate_datasets
-from training.train import train_product_line 
+from training.train import train_product_line, continue_train_product_line
 from utils.file_handler.toml import *
 
 from data.dataset import * 
@@ -38,14 +38,21 @@ if __name__ == '__main__':
     # just in time compilation?
     tf.config.optimizer.set_jit(True)
 
+
+    # ==========================================
+
+
     # DOWNLOAD THE IMAGES
-    collect(PLS.YUGIOH)
+    # collect(PLS.LORCANA)
 
     # GENERATE THE DATASETS
-    generate_datasets(PLS.YUGIOH)
+    generate_datasets(PLS.LORCANA)
     
     # TRAIN THE MODEL
-    # train_product_line(PLS.POKEMON, ['m0'])
+    train_product_line(PLS.LORCANA, ['m0'])
+
+    # CONTINUE TRAIN THE MODEL
+    # continue_train_product_line(PLS.LORCANA, ['m0'], '2025.08.01_18.25.15')
 
 
 def conservative_gpu_usage():

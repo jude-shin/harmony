@@ -13,6 +13,7 @@ from utils.file_handler.dir import get_record_path, get_keras_model_dir
 from utils.file_handler.toml import * 
 from utils.product_lines import PRODUCTLINES as PLS
 from training.callbacks import get_callbacks
+from utils.version import generate_unique_version
 
 def train_product_line(pl: PLS, models: list[str]):
     # load the config.toml based on the model and product line
@@ -39,12 +40,11 @@ def continue_train_model(pl: PLS, model: str, version: str):
     # get the dir name based on the name of the file (which was based on the time of creation)
     keras_model_dir = os.path.join(get_keras_model_dir(), pl.value, version, model)
 
-
     #################
     #   Variables   #
     #################
 
-    with open(keras_model_dir, 'rb') as f: 
+    with open(os.path.join(keras_model_dir, model+'.toml'), 'rb') as f: 
         config = tomllib.load(f)
 
     batch_size = config['batch_size']
@@ -93,7 +93,8 @@ def continue_train_model(pl: PLS, model: str, version: str):
     #################
     #   Callbacks   #
     #################
-    callbacks = get_callbacks(keras_model_dir, model, stopping_threshold)
+    unique_checkpoint_name = generate_unique_version(keras_model_dir, model+'_checkpoint', '.keras')
+    callbacks = get_callbacks(keras_model_dir, unique_checkpoint_name, stopping_threshold)
 
     ################
     #   Training   #
@@ -107,7 +108,9 @@ def continue_train_model(pl: PLS, model: str, version: str):
               callbacks=callbacks,
               )
 
-    keras_model_path = os.path.join(keras_model_dir, model+'.keras')
+    # TODO: the keras models themself will use the unique model name
+    unique_keras_name = generate_unique_version(keras_model_dir, model, '.keras')
+    keras_model_path = os.path.join(keras_model_dir, unique_keras_name)
     keras_model.save(keras_model_path)
 
 
@@ -226,7 +229,7 @@ def train_model(pl: PLS, model: str, config: dict):
     #################
     #   Callbacks   #
     #################
-    callbacks = get_callbacks(keras_model_dir, model, stopping_threshold)
+    callbacks = get_callbacks(keras_model_dir, model+'_checkpoint.keras', stopping_threshold)
 
     ################
     #   Training   #
