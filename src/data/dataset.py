@@ -42,9 +42,9 @@ def load_and_preprocess(path, label, img_height: int, img_width: int):
 #   datasets   #
 ################
 
-def build_dataset(paths, labels, unique_labels, pl: PLS):
+def build_dataset(paths, labels, unique_labels, pl: PLS, model):
     config = load_model_config(pl)
-    config = config['m0']
+    config = config[model]
     img_height = config['img_height']
     img_width = config['img_width']
 
@@ -68,7 +68,7 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
             return canidate
     return None
 
-def generate_datasets(pl: PLS):
+def generate_datasets(pl: PLS, model):
     '''
     Saves the dataset to disk.
 
@@ -76,7 +76,7 @@ def generate_datasets(pl: PLS):
     Returns:
     '''
 
-    _ids = load_ids(pl, 'm0', 'rb') 
+    _ids = load_ids(pl, model, 'rb') 
 
     id_to_label = {id_: i for i, id_ in enumerate(_ids)}
 
@@ -109,7 +109,7 @@ def generate_datasets(pl: PLS):
     print("_Ids Total classes:", len(_ids))
     print("Labels Total classes:", len(labels))
 
-    ds = build_dataset(paths, labels, len(_ids), pl)
+    ds = build_dataset(paths, labels, len(_ids), pl, model)
 
     save_record(get_record_path(pl), ds)
 
@@ -153,11 +153,11 @@ def parse_example(example_proto, img_height: int, img_width: int):
     label = parsed_example['label']
     return image, label
 
-def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes):
+def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes, model):
     tfrecord_path = get_record_path(pl)
 
     config = load_model_config(pl)
-    config = config['m0']
+    config = config[model]
     img_height = config['img_height']
     img_width = config['img_width']
 

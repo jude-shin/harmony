@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # collect(PLS.LORCANA)
 
     # GENERATE THE DATASETS
-    generate_datasets(PLS.LORCANA)
+    generate_datasets(PLS.LORCANA, 'm0') # all sub-models should follow m0's format
     
     # TRAIN THE MODEL
     train_product_line(PLS.LORCANA, ['m0'])
