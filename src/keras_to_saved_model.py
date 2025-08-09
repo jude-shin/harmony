@@ -13,8 +13,8 @@ from utils.file_handler.dir import get_keras_model_dir, get_saved_model_dir
 # ARCHIVE = "/home/jude/harmony/keras_models/pokemon/m0.keras"
 # EXPORT_DIR = "/home/jude/harmony/saved_models/pokemon/m0/1"
 
-ARCHIVE = os.path.join(get_keras_model_dir(), 'pokemon', 'm0.keras')
-EXPORT_DIR = os.path.join(get_saved_model_dir(), 'pokemon', 'm0', '1')
+ARCHIVE = os.path.join(get_keras_model_dir(), 'yugioh', 'm0.keras')
+EXPORT_DIR = os.path.join(get_saved_model_dir(), 'yugioh', 'm0', '1')
 
 HEIGHT, WIDTH, NUM_CLASSES = 437, 313, 23675
 
