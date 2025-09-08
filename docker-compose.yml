@@ -71,7 +71,6 @@ services:
       - "${LORCANA_PORT}:8501"
     volumes:
       - ./saved_models/lorcana/:/models/lorcana/
-        # - ./batching_parameters.txt:/batching_parameters.txt
     deploy:
       resources:
         reservations:
@@ -80,8 +79,6 @@ services:
     command: >
       --model_config_file=/models/lorcana/tfs.config
       --model_config_file_poll_wait_seconds=60
-      --enable_batching
-      # --batching_parameters_file=/batching_parameters.txt
     restart: unless-stopped
     container_name: tfs-lorcana
 
@@ -94,7 +91,6 @@ services:
       - "${POKEMON_PORT}:8501"
     volumes:
       - ./saved_models/pokemon/:/models/pokemon/
-        # - ./batching_parameters.txt:/batching_parameters.txt
     deploy:
       resources:
         reservations:
@@ -103,8 +99,6 @@ services:
     command: >
       --model_config_file=/models/pokemon/tfs.config
       --model_config_file_poll_wait_seconds=60
-      --enable_batching
-      # --batching_parameters_file=/batching_parameters.txt
     restart: unless-stopped
     container_name: tfs-pokemon
 
@@ -117,7 +111,6 @@ services:
       - "${YUGIOH_PORT}:8501"
     volumes:
       - ./saved_models/yugioh/:/models/yugioh/
-        # - ./batching_parameters.txt:/batching_parameters.txt
     deploy:
       resources:
         reservations:
@@ -126,8 +119,6 @@ services:
     command: >
       --model_config_file=/models/yugioh/tfs.config
       --model_config_file_poll_wait_seconds=60
-      --enable_batching
-      # --batching_parameters_file=/batching_parameters.txt
     restart: unless-stopped
     container_name: tfs-yugioh
 
