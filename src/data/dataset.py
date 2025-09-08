@@ -167,7 +167,6 @@ def load_record(pl: PLS, batch_size, shuffle, num_classes, model):
 
     ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.batch(batch_size)
-    ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
     ds = ds.prefetch(tf.data.AUTOTUNE)
 
     return ds 
