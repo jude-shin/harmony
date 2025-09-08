@@ -1,28 +1,59 @@
 services:
+  training:
+    build:
+      context: .
+      dockerfile: ./docker/training/Dockerfile
+    command: tail -f /dev/null
+    environment:
+      - PYTHONPATH=/harmony/src
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - TF_GPU_ALLOCATOR=cuda_malloc_async
+
+      - TF_ENABLE_BF_CONVERSION=1
+      # - TF_ENABLE_AUTO_MIXED_PRECISION=1
+
+      - NCCL_LAUNCH_MODE=GROUP
+      - NCCL_IB_PCI_RELAXED_ORDERING=1
+      - NCCL_DEBUG=WARN
+
+      # - TF_CUDNN_DETERMINISTIC=true # will slow down performance
+      - TF_CPP_MIN_LOG_LEVEL=1
+    env_file: 
+      - path: ./.env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./data/:/volumes/data/
+      - ./keras_models/:/volumes/keras_models/
+      - ./saved_models/:/volumes/saved_models/
+      - ./config/:/volumes/config/
+    runtime: nvidia
+    restart: no 
+    container_name: training 
+
   api:
     build: 
       context: .
       dockerfile: docker/api/Dockerfile
     environment:
+      - PYTHONPATH=/harmony/src
       - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app/src
-
-      - MODEL_DIR=${MODEL_DIR}
-      - DATA_DIR=${DATA_DIR}
-      - SAVED_MODEL_DIR=${SAVED_MODEL_DIR}
-
-      - API_PORT=${API_PORT}
-      - TFS_PORT=${TFS_PORT}
-      - LORCANA_PORT=${LORCANA_PORT}
-      - POKEMON_PORT=${POKEMON_PORT}
-
       - TF_FORCE_GPU_ALLOW_GROWTH=true
+    env_file:
+      - path: ./.env
     ports:
       - "${API_PORT}:5000"
     volumes:
-      - ./keras_models:/keras_models
-      - ./saved_models:/saved_models
-      - ./data:/data
+      - ./data/:/volumes/data/
+      - ./keras_models/:/volumes/keras_models/
+      - ./saved_models/:/volumes/saved_models/
+      - ./config/:/volumes/config/
     deploy:
       resources:
         reservations:
@@ -40,7 +71,6 @@ services:
       - "${LORCANA_PORT}:8501"
     volumes:
       - ./saved_models/lorcana/:/models/lorcana/
-      - ./batching_parameters.txt:/batching_parameters.txt
     deploy:
       resources:
         reservations:
@@ -49,8 +79,6 @@ services:
     command: >
       --model_config_file=/models/lorcana/tfs.config
       --model_config_file_poll_wait_seconds=60
-      --enable_batching
-      --batching_parameters_file=/batching_parameters.txt
     restart: unless-stopped
     container_name: tfs-lorcana
 
@@ -63,7 +91,6 @@ services:
       - "${POKEMON_PORT}:8501"
     volumes:
       - ./saved_models/pokemon/:/models/pokemon/
-      - ./batching_parameters.txt:/batching_parameters.txt
     deploy:
       resources:
         reservations:
@@ -72,8 +99,26 @@ services:
     command: >
       --model_config_file=/models/pokemon/tfs.config
       --model_config_file_poll_wait_seconds=60
-      --enable_batching
-      --batching_parameters_file=/batching_parameters.txt
     restart: unless-stopped
     container_name: tfs-pokemon
+
+  tfs-yugioh:
+    image: tensorflow/serving:latest-gpu
+    environment: 
+      - NVIDIA_VISIBLE_DEVICES=all
+      - TF_FORCE_GPU_ALLOW_GROWTH=true
+    ports:
+      - "${YUGIOH_PORT}:8501"
+    volumes:
+      - ./saved_models/yugioh/:/models/yugioh/
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: >
+      --model_config_file=/models/yugioh/tfs.config
+      --model_config_file_poll_wait_seconds=60
+    restart: unless-stopped
+    container_name: tfs-yugioh
 

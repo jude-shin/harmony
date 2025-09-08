@@ -1,26 +1,57 @@
 import logging
 
-
 import tensorflow as tf
+import keras_cv
+
+from keras_cv import layers as keras_layers
 
 # there is going to be some funky stuff with these imports
-from tensorflow.keras import layers, models, Model, Sequential, regularizers
+from tensorflow.keras import layers, models, Model, Sequential, regularizers, saving, applications
+
+# TODO: rename this file to just model.py
+
 
 #############
 #   PARSE   #
 #############
-def parse_model_name(model_name: str, input_shape, num_classes) -> Model:
+def parse_model_name(model_name: str, height, width, num_classes) -> Model:
     match model_name:
         case 'CnnModelClassic15Mini':
-            return CnnModelClassic15Mini(input_shape, num_classes)
+            return CnnModelClassic15Mini(height, width, num_classes)
         case 'CnnModelClassic15':
-            return CnnModelClassic15(input_shape, num_classes)
-        case 'CnnModelClassic15Large':
-            return CnnModelClassic15Large(input_shape, num_classes)
+            return CnnModelClassic15(height, width, num_classes)
+        case 'CnnModelClassic15Large': 
+            return CnnModelClassic15Large(height, width, num_classes)
+        case 'ResNet152':
+            # base = applications.ResNet152(
+            #     include_top=False, weights=None,
+            #     input_shape=(height, width, 3))
+            # x = layers.GlobalAveragePooling2D()(base.output)
+            # out = layers.Dense(num_classes, activation='softmax')(x)
+            # return Model(base.input, out)
+
+            inputs = layers.Input(shape=(height, width, 3))
+
+            x = PreprocessingLayer(target_size=[height, width])(inputs)
+            x = augmentation_pipeline(x)
+            
+            base = applications.ResNet152(
+                include_top=False,
+                weights=None,
+                input_tensor=x
+            )
+
+            x = layers.GlobalAveragePooling2D()(base.output)
+            outputs = layers.Dense(num_classes,
+                                   activation='softmax',
+                                   dtype='float32')(x)
+
+            return Model(inputs, outputs)
 
 ##############
 #   LAYERS   #
 ##############
+@saving.register_keras_serializable(package='cnn')
 class PreprocessingLayer(layers.Layer):
     '''
     A non-trainable preprocessing layer that handles image resizing, rescaling, and normalization.
@@ -28,156 +59,105 @@ class PreprocessingLayer(layers.Layer):
     '''
 
     def __init__(self, target_size, **kwargs):
-        super().__init__(trainable=False, **kwargs)
+        super().__init__(**kwargs)
         self.target_size = target_size
+
+        self.trainable = False
         self.resize_layer = layers.Resizing(*self.target_size)
-        # self.normalize_layer = layers.Normalization(mean=self.mean, variance=self.std**2)
 
     def call(self, inputs):
         x = self.resize_layer(inputs)
-        # x = self.normalize_layer(x)
         return x
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'target_size': self.target_size,
+            })
+        return config
+    
+    # TODO: I think I can just get rid of this entirely
+    @classmethod
+    def from_config(cls, config):
+        instance = cls(**config)
+        return instance
 
-class AugmentLayer(layers.Layer):
-    '''
-    A data augmentation layer that applies a random combination of image augmentations.
-    This layer is only active during training.
-    '''
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.augmentations = [
-                layers.RandomRotation(0.1),
-                layers.RandomZoom(0.1)
-                ]
-        # TODO: add more augmentation layers if you want 
-        self.custom_augmentations = []
+####################
+#   AUGMENTAITON   #
+####################
 
-    def call(self, inputs, training=False):
-        if not training:
-            return inputs
+flip = keras_layers.RandomFlip(
+        "horizontal"
+        )
 
-        x = inputs
-        for layer in self.augmentations + self.custom_augmentations:
-            x = layer(x)
-        return x
+upsidedown = keras_layers.RandomRotation(
+        factor=(0.5, 0.5), 
+        fill_mode='constant',
+        fill_value=0,
+        )
 
-    def add_custom_augmentation(self, layer):
-        '''
-        Add a custom Keras layer to be included in the augmentation pipeline.
-        I don't know how useful this may be... we might still want to do some preprocessing in the tf.data.Dataset
-        '''
-        self.custom_augmentations.append(layer)
+rotate = keras_layers.RandomRotation(
+        factor=(-0.01, 0.01), 
+        fill_mode='constant',
+        fill_value=0,
+        )
+
+translate = keras_layers.RandomTranslation(
+        height_factor=(-0.07, 0.07),
+        width_factor=(-0.07, 0.07),
+        fill_mode='constant',
+        fill_value=0,
+        )
+
+shear = keras_layers.RandomShear(
+        x_factor=0.10, 
+        y_factor=0.05,
+        fill_mode='constant',
+        fill_value=0,
+        )
+
+contrast = keras_layers.RandomContrast(
+        value_range=(0, 1), 
+        factor=0.50,
+        )
+
+brightness = keras_layers.RandomBrightness(
+        value_range=(0, 1), 
+        factor=0.10,
+        )
+
+blur = keras_layers.RandomGaussianBlur(
+        factor=(1.0, 1.0), 
+        kernel_size=15,
+        )
+
+augmentation_pipeline = Sequential([
+    keras_layers.RandomApply(contrast, rate=0.7),
+    keras_layers.RandomApply(brightness, rate=0.7),
+    keras_layers.RandomApply(blur, rate=0.7),
+    keras_layers.RandomApply(upsidedown, rate=0.5),
+    shear, rotate, translate, flip, 
+    ])
+
 
 ##############
 #   BLOCKS   #
 ##############
-class ConvBlock(layers.Layer):
-    '''
-    A modular convolutional block: Conv2D -> BatchNorm -> ReLU -> MaxPool
-    '''
-    def __init__(self, filters, kernel_size=3, pool_size=2, **kwargs):
-        super().__init__(**kwargs)
-        self.conv = layers.Conv2D(filters, kernel_size, padding='same')
-        self.bn = layers.BatchNormalization()
-        self.act = layers.ReLU() # could be LeakyReLu
-        self.pool = layers.MaxPooling2D(pool_size)
-
-    def call(self, inputs, training=False):
-        x = self.conv(inputs)
-        x = self.bn(x, training=training)
-        x = self.act(x)
-        return self.pool(x)
-
-
-class SEBlock(layers.Layer):
-    def __init__(self, ratio=8, **kwargs):
-        super().__init__(**kwargs)
-        self.ratio = ratio
-
-    def build(self, input_shape):
-        channel_dim = input_shape[-1]
-        self.global_avg_pool = layers.GlobalAveragePooling2D()
-        self.dense1 = layers.Dense(channel_dim // self.ratio, activation='relu')
-        self.dense2 = layers.Dense(channel_dim, activation='sigmoid')
-        self.reshape = layers.Reshape((1, 1, channel_dim))
-
-    def call(self, inputs):
-        x = self.global_avg_pool(inputs)
-        x = self.dense1(x)
-        x = self.dense2(x)
-        x = self.reshape(x)
-        return inputs * x
-
-class ResidualBlock(layers.Layer):
-    def __init__(self, filters, kernel_size=3, **kwargs):
-        super().__init__(**kwargs)
-        self.conv1 = layers.Conv2D(filters, kernel_size, padding='same')
-        self.bn1 = layers.BatchNormalization()
-        self.relu = layers.ReLU()
-        self.conv2 = layers.Conv2D(filters, kernel_size, padding='same')
-        self.bn2 = layers.BatchNormalization()
-
-    def call(self, inputs, training=False):
-        x = self.conv1(inputs)
-        x = self.bn1(x, training=training)
-        x = self.relu(x)
-        x = self.conv2(x)
-        x = self.bn2(x, training=training)
-        return self.relu(x + inputs)
-
-class FlattenBlock(layers.Layer):
-    '''
-    Final classifier block: Flatten -> Dense -> optional Dropout -> Output
-    '''
-    def __init__(self, num_classes, hidden_units, dropout_rate=0.5, **kwargs):
-        super().__init__(**kwargs)
-        self.flatten = layers.Flatten()
-        self.dense1 = layers.Dense(hidden_units, activation='relu')
-        # add a LeakyReLu?
-        self.dropout = layers.Dropout(dropout_rate)
-        self.output_layer = layers.Dense(num_classes, activation='softmax')
-
-    def call(self, inputs, training=False):
-        x = self.flatten(inputs)
-        x = self.dense1(x)
-        x = self.dropout(x, training=training)
-        return self.output_layer(x)
-
-class GlobalPoolBlock(layers.Layer):
-    '''
-    Classifier alternative to flattenning 
-    '''
-    def __init__(self, num_classes, **kwargs):
-        super().__init__(**kwargs)
-        self.pool = layers.GlobalAveragePooling2D()
-        self.output_layer = layers.Dense(num_classes, activation='softmax')
-
-    def call(self, inputs):
-        x = self.pool(inputs)
-        return self.output_layer(x)
-
-
-
-class DropBlock(layers.Layer):
-    def __init__(self, rate=0.3, **kwargs):
-        super().__init__(**kwargs)
-        self.drop = layers.SpatialDropout2D(rate)
-
-    def call(self, inputs, training=False):
-        return self.drop(inputs, training=training)
-
-
+@saving.register_keras_serializable(package='cnn')
 class ConvBnLeakyBlock(layers.Layer):
     '''
     Conv2D + BatchNorm + LeakyReLU + MaxPool, with L2 regularization.
     '''
-    def __init__(self, filters, kernel_size=3, pool_size=2, l2=0.01, **kwargs):
+    def __init__(self, filters, kernel_size, pool_size, l2, **kwargs):
         super().__init__(**kwargs)
-        self.conv = layers.Conv2D(filters, kernel_size, padding='same',
-                                  kernel_regularizer=regularizers.l2(l2))
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.pool_size = pool_size 
+        self.l2 = l2
+
+        self.conv = layers.Conv2D(filters, kernel_size, padding='same', kernel_regularizer=regularizers.l2(l2))
         self.bn = layers.BatchNormalization()
-        self.act = layers.LeakyReLU(negative_slope=0.01)
+        self.act = layers.LeakyReLU(alpha=0.01) 
         self.pool = layers.MaxPooling2D(pool_size)
 
     def call(self, inputs, training=False):
@@ -186,92 +166,48 @@ class ConvBnLeakyBlock(layers.Layer):
         x = self.act(x)
         return self.pool(x)
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'filters': self.filters,
+            'kernel_size': self.kernel_size,
+            'pool_size': self.pool_size,
+            'l2': self.l2,
+            })
+        return config
 
-class DenseDropoutBlock(layers.Layer):
-    '''
-    Dense + Dropout with L2 regularization, for classifier head.
-    '''
-    def __init__(self, units, dropout_rate=0.5, l2=0.01, **kwargs):
-        super().__init__(**kwargs)
-        self.dense = layers.Dense(units, activation='relu', kernel_regularizer=regularizers.l2(l2))
-        self.dropout = layers.Dropout(dropout_rate)
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
-    def call(self, inputs, training=False):
-        x = self.dense(inputs)
-        return self.dropout(x, training=training)
-
-####################
-#   BLOCK MACROS   #
-####################
-
-def makeCnnSeq(filters, dropout_rate):
-    return Sequential([
-        ConvBlock(filters),
-        ResidualBlock(filters),
-        SEBlock(),
-        DropBlock(rate=dropout_rate)
-        ])
 
 #######################
 #   MODEL TEMPLATES   #
 #######################
-class CnnModel1(Model):
-    '''
-    Full model: Preprocessing -> Augmentation -> ConvBlocks -> FlattenBlock
-    '''
-    def __init__(self, input_shape, num_classes, **kwargs):
+@saving.register_keras_serializable(package='cnn')
+class CnnModelClassicBase(Model):
+    def __init__(self, height, width, num_classes, **kwargs):
         super().__init__(**kwargs)
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        # self.augment = AugmentLayer()
+        # self.my_input_shape = (1, height, width, 3)
+        self.height = height
+        self.width = width
+        self.num_classes = num_classes 
 
-        self.blocks = [
-                makeCnnSeq(32, 0.2),
-                makeCnnSeq(64, 0.3),
-                makeCnnSeq(128, 0.4),
-                ]
+        self.preprocess = PreprocessingLayer(target_size=[height, width])
+        
+        self.augment = augmentation_pipeline
 
-        self.pool = layers.GlobalAveragePooling2D()
-        self.output_layer = layers.Dense(num_classes, activation='softmax')
-
-    def call(self, inputs, training=False):
-        x = self.preprocess(inputs)
-        # x = self.augment(x, training=training)
-
-        for block in self.blocks:
-            x = block(x, training=training)
-
-        x = self.pool(x)
-        return self.output_layer(x)
-
-
-class CnnModelClassic15Mini(Model):
-    '''
-    Smaller version of CnnModelClassic15 to reduce overfitting:
-    - Fewer filters per ConvBnLeakyBlock
-    - One less block
-    - Smaller Dense layer in head
-    '''
-    def __init__(self, input_shape, num_classes, **kwargs):
-        super().__init__(**kwargs)
-
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        # self.augment = AugmentLayer()
-
-        self.blocks = [
-            ConvBnLeakyBlock(16, pool_size=2),
-            ConvBnLeakyBlock(32, pool_size=2),
-            ConvBnLeakyBlock(64, pool_size=2),
-            ConvBnLeakyBlock(128, pool_size=2),
-            ]
+        self.blocks = [] 
 
         self.global_pool = layers.GlobalAveragePooling2D()
-        self.hidden = layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.01))
+        self.hidden = None 
         self.dropout = layers.Dropout(0.5)
         self.output_layer = layers.Dense(num_classes, activation='softmax')
 
     def call(self, inputs, training=False):
         x = self.preprocess(inputs)
-        # x = self.augment(x, training=training)
+
+        x = self.augment(x, training=training) # trying new augmentation layer that will work on gpu
 
         for block in self.blocks:
             x = block(x, training=training)
@@ -281,78 +217,72 @@ class CnnModelClassic15Mini(Model):
         x = self.dropout(x, training=training)
         return self.output_layer(x)
 
+    def build(self, input_shape):
+        logging.warning('input shape: ')
+        logging.info(input_shape)
 
-class CnnModelClassic15(Model):
-    '''
-    Improved model based on "model_classic_15":
-    - Uses Conv + BN + LeakyReLU blocks
-    - Includes spatial downsampling
-    - Ends with GlobalAveragePooling + Dense classification head
-    '''
-    def __init__(self, input_shape, num_classes, **kwargs):
-        super().__init__(**kwargs)
+        dummy_input = tf.zeros(input_shape)
+        self.call(dummy_input, training=False)
+        super().build(input_shape)
 
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        # self.augment = AugmentLayer()
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'height': self.height,
+            'width': self.width,
+            'num_classes': self.num_classes,
+            })
+        return config
 
-        # Feature extraction backbone with progressive downsampling
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+
+@saving.register_keras_serializable(package='cnn')
+class CnnModelClassic15Mini(CnnModelClassicBase):
+    def __init__(self, height, width, num_classes, **kwargs):
+        super().__init__(height, width, num_classes, **kwargs)
+
         self.blocks = [
-                ConvBnLeakyBlock(40, pool_size=2), 
-                ConvBnLeakyBlock(80, pool_size=2), 
-                ConvBnLeakyBlock(160, pool_size=2),
-                ConvBnLeakyBlock(320, pool_size=2),
-                ConvBnLeakyBlock(640, pool_size=2),
+            ConvBnLeakyBlock(filters=16, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=32, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
+            ]
+
+        self.hidden = layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.01)) 
+
+
+@saving.register_keras_serializable(package='cnn')
+class CnnModelClassic15(CnnModelClassicBase):
+    def __init__(self, height, width, num_classes, **kwargs):
+        super().__init__(height, width, num_classes, **kwargs)
+
+        self.blocks = [
+                ConvBnLeakyBlock(filters=40, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=80, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=160, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=320, kernel_size=3, pool_size=2, l2=0.01),
+                ConvBnLeakyBlock(filters=640, kernel_size=3, pool_size=2, l2=0.01),
                 ]
 
-        # Classification head: GAP → Dense → Dropout → Output
-        self.global_pool = layers.GlobalAveragePooling2D()
         self.hidden = layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.01))
-        self.dropout = layers.Dropout(0.5)
-        self.output_layer = layers.Dense(num_classes, activation='softmax')
 
-    def call(self, inputs, training=False):
-        x = self.preprocess(inputs)
-        # x = self.augment(x, training=training)
 
-        for block in self.blocks:
-            x = block(x, training=training)
+@saving.register_keras_serializable(package='cnn')
+class CnnModelClassic15Large(CnnModelClassicBase):
+    def __init__(self, height, width, num_classes, **kwargs):
+        super().__init__(height, width, num_classes, **kwargs)
 
-        x = self.global_pool(x)
-        x = self.hidden(x)
-        x = self.dropout(x, training=training)
-        return self.output_layer(x)
-
-class CnnModelClassic15Large(Model):
-    def __init__(self, input_shape, num_classes, **kwargs):
-        super().__init__(**kwargs)
-
-        self.preprocess = PreprocessingLayer(target_size=input_shape[:2])
-        # self.augment = AugmentLayer()
-
-        # Expanded feature extraction backbone
         self.blocks = [
-            ConvBnLeakyBlock(64, pool_size=2),
-            ConvBnLeakyBlock(128, pool_size=2),
-            ConvBnLeakyBlock(256, pool_size=2),
-            ConvBnLeakyBlock(512, pool_size=2),
-            ConvBnLeakyBlock(768, pool_size=2),
-            ConvBnLeakyBlock(1024, pool_size=2),
+            ConvBnLeakyBlock(filters=64, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=128, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=256, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=512, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=768, kernel_size=3, pool_size=2, l2=0.01),
+            ConvBnLeakyBlock(filters=1024, kernel_size=3, pool_size=2, l2=0.01),
             ]
 
-        self.global_pool = layers.GlobalAveragePooling2D()
         self.hidden = layers.Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))
-        self.dropout = layers.Dropout(0.5)
-        self.output_layer = layers.Dense(num_classes, activation='softmax')
-
-    def call(self, inputs, training=False):
-        x = self.preprocess(inputs)
-        # x = self.augment(x, training=training)
-
-        for block in self.blocks:
-            x = block(x, training=training)
-
-        x = self.global_pool(x)
-        x = self.hidden(x)
-        x = self.dropout(x, training=training)
-        return self.output_layer(x)
 

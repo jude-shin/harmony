@@ -10,19 +10,28 @@ from requests.exceptions import Timeout, RequestException
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.json import load_deckdrafterprod
 from utils.file_handler.dir import get_data_dir
+from utils.file_handler.toml import * 
 
 def collect(pl: PLS):
     generate_keys(pl)
-    download_images_parallel(pl, 'large', 64)
+    download_images_parallel(pl, 64)
 
 
 #############################################
 #   images (downloads images in parallel)   #
 #############################################
-def download_image(item, i, size, images_dir, max_retries=5, backoff_base=2):
+def download_image(item, i, img_keys, images_dir, max_retries=5, backoff_base=2):
     try:
         _id = item['_id']
-        url = item['images'][size]
+        # TODO: have a list of keys for the config that match to the product lines (yugioh uses 'card_images' for some horrible reason)
+        # url = item['card_images']['image_url']
+        url = item
+        for k in img_keys:
+          # will simulate item['card_images']['image_url']
+          url = url.get(k)
+
+        if url is None: raise KeyError
+
     except KeyError as e:
         logging.warning(f'[{i}] Missing _id or url. Skipping. Item: {item}')
         return
@@ -51,8 +60,12 @@ def download_image(item, i, size, images_dir, max_retries=5, backoff_base=2):
     logging.error(f'[{i}] Failed to download {_id} after {max_retries} attempts')
 
 
-def download_images_parallel(pl: PLS, size='large', max_workers=64):
+def download_images_parallel(pl: PLS, max_workers):
     deckdrafterprod = load_deckdrafterprod(pl, 'r')
+    
+    config = load_model_config(pl)
+    config = config['m0']
+    img_keys = config['deckdrafterprod_img_keys']
 
     data_dir = get_data_dir()
     images_dir = os.path.join(data_dir, pl.value, 'images')
@@ -63,7 +76,7 @@ def download_images_parallel(pl: PLS, size='large', max_workers=64):
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for i, item in enumerate(deckdrafterprod):
-            executor.submit(download_image, item, i, size, images_dir)
+            executor.submit(download_image, item, i, img_keys , images_dir)
         executor.shutdown(wait=True)
 
 
@@ -92,7 +105,9 @@ def generate_keys(pl: PLS):
 
 
     # TODO: use the file_management module in utils
-    pickle_path = 'master_ids.pkl'
+    # TODO: add the model name in the generate_keys as a parameter
+    # pickle_path = '{prefix}_ids.pkl'
+    pickle_path = 'm0_ids.pkl'
 
     label_to_id_path = os.path.join(data_dir, pl.value, pickle_path)
     with open(label_to_id_path, 'wb+') as f:

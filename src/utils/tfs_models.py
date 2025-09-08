@@ -8,14 +8,13 @@ import numpy as np
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
 from utils.file_handler.pickle import load_ids
+from utils.file_handler.dir import get_saved_model_dir, get_config_path
+from utils.file_handler.toml import * 
 
 # TODO : move to api package?
 # but keep some of the features
 
-# TODO : move to api package?
-# but keep some of the features
-
-def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list[float]]:
+def identify(instances: list, model_name: str, pl: PLS, version: int) -> tuple[list[str], list[float]]:
     '''
     Identifies a card with multiple models, giving the most confident output.
 
@@ -33,7 +32,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
     '''
 
     TFS_PORT = os.getenv('TFS_PORT')
-    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}:predict'
+    url = f'http://tfs-{pl.value}:{TFS_PORT}/v1/models/{model_name}/versions/{version}:predict'
 
     try:
         response = requests.post(url, json={'instances': instances}, timeout=10)
@@ -46,7 +45,9 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
     final_prediction_labels = [None] * len(instances)
     confidences = [0.0] * len(instances)
 
-    if CachedConfigs().request_config(pl)[model_name]['is_final']:
+    config = load_model_config(pl)
+
+    if config[model_name]['is_final']: 
         for i, p in enumerate(predictions):
             try:
                 p_np = np.array(p)
@@ -87,7 +88,7 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
     # Recurse into submodels
     for next_model, sub_instances in submodel_inputs.items():
         try:
-            sub_labels, sub_confidences = identify(sub_instances, next_model, pl)
+            sub_labels, sub_confidences = identify(sub_instances, next_model, pl, version)
         except Exception as e:
             logging.warning('Submodel [%s] failed to identify batch: %s', next_model, str(e))
             sub_labels = [None] * len(sub_instances)
@@ -100,76 +101,3 @@ def identify(instances: list, model_name: str, pl: PLS) -> tuple[list[str], list
             confidences[idx] = top_conf * sub_conf
 
     return final_prediction_labels, confidences
-
-
-def get_model_metadata(model_name: str, pl: PLS) -> dict:
-    '''
-    gets the json dict of the metadata that tensorflow serving returns
-
-    Args:
-        model_name (string): unique identifier for which (sub)model we are using for evaluation
-            ex) in the model "m12.keras", the model_name is "m12"
-            ex) in the labels toml "m0_labels.toml", the model_name is "m0"
-        pl (PRODUCTLINES): The product_line we are working with.
-    Returns: 
-        dict: json dict response from tfs metadata get request
-    '''
-    # port = get_port(pl) 
-    port = os.getenv('TFS_PORT')
-    url = f'http://tfs-{pl.value}:{port}/v1/models/{model_name}/metadata'
-    return requests.get(url).json()
-
-
-# TODO: pickled information may be easier?
-def get_model_config(pl: PLS) -> dict:
-    '''
-    Gets the tensorflow model config.toml (shows the is_final status and no. of outputs a model has).
-    
-    Args:
-        pl (PRODUCTLINES): The product_line we are working with.
-    Returns:
-        dict: the dictonary of the toml (in dictionary form)
-    '''
-    try:
-        toml_path = 'config.toml'
-
-
-        saved_model_dir = get_saved_model_dir()
-        full_toml_path = os.path.join(saved_model_dir, pl.value, toml_path)
-
-        with open(full_toml_path, 'rb') as f:
-            return tomllib.load(f)
-
-    except Exception as e:
-        logging.error(' [get_model_config] unexpected error %s. Returning an empty dict.', e)
-        return {}
-
-
-
-# -------------------------------------------------------
-class CachedConfigs(metaclass=Singleton):
-    # TODO: pickled information may be easier?
-    def __init__(self):
-        self.cached_configs = {}
-        for pl in PLS:
-            self.cached_configs[pl.value] = get_model_config(pl)
-
-            # for each of the product lines
-            # find the one that is 'base'
-            # that is the only one that needs height and width because all other models should be following the same format
-            # this is for efficiency. why else should we be training the models off of different sized images?A
-            # this might bite me in the butt when it comes to versioning... 
-            metadata = get_model_metadata('m0', pl)
-            input_width = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][1]['size'])
-            input_height = int(metadata['metadata']['signature_def']['signature_def']['serve']['inputs']['input_layer']['tensor_shape']['dim'][2]['size'])
-
-            self.cached_configs[pl.value]['m0']['input_width'] = input_width
-            self.cached_configs[pl.value]['m0']['input_height'] = input_height 
-
-    def request_config(self, pl: PLS) -> dict:
-        try:
-            return self.cached_configs[pl.value]
-        except KeyError as e:
-            logging.error(' [request_config] ps not loaded yet. Error: %s.', e)
-            return {}
-

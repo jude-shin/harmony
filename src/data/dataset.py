@@ -7,229 +7,49 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path
+from utils.file_handler.dir import get_data_dir, get_images_dir, get_record_path, get_config_path
+from utils.file_handler.toml import *
 
 from utils.file_handler.pickle import load_ids # TODO change from master to m0 or something
 
-# TODO use the config file to get these variables
-IMG_WIDTH=313
-IMG_HEIGHT=437
-IMG_EXTS=['.jpg']
+IMG_EXTS=['.jpg', '.png']
 
 ###########################################################
 #   preprocessing the images to be stored in a TFRecord   #
 ###########################################################
 
-@tf.function
-def load_and_preprocess(path, label):
+# @tf.function
+def load_and_preprocess(path, label, img_height: int, img_width: int):
     image = tf.io.read_file(path)
     image = tf.image.decode_image(image, channels=3)
-    image = tf.image.resize(image, [IMG_HEIGHT, IMG_WIDTH]) 
+
+    # image = tf.io.decode_jpeg(
+    #     image ,
+    #     channels=3,
+    #     fancy_upscaling=False,
+    #     dct_method='INTEGER_FAST'
+    # )
+
+    image.set_shape([None, None, 3]) # TODO: do I even need this?
+    image = tf.image.resize(image, [img_height, img_width])
 
     image = tf.cast(image, tf.float32) / 255.0
 
     return image, label
 
 
-######################################
-#   augmentation (during training)   #
-######################################
-
-# note: this will be done to the training dataset real time
-# prevents overfitting, stochastic, and decreases disk space
-#################
-#   GEOMETRIC   #
-################# 
-
-@tf.function
-def augment_skew(image, label):
-    max_skew = 0.03
-    
-    skew_x = tf.random.uniform([], -max_skew, max_skew)
-    skew_y = tf.random.uniform([], -max_skew, max_skew)
-
-    transform = [1.0, skew_x, 0.0,
-                 skew_y, 1.0, 0.0,
-                 0.0,    0.0]
-    transform = tf.convert_to_tensor([transform], dtype=tf.float32)  # batch of 1 transform
-
-    image = tf.expand_dims(image, 0)
-    output_shape = tf.shape(image)[1:3]
-
-    image_skewed = tf.raw_ops.ImageProjectiveTransformV3(
-        images=image,
-        transforms=transform,
-        output_shape=output_shape,
-        interpolation="BILINEAR",
-        fill_mode="CONSTANT",
-        fill_value=0.0
-    )
-
-    image_skewed = tf.squeeze(image_skewed, 0)
-    image_skewed = tf.cast(image_skewed, image.dtype)
-    return image_skewed, label
-
-
-@tf.function
-def augment_rotation(image, label):
-    angle_rad = tf.random.uniform([], -math.pi, math.pi)
-
-    # Image dimensions
-    height, width = tf.shape(image)[0], tf.shape(image)[1]
-    height_f, width_f = tf.cast(height, tf.float32), tf.cast(width, tf.float32)
-    center = [width_f / 2, height_f / 2]
-
-    # Rotation matrix
-    cos_angle = tf.cos(angle_rad)
-    sin_angle = tf.sin(angle_rad)
-    rotation_matrix = tf.reshape(
-        [cos_angle, -sin_angle, (1 - cos_angle) * center[0] + sin_angle * center[1],
-         sin_angle, cos_angle, (1 - cos_angle) * center[1] - sin_angle * center[0],
-         0, 0],
-        [8]
-    )
-
-    # Rotate using ImageProjectiveTransformV3
-    rotated = tf.raw_ops.ImageProjectiveTransformV3(
-        images=tf.expand_dims(image, axis=0),
-        transforms=tf.expand_dims(rotation_matrix, axis=0),
-        output_shape=[height, width],
-        interpolation="BILINEAR",
-        fill_mode="CONSTANT",
-        fill_value=0.0
-    )
-
-    rotated_image = tf.squeeze(rotated, axis=0)
-
-    return rotated_image, label
-
-# @tf.function
-# def augment_translation(image, label):
-#     image = tf.expand_dims(image, axis=0)
-#     translated = layers.RandomTranslation(
-#         height_factor=0.2,
-#         width_factor=0.2,
-#         fill_mode='constant',
-#         fill_value=0.0,
-#         interpolation='bilinear'
-#     )(image, training=True)
-#     return tf.squeeze(translated, axis=0), label
-
-
-@tf.function
-def augment_translation(image, label):
-    height, width = tf.shape(image)[0], tf.shape(image)[1]
-    height_f, width_f = tf.cast(height, tf.float32), tf.cast(width, tf.float32)
-
-    # Random translation factors (-20% to 20%)
-    translate_x = tf.random.uniform([], -0.2, 0.2) * width_f
-    translate_y = tf.random.uniform([], -0.2, 0.2) * height_f
-
-    # Translation transform
-    transform = [1.0, 0.0, -translate_x,
-                 0.0, 1.0, -translate_y,
-                 0.0, 0.0]
-
-    # Apply transformation
-    translated = tf.raw_ops.ImageProjectiveTransformV3(
-        images=tf.expand_dims(image, 0),
-        transforms=[transform],
-        output_shape=[height, width],
-        interpolation="BILINEAR",
-        fill_mode="CONSTANT",
-        fill_value=0.0
-    )
-
-    translated_image = tf.squeeze(translated, axis=0)
-
-    return translated_image, label
-
-
-
-
-#####################
-#   NON-GEOMETRIC   # 
-#####################
-
-@tf.function
-def augment_blur(image, label):
-    kernel_vals = [
-        [1.,  4.,  6.,  4., 1.],
-        [4., 16., 24., 16., 4.],
-        [6., 24., 36., 24., 6.],
-        [4., 16., 24., 16., 4.],
-        [1.,  4.,  6.,  4., 1.]
-    ]
-
-    kernel = tf.constant(kernel_vals, dtype=tf.float32)
-    kernel = kernel / tf.reduce_sum(kernel)
-    # kernel = tf.reshape(kernel, [3, 3, 1, 1])
-    kernel = tf.reshape(kernel, [5, 5, 1, 1])
-    kernel = tf.tile(kernel, [1, 1, tf.shape(image)[-1], 1])
-
-    # Prepare image for convolution
-    tf_img = tf.expand_dims(tf.cast(image, tf.float32), axis=0)
-    image = tf.nn.depthwise_conv2d(tf_img, kernel, strides=[1,1,1,1], padding='SAME')
-    image = tf.squeeze(image, axis=0)
-    image = tf.cast(image, image.dtype)
-    
-    return image, label
-
-@tf.function
-def augment_saturation(image, label):
-    image = tf.image.random_saturation(image, 0.5, 1)
-    return image, label
-
-@tf.function
-def augment_contrast(image, label):
-    image = tf.image.random_contrast(image, 0.2, 0.5)
-    return image, label
-
-# @tf.function
-# def augment_hue(image, label):
-# # NOTE: I don't think that it is beneficial to change the color of the image. this might hurt us
-#     image = tf.image.random_hue(image, 0.1)
-#     return image, label
-
-@tf.function
-def augment_brightness(image, label):
-    image = tf.image.random_brightness(image, 0.2)
-    return image, label
-
-
-@tf.function
-def augment_non_geometric(image, label):
-    fns = [
-        augment_blur,
-        augment_saturation,
-        augment_contrast,
-        augment_brightness,
-    ]
-
-    for fn in fns:
-        apply = tf.random.uniform(()) < 0.5
-        image, label = tf.cond(apply, lambda: fn(image, label), lambda: (image, label))
-
-    return image, label
-
-@tf.function
-def augment_geometric(image, label):
-    i = tf.random.uniform(shape=[], minval=0, maxval=3, dtype=tf.int32)
-    return tf.case([
-        (tf.equal(i, 0), lambda: augment_rotation(image, label)),
-        (tf.equal(i, 1), lambda: augment_skew(image, label)),
-        (tf.equal(i, 2), lambda: augment_translation(image, label)),
-    ])
-
-
-
 ################
 #   datasets   #
 ################
 
-def build_dataset(paths, labels, unique_labels):
+def build_dataset(paths, labels, unique_labels, pl: PLS, model):
+    config = load_model_config(pl)
+    config = config[model]
+    img_height = config['img_height']
+    img_width = config['img_width']
+
     ds = tf.data.Dataset.from_tensor_slices((paths, labels))
-    ds = ds.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE, deterministic=False)
+    ds = ds.map(lambda x, y: load_and_preprocess(x, y, img_height, img_width), num_parallel_calls=tf.data.AUTOTUNE, deterministic=False)
 
     ds = ds.apply(tf.data.Dataset.ignore_errors)
 
@@ -248,24 +68,7 @@ def resolve_path(img_dir: str, file_id: str) -> str | None:
             return canidate
     return None
 
-
-def process_df(pl: PLS, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    img_dir = get_images_dir(pl) # this does not work
-    # img_dir = os.path.join(get_data_dir(), pl.value, 'images')
-
-    df['path'] = df['_id'].apply(lambda x: resolve_path(img_dir, x))
-
-    present = df[df['path'].notna()].reset_index(drop=True)
-    missing = df[df['path'].isna()].reset_index(drop=True)
-
-
-    logging.info('Number Present: %d', len(present))
-    logging.info('Number Missing: %d', len(missing))
-
-    return present, missing
-
-
-def generate_datasets(pl: PLS):
+def generate_datasets(pl: PLS, model):
     '''
     Saves the dataset to disk.
 
@@ -273,7 +76,7 @@ def generate_datasets(pl: PLS):
     Returns:
     '''
 
-    _ids = load_ids(pl, 'm0', 'rb') 
+    _ids = load_ids(pl, model, 'rb') 
 
     id_to_label = {id_: i for i, id_ in enumerate(_ids)}
 
@@ -306,11 +109,9 @@ def generate_datasets(pl: PLS):
     print("_Ids Total classes:", len(_ids))
     print("Labels Total classes:", len(labels))
 
-    ds = build_dataset(paths, labels, len(_ids))
+    ds = build_dataset(paths, labels, len(_ids), pl, model)
 
     save_record(get_record_path(pl), ds)
-
-
 
 
 ###############
@@ -325,18 +126,6 @@ def serialize_example(image, label):
     example = tf.train.Example(features=tf.train.Features(feature=feature))
     return example.SerializeToString()
 
-def parse_example(example_proto):
-    feature_description = {
-        'image': tf.io.FixedLenFeature([], tf.string),
-        'label': tf.io.FixedLenFeature([], tf.int64),
-    }
-    parsed_example = tf.io.parse_single_example(example_proto, feature_description)
-    
-    image = tf.io.parse_tensor(parsed_example['image'], out_type=tf.float32)
-    image = tf.reshape(image, [IMG_HEIGHT, IMG_WIDTH, 3])  # use the same size used in preprocessing
-    label = parsed_example['label']
-    return image, label
-
 def save_record(tfrecord_path, dataset):
     count = 0
     with tf.io.TFRecordWriter(tfrecord_path) as writer:
@@ -350,26 +139,37 @@ def save_record(tfrecord_path, dataset):
                 continue
     logging.info('Wrote %d examples to %s', count, tfrecord_path)
 
-def load_record(tfrecord_path, batch_size, shuffle, augment, multiply, num_classes):
-    raw_ds = tf.data.TFRecordDataset(tfrecord_path)
-    parsed_ds = raw_ds.map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
+def parse_example(example_proto, img_height: int, img_width: int):
+    feature_description = {
+        'image': tf.io.FixedLenFeature([], tf.string),
+        'label': tf.io.FixedLenFeature([], tf.int64),
+    }
+    parsed_example = tf.io.parse_single_example(example_proto, feature_description)
+    
+    image = tf.io.parse_tensor(parsed_example['image'], out_type=tf.float32)
 
-    if augment:
-        parsed_ds = parsed_ds.map(augment_geometric, num_parallel_calls=tf.data.AUTOTUNE) 
-        parsed_ds = parsed_ds.map(augment_non_geometric, num_parallel_calls=tf.data.AUTOTUNE)
+    image = tf.reshape(image, [img_height, img_width, 3])
 
-    if multiply > 1:
-        parsed_ds = parsed_ds.repeat(multiply)
+    label = parsed_example['label']
+    return image, label
 
-    if shuffle:
-        parsed_ds = parsed_ds.shuffle(buffer_size=1000)
+def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes, model):
+    tfrecord_path = get_record_path(pl)
 
-    ds = parsed_ds.batch(batch_size)
+    config = load_model_config(pl)
+    config = config[model]
+    img_height = config['img_height']
+    img_width = config['img_width']
 
-    # one hot encode the labels for smooth labels
+    ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
+    if shuffle: ds = ds.shuffle(buffer_size=256)
+    ds.repeat()
+
+    ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.batch(batch_size)
     ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
-
     ds = ds.prefetch(tf.data.AUTOTUNE)
 
     return ds 
+
 

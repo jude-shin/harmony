@@ -14,5 +14,4 @@ testing/
 
 **/__pycache__/
 
-.env
-.env.development
+!augmentedimg.png

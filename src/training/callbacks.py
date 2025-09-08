@@ -4,7 +4,6 @@ import os
 
 from tensorflow.keras import callbacks, backend
 
-
 class CsvLoggerCallback(callbacks.Callback):
     def __init__(self, filename):
         self.filename = filename
@@ -44,15 +43,15 @@ class ClearMemory(callbacks.Callback): # TODO depreciated
         backend.clear_session()
         gc.collect()
 
-def get_callbacks(keras_model_dir: str) -> list[callbacks.Callback]: # TODO depreciated
+def get_callbacks(keras_model_dir: str, checkpoint_name: str, stopping_threshold: float) -> list[callbacks.Callback]:
     # defines when the model will stop training
     accuracy_threshold_callback = EarlyStoppingByValThreshold(
             monitor='val_categorical_accuracy',
-            threshold=0.98,
+            threshold=stopping_threshold,
             )
 
     # saves a snapshot of the model while it is training
-    checkpoint_path = os.path.join(keras_model_dir, "checkpoint.keras")
+    checkpoint_path = os.path.join(keras_model_dir, checkpoint_name)
     checkpoint_callback = callbacks.ModelCheckpoint(
         filepath=checkpoint_path, save_weights_only=False, save_best_only=True,
         monitor='val_loss',
@@ -62,15 +61,5 @@ def get_callbacks(keras_model_dir: str) -> list[callbacks.Callback]: # TODO depr
     # logs the epoch, accuracy, and loss for a training session
     csv_path = os.path.join(keras_model_dir, "training_logs.csv")
     csv_logger_callback = CsvLoggerCallback(csv_path)
-
-    # Define the ReduceLROnPlateau callback
-    reduce_lr_callback = callbacks.ReduceLROnPlateau(
-        monitor="val_loss",  # Metric to monitor
-        factor=0.2,  # Factor by which the learning rate will be reduced
-        patience=5,  # Number of epochs with no improvement after which learning rate will be reduced
-        min_lr=0.00001,  # Lower bound on the learning rate
-    )
-
-    clear_memory_callback = ClearMemory()
 
     return [accuracy_threshold_callback, checkpoint_callback, csv_logger_callback]

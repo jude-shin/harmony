@@ -4,11 +4,16 @@
 	img_height=437
 	img_width=313
 	num_unique_classes=23675
-	augment_multiplication=300
+	augment_multiplication=10
 	learning_rate=0.00005
 	beta_1=0.9
 	beta_2=0.999
 	label_smoothing=0.05
 	stopping_threshold=98
 
+	img_height=437
+	img_width=313
 
+	deckdrafterprod_img_keys=['images', 'large']
+
+	is_final=true

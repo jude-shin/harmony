@@ -1,13 +1,14 @@
 [m0]
-	batch_size=8
-	model_name='CnnModelClassic15Mini'
-	num_unique_classes=994
-	augment_multiplication=3
+	model_name='ResNet152'
+	augment_multiplication=10
+
+	batch_size=2048
+	num_unique_classes=27795
 	learning_rate=0.00005
 	beta_1=0.9
 	beta_2=0.999
 	label_smoothing=0.05
-	stopping_threshold=50
+	stopping_threshold=98
 
 	img_height=437
 	img_width=313
@@ -15,5 +16,3 @@
 	deckdrafterprod_img_keys=['images', 'large']
 
 	is_final=true
-
-
