@@ -162,17 +162,12 @@ def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes, model):
     img_width = config['img_width']
 
     ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
+    if shuffle: ds = ds.shuffle(buffer_size=256)
+    ds.repeat()
+
     ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
-
-    if multiply > 1:
-        ds = ds.repeat(multiply)
-
-    if shuffle:
-        ds = ds.shuffle(buffer_size=1000)
-
     ds = ds.batch(batch_size)
     ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
-    # ds = ds.cache()
     ds = ds.prefetch(tf.data.AUTOTUNE)
 
     return ds 
