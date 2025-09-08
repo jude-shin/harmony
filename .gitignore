@@ -15,3 +15,5 @@ testing/
 **/__pycache__/
 
 !augmentedimg.png
+
+.SWP
