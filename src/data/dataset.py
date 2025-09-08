@@ -37,6 +37,12 @@ def load_and_preprocess(path, label, img_height: int, img_width: int):
 
     return image, label
 
+# augmentation will happen here when loading a dataset
+def augment(img, label):
+    img = tf.image.random_flip_left_right(img)
+    img = tf.image.random_brightness(img, 0.1)
+    return img, label
+
 
 ################
 #   datasets   #
@@ -166,6 +172,7 @@ def load_record(pl: PLS, batch_size, shuffle, model):
     ds.repeat()
 
     ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.batch(batch_size)
     ds = ds.prefetch(tf.data.AUTOTUNE)
 
