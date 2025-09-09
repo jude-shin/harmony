@@ -4,6 +4,8 @@ import tensorflow as tf
 from utils.file_handler.toml import load_model_config
 from utils.product_lines import PRODUCTLINES as PLS
 
+# the embedder turns the raw images into a vector that has seperation. instead of just having each pixel be a dimension of a vector, the embedder helps seperate the vectors that will be in the index
+
 def build_embedder(pl: PLS, emb_dim):
     # get config variables for the images
     config = load_model_config(pl)
