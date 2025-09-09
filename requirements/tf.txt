@@ -1,2 +1,5 @@
 tensorflow[and-cuda]
 numpy
+
+tensorflow-recommenders
+scann
