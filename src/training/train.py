@@ -134,9 +134,13 @@ def train_model(pl: PLS, model: str, config: dict):
             validation_data=val_ds, 
             epochs=10,
             )
+    
+    # TODO: change this to the tensorflow serving path
+    keras_model_path = os.path.join(keras_model_dir, model)
 
-    
-    
+    embedder = models.Model(ann_classifier.input, ann_classifier.get_layer('emb_l2').output, name='embedder_export') 
+    embedder.save(keras_model_path) # this should be the path to a tensorflow serving
+
 
     
 
