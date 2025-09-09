@@ -15,8 +15,6 @@ from utils.product_lines import PRODUCTLINES as PLS
 from training.callbacks import get_callbacks
 from utils.version import generate_unique_version
 
-from ann.embedder import build_embedder
-
 def train_product_line(pl: PLS, models: list[str]):
     # load the config.toml based on the model and product line
     config = load_model_config(pl)
@@ -84,11 +82,11 @@ def train_model(pl: PLS, model: str, config: dict):
         # validation can be augmented or shuffled
 
         logging.info('Loading Training Dataset from TFRecord...')
-        train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, 'm0')
+        train_ds = load_record(pl=pl, batch_size=batch_size, shuffle=True, model='m0')
         logging.info('Finished Loading Training Dataset!')
 
         logging.info('Loading Validation Dataset from TFRecord...')
-        val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, 'm0')
+        val_ds = load_record(pl=pl, batch_size=batch_size, shuffle=False, model='m0')
         logging.info('Finished Loading Validation Dataset!')
 
         #########################

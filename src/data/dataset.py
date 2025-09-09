@@ -159,7 +159,7 @@ def parse_example(example_proto, img_height: int, img_width: int):
     label = parsed_example['label']
     return image, label
 
-def load_record(pl: PLS, batch_size, shuffle, model):
+def load_record(pl: PLS, batch_size, shuffle, model: str):
     tfrecord_path = get_record_path(pl)
 
     config = load_model_config(pl)
