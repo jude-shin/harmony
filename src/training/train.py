@@ -15,6 +15,8 @@ from utils.product_lines import PRODUCTLINES as PLS
 from training.callbacks import get_callbacks
 from utils.version import generate_unique_version
 
+from ann.embedder import build_embedder
+
 def train_product_line(pl: PLS, models: list[str]):
     # load the config.toml based on the model and product line
     config = load_model_config(pl)
@@ -26,92 +28,6 @@ def train_product_line(pl: PLS, models: list[str]):
     for model in models:
         model_config = config[model]
         train_model(pl, model, model_config)
-
-def continue_train_product_line(pl: PLS, models: list[str], version: str):
-    for model in models:
-        # load the config that is stored in the appropriate directory
-        continue_train_model(pl, model, version)
-    
-def continue_train_model(pl: PLS, model: str, version: str):
-    ###########################
-    #   keras_models verson   #
-    ###########################
-
-    # get the dir name based on the name of the file (which was based on the time of creation)
-    keras_model_dir = os.path.join(get_keras_model_dir(), pl.value, version, model)
-
-    #################
-    #   Variables   #
-    #################
-
-    with open(os.path.join(keras_model_dir, model+'.toml'), 'rb') as f: 
-        config = tomllib.load(f)
-
-    batch_size = config['batch_size']
-    num_classes = config['num_unique_classes']
-
-    # model_name = config['model_name']
-    # img_height = config['img_height']
-    # img_width = config['img_width']
-    # learning_rate = config['learning_rate']
-    # beta_1 = config['beta_1']
-    # beta_2 = config['beta_2']
-    # label_smoothing = config['label_smoothing']
-
-    stopping_threshold = config['stopping_threshold']
-
-    ############################
-    #   Loading the Datasets   #
-    ############################
-    # TODO: make an internal function
-
-    logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, 'm0')
-    logging.info('Finished Loading Training Dataset!')
-
-    logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, 'm0')
-    logging.info('Finished Loading Validation Dataset!')
-
-
-    #########################
-    #   Loading the Model   #
-    #########################
-
-    # load the model that was saved in the directory
-    logging.info('Loading Model...')
-    keras_model_path = os.path.join(keras_model_dir, model+'.keras')
-
-    if not os.path.exists(keras_model_path):
-        keras_model_path = os.path.join(keras_model_dir, model+'_checkpoint.keras')
-
-    keras_model = models.load_model(keras_model_path)
-    logging.info('Finished Loading Model!')
-
-
-    #################
-    #   Callbacks   #
-    #################
-    unique_checkpoint_name = generate_unique_version(keras_model_dir, model+'_checkpoint', '.keras')
-    callbacks = get_callbacks(keras_model_dir, unique_checkpoint_name, stopping_threshold)
-
-    ################
-    #   Training   #
-    ################
-
-    # fit the model with custom callbacks and the datasets we created
-    logging.info('Continuing training...')
-    keras_model.fit(train_ds,
-              epochs=1000000000,
-              validation_data=val_ds, 
-              callbacks=callbacks,
-              )
-
-    # TODO: the keras models themself will use the unique model name
-    unique_keras_name = generate_unique_version(keras_model_dir, model, '.keras')
-    keras_model_path = os.path.join(keras_model_dir, unique_keras_name)
-    keras_model.save(keras_model_path)
-
 
 
 def train_model(pl: PLS, model: str, config: dict):
@@ -167,7 +83,6 @@ def train_model(pl: PLS, model: str, config: dict):
         # training data should be shuffled and augmented
         # validation can be augmented or shuffled
 
-        # =====================================================
         logging.info('Loading Training Dataset from TFRecord...')
         train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, 'm0')
         logging.info('Finished Loading Training Dataset!')
@@ -175,53 +90,32 @@ def train_model(pl: PLS, model: str, config: dict):
         logging.info('Loading Validation Dataset from TFRecord...')
         val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, 'm0')
         logging.info('Finished Loading Validation Dataset!')
-        # =====================================================
-        # logging.warning("⚠ Using synthetic data (no disk I/O).")
-        # def make_fake_batch():
-        #     images = tf.random.uniform(
-        #         shape=[batch_size, img_height, img_width, 3],
-        #         minval=0, maxval=1, dtype=tf.float32
-        #     )
-        #     labels = tf.random.uniform(
-        #         shape=[batch_size],
-        #         minval=0, maxval=num_classes, dtype=tf.int32
-        #     )
-        #     labels = tf.one_hot(labels, num_classes)
-        #     return images, labels
-
-        # train_ds = (tf.data.Dataset
-        #             .from_tensors(make_fake_batch())
-        #             .repeat()
-        #             .prefetch(tf.data.AUTOTUNE))
-
-        # val_ds = (tf.data.Dataset
-        #             .from_tensors(make_fake_batch())
-        #             .repeat()
-        #             .prefetch(tf.data.AUTOTUNE))
-        # =====================================================
 
         #########################
         #   Loading the Model   #
         #########################
-        # TODO: make an internal function
+        # NOTE: we are loading the embedding
 
         # compile the model
-        logging.info('Loading Model...')
-        input_shape = [1, img_height, img_width, 3]
+        logging.info('Loading ANN_CLASSIFIER...')
 
-        keras_model = parse_model_name(model_name, img_height, img_width, num_classes)
-    
-        # build the layers
-        keras_model(tf.zeros(input_shape))
-        
-        # compile the model with learning rates and optimizers
-        keras_model.compile(
-            optimizer=optimizers.Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2),
-            loss=losses.CategoricalCrossentropy(from_logits=False, label_smoothing=label_smoothing), # Label smoothing
-            metrics=[metrics.CategoricalAccuracy()],
-        )
 
-        logging.info('Finished Loading Model!')
+        config = load_model_config(pl)
+        config = config['ann']
+        num_unique_classes = config['num_unique_classes']
+
+        embedder = build_embedder(pl, emb_dim=256)
+
+        # simple classifier head (training only)
+        ann_classifier_out = layers.Dense(num_unique_classes, dtype='float32', name='logits')(embedder.output)
+        ann_classifier = models.Model(embedder.input, ann_classifier_out)
+        ann_classifier.compile(
+                optimizer=optimizers.Adam(0.001),
+                loss=losses.SparseCategoricalCrossentropy(from_logits=True),
+                metrics=[metrics.SparseCategoricalAccuracy()]
+                )
+
+        logging.info('Finished Loading ANN_CLASSIFIER!')
 
 
     #################
@@ -235,14 +129,14 @@ def train_model(pl: PLS, model: str, config: dict):
 
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
-    keras_model.fit(train_ds,
-                    epochs=1000000000,
-                    validation_data=val_ds, 
-                    callbacks=callbacks,
-                    # validation_steps=10,
-                    # steps_per_epoch=2000,
-                    )
+    ann_classifier.fit(
+            train_ds, 
+            validation_data=val_ds, 
+            epochs=10,
+            )
 
-    keras_model_path = os.path.join(keras_model_dir, model+'.keras')
-    keras_model.save(keras_model_path)
+    
+    
+
+    
 

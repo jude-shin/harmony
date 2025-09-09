@@ -20,19 +20,3 @@ def build_embedder(pl: PLS, emb_dim):
 
     return models.Model(inp, emb, name='embedder')
 
-def get_embedder(pl: PLS):
-    # get config variables for the images
-    config = load_model_config(pl)
-    config = config['ann']
-    num_unique_classes = config['num_unique_classes']
-
-    embedder = build_embedder(pl, emb_dim=256)
-
-    # simple classifier head (training only)
-    classifier_out = layers.Dense(num_unique_classes, dtype='float32', name='logits')(embedder.output)
-    classifier = models.Model(embedder.input, classifier_out)
-    classifier.compile(
-            optimizer=optimizers.Adam(0.001),
-            loss=losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=[metrics.SparseCategoricalAccuracy()]
-            )
