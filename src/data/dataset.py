@@ -171,7 +171,7 @@ def load_record(pl: PLS, batch_size, shuffle, model: str):
     if shuffle: ds = ds.shuffle(buffer_size=256)
     ds.repeat()
 
-    ds = ds.map(lambda x: parse_example(x, img_width, img_height), num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.map(lambda x: parse_example(x, img_height, img_width), num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
     ds = ds.batch(batch_size)
     ds = ds.prefetch(tf.data.AUTOTUNE)

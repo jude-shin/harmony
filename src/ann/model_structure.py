@@ -7,7 +7,7 @@ import tensorflow_recommenders as tfrs
 import tensorflow_datasets as tfds
 
 from tensorflow.keras import Sequential, layers, Input, Model
-from typing import Dict, Text
+# from typing import Dict, Text
 
 # TODO: add this to the config file
 EMBEDDING_DIMENSION = 32

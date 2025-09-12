@@ -15,6 +15,8 @@ from utils.product_lines import PRODUCTLINES as PLS
 from training.callbacks import get_callbacks
 from utils.version import generate_unique_version
 
+from ann.embedder import build_embedder
+
 def train_product_line(pl: PLS, models: list[str]):
     # load the config.toml based on the model and product line
     config = load_model_config(pl)
@@ -98,14 +100,11 @@ def train_model(pl: PLS, model: str, config: dict):
         logging.info('Loading ANN_CLASSIFIER...')
 
 
-        config = load_model_config(pl)
-        config = config['ann']
-        num_unique_classes = config['num_unique_classes']
 
         embedder = build_embedder(pl, emb_dim=256)
 
         # simple classifier head (training only)
-        ann_classifier_out = layers.Dense(num_unique_classes, dtype='float32', name='logits')(embedder.output)
+        ann_classifier_out = layers.Dense(num_classes, dtype='float32', name='logits')(embedder.output)
         ann_classifier = models.Model(embedder.input, ann_classifier_out)
         ann_classifier.compile(
                 optimizer=optimizers.Adam(0.001),
@@ -130,6 +129,7 @@ def train_model(pl: PLS, model: str, config: dict):
     ann_classifier.fit(
             train_ds, 
             validation_data=val_ds, 
+            callbacks=callbacks,
             epochs=10,
             )
     

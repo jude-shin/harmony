@@ -15,7 +15,7 @@ from data.collect import download_images_parallel, collect
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.time import get_elapsed_time 
 from data.dataset import generate_datasets
-from training.train import train_product_line, continue_train_product_line
+from training.train import train_product_line#, continue_train_product_line
 from utils.file_handler.toml import *
 from data.dataset import * 
 
@@ -49,20 +49,20 @@ if __name__ == '__main__':
     mixed_precision.set_global_policy("mixed_bfloat16")
     
     # just in time compilation?
-    tf.config.optimizer.set_jit(True)
+    tf.config.optimizer.set_jit(False)
 
 
     # ==========================================
 
 
     # DOWNLOAD THE IMAGES
-    # collect(PLS.LORCANA)
+    # collect(PLS.POKEMON)
 
     # GENERATE THE DATASETS
-    generate_datasets(PLS.LORCANA, 'm0') # all sub-models should follow m0's format
+    # generate_datasets(PLS.POKEMON, 'm0') # all sub-models should follow m0's format
     
     # TRAIN THE MODEL
-    train_product_line(PLS.LORCANA, ['m0'])
+    train_product_line(PLS.POKEMON, ['m0'])
 
     # CONTINUE TRAIN THE MODEL
     # continue_train_product_line(PLS.LORCANA, ['m0'], '2025.08.01_18.25.15')
