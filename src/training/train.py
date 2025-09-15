@@ -66,11 +66,11 @@ def continue_train_model(pl: PLS, model: str, version: str):
     # TODO: make an internal function
 
     logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, 'm0')
+    train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, model='m0')
     logging.info('Finished Loading Training Dataset!')
 
     logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, 'm0')
+    val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, model='m0')
     logging.info('Finished Loading Validation Dataset!')
 
 
@@ -169,11 +169,11 @@ def train_model(pl: PLS, model: str, config: dict):
 
         # =====================================================
         logging.info('Loading Training Dataset from TFRecord...')
-        train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, 'm0')
+        train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, model='m0')
         logging.info('Finished Loading Training Dataset!')
 
         logging.info('Loading Validation Dataset from TFRecord...')
-        val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, 'm0')
+        val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, model='m0')
         logging.info('Finished Loading Validation Dataset!')
         # =====================================================
         # logging.warning("⚠ Using synthetic data (no disk I/O).")
