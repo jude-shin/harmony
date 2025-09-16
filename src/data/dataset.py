@@ -153,23 +153,24 @@ def parse_example(example_proto, img_height: int, img_width: int):
     label = parsed_example['label']
     return image, label
 
-def load_record(pl: PLS, batch_size, shuffle, num_classes, model):
+def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes, img_height, img_width,  model):
     tfrecord_path = get_record_path(pl)
 
-    config = load_model_config(pl)
-    config = config[model]
-    img_height = config['img_height']
-    img_width = config['img_width']
-
     ds = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
-    if shuffle: ds = ds.shuffle(buffer_size=256)
-    ds.repeat()
 
     ds = ds.map(lambda x: parse_example(x, img_height, img_width), num_parallel_calls=tf.data.AUTOTUNE)
-    ds = ds.batch(batch_size)
-    ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
-    ds = ds.prefetch(tf.data.AUTOTUNE)
 
+    if multiply > 1:
+        ds = ds.flat_map(lambda x, y: tf.data.dataset.Dataset.from_tensors((x, y)).repeat(multiply))
+
+    if shuffle: ds = ds.shuffle(buffer_size=(256, batch_size * multiply * 4)) # try and get in multiple batches
+
+    ds = ds.batch(batch_size)
+    ds = ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)), num_parallel_calls=tf.data.AUTOTUNE)
+
+    ds = ds.repeat()
+
+    ds = ds.prefetch(tf.data.AUTOTUNE)
     return ds 
 
 

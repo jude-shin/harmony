@@ -56,13 +56,13 @@ if __name__ == '__main__':
 
 
     # DOWNLOAD THE IMAGES
-    # collect(PLS.LORCANA)
+    # collect(PLS.YUGIOH)
 
     # GENERATE THE DATASETS
-    generate_datasets(PLS.LORCANA, 'm0') # all sub-models should follow m0's format
+    generate_datasets(PLS.YUGIOH, 'm0') # all sub-models should follow m0's format
     
     # TRAIN THE MODEL
-    train_product_line(PLS.LORCANA, ['m0'])
+    train_product_line(PLS.YUGIOH, ['m0'])
 
     # CONTINUE TRAIN THE MODEL
     # continue_train_product_line(PLS.LORCANA, ['m0'], '2025.08.01_18.25.15')
