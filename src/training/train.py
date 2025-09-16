@@ -57,7 +57,7 @@ def train_model(pl: PLS, model: str, config: dict):
     img_height = config['img_height']
     img_width = config['img_width']
     num_classes = config['num_unique_classes']
-    multiply = config['multiply']
+    multiply = config['augment_multiplication']
     learning_rate = config['learning_rate']
     beta_1 = config['beta_1']
     beta_2 = config['beta_2']
