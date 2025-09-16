@@ -92,7 +92,7 @@ def train_model(pl: PLS, model: str, config: dict):
         logging.info('Finished Loading Training Dataset!')
 
         logging.info('Loading Validation Dataset from TFRecord...')
-        train_ds = load_record(pl, batch_size=batch_size, shuffle=True, multiply=1, num_classes=num_classes, img_height=img_height, img_width=img_width, model='m0')
+        val_ds = load_record(pl, batch_size=batch_size, shuffle=True, multiply=1, num_classes=num_classes, img_height=img_height, img_width=img_width, model='m0')
         logging.info('Finished Loading Validation Dataset!')
         # =====================================================
         # logging.warning("⚠ Using synthetic data (no disk I/O).")
