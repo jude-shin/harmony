@@ -89,10 +89,12 @@ def train_model(pl: PLS, model: str, config: dict):
         # =====================================================
         logging.info('Loading Training Dataset from TFRecord...')
         train_ds = load_record(pl, batch_size=batch_size, shuffle=True, multiply=multiply, num_classes=num_classes, img_height=img_height, img_width=img_width, model='m0')
+        train_steps= math.ceil((multiply * num_classes)/batch_size)
         logging.info('Finished Loading Training Dataset!')
 
         logging.info('Loading Validation Dataset from TFRecord...')
         val_ds = load_record(pl, batch_size=batch_size, shuffle=True, multiply=1, num_classes=num_classes, img_height=img_height, img_width=img_width, model='m0')
+        val_steps= math.ceil((multiply * num_classes)/batch_size)
         logging.info('Finished Loading Validation Dataset!')
         # =====================================================
         # logging.warning("⚠ Using synthetic data (no disk I/O).")
@@ -155,11 +157,11 @@ def train_model(pl: PLS, model: str, config: dict):
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     keras_model.fit(train_ds,
+                    steps_per_epoch=train_steps,
                     epochs=1000000000,
                     validation_data=val_ds, 
+                    validation_steps=val_steps,
                     callbacks=callbacks,
-                    # validation_steps=10,
-                    # steps_per_epoch=2000,
                     )
 
     keras_model_path = os.path.join(keras_model_dir, model+'.keras')
