@@ -161,7 +161,7 @@ def load_record(pl: PLS, batch_size, shuffle, multiply, num_classes, img_height,
     ds = ds.map(lambda x: parse_example(x, img_height, img_width), num_parallel_calls=tf.data.AUTOTUNE)
 
     if multiply > 1:
-        ds = ds.flat_map(lambda x, y: tf.data.dataset.Dataset.from_tensors((x, y)).repeat(multiply))
+        ds = ds.flat_map(lambda x, y: tf.data.Dataset.from_tensors((x, y)).repeat(multiply))
 
     if shuffle: ds = ds.shuffle(buffer_size=max(256, batch_size * multiply * 4)) # try and get in a larger batch (default 256)
 
