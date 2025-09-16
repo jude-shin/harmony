@@ -60,6 +60,8 @@ sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 
 
+# ScANN idea
+https://www.tensorflow.org/recommenders/examples/basic_retrieval#item-to-item_recommendation
 
 
 ### GPU usage

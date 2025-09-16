@@ -1,6 +1,7 @@
 import logging 
 import os
 import tomllib
+import math 
 
 import tensorflow as tf
 
@@ -31,88 +32,6 @@ def continue_train_product_line(pl: PLS, models: list[str], version: str):
     for model in models:
         # load the config that is stored in the appropriate directory
         continue_train_model(pl, model, version)
-    
-def continue_train_model(pl: PLS, model: str, version: str):
-    ###########################
-    #   keras_models verson   #
-    ###########################
-
-    # get the dir name based on the name of the file (which was based on the time of creation)
-    keras_model_dir = os.path.join(get_keras_model_dir(), pl.value, version, model)
-
-    #################
-    #   Variables   #
-    #################
-
-    with open(os.path.join(keras_model_dir, model+'.toml'), 'rb') as f: 
-        config = tomllib.load(f)
-
-    batch_size = config['batch_size']
-    num_classes = config['num_unique_classes']
-
-    # model_name = config['model_name']
-    # img_height = config['img_height']
-    # img_width = config['img_width']
-    # learning_rate = config['learning_rate']
-    # beta_1 = config['beta_1']
-    # beta_2 = config['beta_2']
-    # label_smoothing = config['label_smoothing']
-
-    stopping_threshold = config['stopping_threshold']
-
-    ############################
-    #   Loading the Datasets   #
-    ############################
-    # TODO: make an internal function
-
-    logging.info('Loading Training Dataset from TFRecord...')
-    train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, model='m0')
-    logging.info('Finished Loading Training Dataset!')
-
-    logging.info('Loading Validation Dataset from TFRecord...')
-    val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, model='m0')
-    logging.info('Finished Loading Validation Dataset!')
-
-
-    #########################
-    #   Loading the Model   #
-    #########################
-
-    # load the model that was saved in the directory
-    logging.info('Loading Model...')
-    keras_model_path = os.path.join(keras_model_dir, model+'.keras')
-
-    if not os.path.exists(keras_model_path):
-        keras_model_path = os.path.join(keras_model_dir, model+'_checkpoint.keras')
-
-    keras_model = models.load_model(keras_model_path)
-    logging.info('Finished Loading Model!')
-
-
-    #################
-    #   Callbacks   #
-    #################
-    unique_checkpoint_name = generate_unique_version(keras_model_dir, model+'_checkpoint', '.keras')
-    callbacks = get_callbacks(keras_model_dir, unique_checkpoint_name, stopping_threshold)
-
-    ################
-    #   Training   #
-    ################
-
-    # fit the model with custom callbacks and the datasets we created
-    logging.info('Continuing training...')
-    keras_model.fit(train_ds,
-              epochs=1000000000,
-              validation_data=val_ds, 
-              callbacks=callbacks,
-              )
-
-    # TODO: the keras models themself will use the unique model name
-    unique_keras_name = generate_unique_version(keras_model_dir, model, '.keras')
-    keras_model_path = os.path.join(keras_model_dir, unique_keras_name)
-    keras_model.save(keras_model_path)
-
-
 
 def train_model(pl: PLS, model: str, config: dict):
     ###########################
@@ -139,6 +58,7 @@ def train_model(pl: PLS, model: str, config: dict):
     img_height = config['img_height']
     img_width = config['img_width']
     num_classes = config['num_unique_classes']
+    multiply = config['augment_multiplication']
     learning_rate = config['learning_rate']
     beta_1 = config['beta_1']
     beta_2 = config['beta_2']
@@ -169,11 +89,13 @@ def train_model(pl: PLS, model: str, config: dict):
 
         # =====================================================
         logging.info('Loading Training Dataset from TFRecord...')
-        train_ds = load_record(pl, batch_size=batch_size, shuffle=True, num_classes=num_classes, model='m0')
+        train_ds = load_record(pl, batch_size=batch_size, shuffle=True, multiply=multiply, num_classes=num_classes, img_height=img_height, img_width=img_width, model='m0')
+        train_steps= math.ceil((multiply * num_classes)/batch_size)
         logging.info('Finished Loading Training Dataset!')
 
         logging.info('Loading Validation Dataset from TFRecord...')
-        val_ds = load_record(pl, batch_size=batch_size, shuffle=False, num_classes=num_classes, model='m0')
+        val_ds = load_record(pl, batch_size=batch_size, shuffle=True, multiply=1, num_classes=num_classes, img_height=img_height, img_width=img_width, model='m0')
+        val_steps= math.ceil((multiply * num_classes)/batch_size)
         logging.info('Finished Loading Validation Dataset!')
         # =====================================================
         # logging.warning("⚠ Using synthetic data (no disk I/O).")
@@ -236,11 +158,11 @@ def train_model(pl: PLS, model: str, config: dict):
     # fit the model with custom callbacks and the datasets we created
     logging.info('Starting training...')
     keras_model.fit(train_ds,
+                    steps_per_epoch=train_steps,
                     epochs=1000000000,
                     validation_data=val_ds, 
+                    validation_steps=val_steps,
                     callbacks=callbacks,
-                    # validation_steps=10,
-                    # steps_per_epoch=2000,
                     )
 
     keras_model_path = os.path.join(keras_model_dir, model+'.keras')

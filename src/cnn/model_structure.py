@@ -23,13 +23,6 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
         case 'CnnModelClassic15Large': 
             return CnnModelClassic15Large(height, width, num_classes)
         case 'ResNet152':
-            # base = applications.ResNet152(
-            #     include_top=False, weights=None,
-            #     input_shape=(height, width, 3))
-            # x = layers.GlobalAveragePooling2D()(base.output)
-            # out = layers.Dense(num_classes, activation='softmax')(x)
-            # return Model(base.input, out)
-
             inputs = layers.Input(shape=(height, width, 3))
 
             x = PreprocessingLayer(target_size=[height, width])(inputs)
@@ -47,6 +40,63 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
                                    dtype='float32')(x)
 
             return Model(inputs, outputs)
+        case 'EfficientNetV2L':
+            inputs = layers.Input(shape=(height, width, 3))
+
+            x = PreprocessingLayer(target_size=[height, width])(inputs)
+            x = augmentation_pipeline(x)
+            
+            base = applications.EfficientNetV2L(
+                include_top=False,
+                weights=None,
+                input_tensor=x
+            )
+
+            x = layers.GlobalAveragePooling2D()(base.output)
+            outputs = layers.Dense(num_classes,
+                                   activation='softmax',
+                                   dtype='float32')(x)
+
+            return Model(inputs, outputs)
+        case 'VGG19':
+            inputs = layers.Input(shape=(height, width, 3))
+
+            x = PreprocessingLayer(target_size=[height, width])(inputs)
+            x = augmentation_pipeline(x)
+            
+            base = applications.VGG19(
+                include_top=False,
+                weights=None,
+                input_tensor=x
+            )
+
+            x = layers.GlobalAveragePooling2D()(base.output)
+            outputs = layers.Dense(num_classes,
+                                   activation='softmax',
+                                   dtype='float32')(x)
+
+            return Model(inputs, outputs)
+        case 'ConvNeXtXLarge':
+            inputs = layers.Input(shape=(height, width, 3))
+
+            x = PreprocessingLayer(target_size=[height, width])(inputs)
+            x = augmentation_pipeline(x)
+            
+            base = applications.ConvNeXtXLarge(
+                include_top=False,
+                weights=None,
+                input_tensor=x
+            )
+
+            x = layers.GlobalAveragePooling2D()(base.output)
+            outputs = layers.Dense(num_classes,
+                                   activation='softmax',
+                                   dtype='float32')(x)
+
+            return Model(inputs, outputs)
+
+        case _:
+            raise ValueError(f"Unknown model_name: {model_name}")
 
 ##############
 #   LAYERS   #

@@ -1,13 +1,15 @@
 [m0]
-	model_name='ResNet152'
+	model_name='EfficientNetV2'
 	augment_multiplication=10
 
 	batch_size=2048
 	num_unique_classes=27795
-	learning_rate=0.00005
+
+	learning_rate=2.4e-3
+
 	beta_1=0.9
 	beta_2=0.999
-	label_smoothing=0.05
+	label_smoothing=0.1
 	stopping_threshold=98
 
 	img_height=437
