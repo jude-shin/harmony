@@ -22,6 +22,24 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             return CnnModelClassic15(height, width, num_classes)
         case 'CnnModelClassic15Large': 
             return CnnModelClassic15Large(height, width, num_classes)
+        case 'ResNet50V2':
+            inputs = layers.Input(shape=(height, width, 3))
+
+            x = PreprocessingLayer(target_size=[height, width])(inputs)
+            x = augmentation_pipeline(x)
+            
+            base = applications.ResNet50V2(
+                include_top=False,
+                weights=None,
+                input_tensor=x
+            )
+
+            x = layers.GlobalAveragePooling2D()(base.output)
+            outputs = layers.Dense(num_classes,
+                                   activation='softmax',
+                                   dtype='float32')(x)
+
+            return Model(inputs, outputs)
         case 'ResNet152':
             inputs = layers.Input(shape=(height, width, 3))
 
