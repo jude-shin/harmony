@@ -53,20 +53,19 @@ def train_model(pl: PLS, model: str, config: dict):
     #################
 
     # Training Augmentation Multiplication
-    batch_size = config['batch_size']
+    batch_size = config.get('batch_size', 64)
     model_name = config['model_name']
-    img_height = config['img_height']
-    img_width = config['img_width']
+    img_height = config.get('img_height', 437)
+    img_width = config.get('img_width', 313)
     num_classes = config['num_unique_classes']
-    multiply = config['augment_multiplication']
-    learning_rate = config['learning_rate']
-    beta_1 = config['beta_1']
-    beta_2 = config['beta_2']
-    label_smoothing = config['label_smoothing']
+    multiply = config.get('augment_multiplication', 1)
+    learning_rate = config.get('learning_rate', 0.0001)
+    beta_1 = config.get('beta_1', 0.9)
+    beta_2 = config.get('beta_2', 0.999)
+    label_smoothing = config.get('label_smoothing', 0.1)
 
-    stopping_threshold = config['stopping_threshold']
-    #weights = config.get('weights', None)
-    weights = config['weights']
+    stopping_threshold = config.get('stopping_threshold', 98)
+    weights = config.get('weights', None)
    
 
     #############################
