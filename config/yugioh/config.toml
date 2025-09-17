@@ -18,3 +18,5 @@
 	deckdrafterprod_img_keys=['images', 'large']
 
 	is_final=true
+
+	weights='imagenet'

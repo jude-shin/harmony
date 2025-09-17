@@ -14,7 +14,7 @@ from tensorflow.keras import layers, models, Model, Sequential, regularizers, sa
 #############
 #   PARSE   #
 #############
-def parse_model_name(model_name: str, height, width, num_classes) -> Model:
+def parse_model_name(model_name: str, height, width, num_classes, weights) -> Model:
     match model_name:
         case 'CnnModelClassic15Mini':
             return CnnModelClassic15Mini(height, width, num_classes)
@@ -30,7 +30,7 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             
             base = applications.ResNet50V2(
                 include_top=False,
-                weights=None,
+                weights=weights,
                 input_tensor=x
             )
 
@@ -48,7 +48,7 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             
             base = applications.ResNet152(
                 include_top=False,
-                weights=None,
+                weights=weights,
                 input_tensor=x
             )
 
@@ -66,7 +66,7 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             
             base = applications.EfficientNetV2L(
                 include_top=False,
-                weights=None,
+                weights=weights,
                 input_tensor=x
             )
 
@@ -84,7 +84,7 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             
             base = applications.VGG19(
                 include_top=False,
-                weights=None,
+                weights=weights,
                 input_tensor=x
             )
 
@@ -102,7 +102,7 @@ def parse_model_name(model_name: str, height, width, num_classes) -> Model:
             
             base = applications.ConvNeXtXLarge(
                 include_top=False,
-                weights=None,
+                weights=weights,
                 input_tensor=x
             )
 

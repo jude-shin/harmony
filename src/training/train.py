@@ -65,6 +65,8 @@ def train_model(pl: PLS, model: str, config: dict):
     label_smoothing = config['label_smoothing']
 
     stopping_threshold = config['stopping_threshold']
+    #weights = config.get('weights', None)
+    weights = config['weights']
    
 
     #############################
@@ -131,7 +133,7 @@ def train_model(pl: PLS, model: str, config: dict):
         logging.info('Loading Model...')
         input_shape = [1, img_height, img_width, 3]
 
-        keras_model = parse_model_name(model_name, img_height, img_width, num_classes)
+        keras_model = parse_model_name(model_name, img_height, img_width, num_classes, weights)
     
         # build the layers
         keras_model(tf.zeros(input_shape))
