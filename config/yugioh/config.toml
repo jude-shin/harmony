@@ -2,7 +2,7 @@
 	model_name='Resnet50V2'
 	augment_multiplication=10
 
-	batch_size=2048
+	batch_size=1024
 	num_unique_classes=42424
 
 	learning_rate=0.0001
