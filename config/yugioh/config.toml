@@ -1,6 +1,6 @@
 [m0]
 	model_name='Resnet50V2'
-	augment_multiplication=10
+	augment_multiplication=20
 
 	batch_size=1024
 	num_unique_classes=42424
