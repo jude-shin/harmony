@@ -1,5 +1,5 @@
 [m0]
-	model_name='EfficientNetV2'
+	model_name='ResNet50V2'
 	augment_multiplication=10
 
 	batch_size=2048
