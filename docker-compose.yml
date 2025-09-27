@@ -37,7 +37,7 @@ services:
     restart: no 
     container_name: training 
 
-  api:
+  serving-api:
     build: 
       context: .
       dockerfile: docker/api/Dockerfile
@@ -48,7 +48,7 @@ services:
     env_file:
       - path: ./.env
     ports:
-      - "${API_PORT}:5000"
+      - "${SERVING_API_PORT}:5000"
     volumes:
       - ./data/:/volumes/data/
       - ./keras_models/:/volumes/keras_models/
@@ -60,7 +60,7 @@ services:
           devices:
             - capabilities: [gpu]
     restart: unless-stopped
-    container_name: api
+    container_name: serving-api
 
   tfs-lorcana:
     image: tensorflow/serving:latest-gpu
@@ -68,7 +68,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - TF_FORCE_GPU_ALLOW_GROWTH=true
     ports:
-      - "${LORCANA_PORT}:8501"
+      - "${TFS_LORCANA_PORT}:8501"
     volumes:
       - ./saved_models/lorcana/:/models/lorcana/
     deploy:
@@ -88,7 +88,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - TF_FORCE_GPU_ALLOW_GROWTH=true
     ports:
-      - "${POKEMON_PORT}:8501"
+      - "${TFS_POKEMON_PORT}:8501"
     volumes:
       - ./saved_models/pokemon/:/models/pokemon/
     deploy:
@@ -108,7 +108,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - TF_FORCE_GPU_ALLOW_GROWTH=true
     ports:
-      - "${YUGIOH_PORT}:8501"
+      - "${TFS_YUGIOH_PORT}:8501"
     volumes:
       - ./saved_models/yugioh/:/models/yugioh/
     deploy:
