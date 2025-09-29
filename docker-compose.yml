@@ -37,10 +37,10 @@ services:
     restart: no 
     container_name: training 
 
-  serving-api:
+  serving_api:
     build: 
       context: .
-      dockerfile: docker/api/Dockerfile
+      dockerfile: docker/serving_api/Dockerfile
     environment:
       - PYTHONPATH=/harmony/src
       - PYTHONUNBUFFERED=1
@@ -60,7 +60,7 @@ services:
           devices:
             - capabilities: [gpu]
     restart: unless-stopped
-    container_name: serving-api
+    container_name: serving_api
 
   tfs-lorcana:
     image: tensorflow/serving:latest-gpu

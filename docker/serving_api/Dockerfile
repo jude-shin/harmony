@@ -7,12 +7,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements requirements
-RUN pip install --no-cache-dir -r requirements/base.txt -r requirements/api.txt -r requirements/tf.txt
+RUN pip install --no-cache-dir -r requirements/base.txt -r requirements/serving_api.txt -r requirements/tf.txt
 
-COPY src/api src/api
+COPY src/serving_api src/serving_api
 COPY src/utils src/utils
 COPY src/processing src/processing
 
 EXPOSE ${SERVING_API_PORT}
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.api.server:app", "--workers", "1", "--bind", "0.0.0.0:5000", "--timeout", "120"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.serving_api.server:app", "--workers", "1", "--bind", "0.0.0.0:5000", "--timeout", "120"]
 

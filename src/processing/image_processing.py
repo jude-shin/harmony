@@ -30,3 +30,8 @@ def get_image_from_uri(image_uri: str) -> Image.Image:
     image_data = response.content
     image = Image.open(BytesIO(image_data))
     return image
+
+def preprocess_tensor(image: tf.Tensor, img_width: int, img_height: int) -> tf.Tensor:
+    img = tf.image.resize(image, [img_height, img_width])
+    img = img / 255.0
+    return img

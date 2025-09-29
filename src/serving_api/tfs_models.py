@@ -1,9 +1,13 @@
-import tomllib
 import logging
 import os
+import io
 import requests
-
 import numpy as np
+
+import httpx
+from fastapi import UploadFile
+from PIL import Image
+from typing import Optional
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.singleton import Singleton
@@ -11,8 +15,64 @@ from utils.file_handler.pickle import load_ids
 from utils.file_handler.dir import get_saved_model_dir, get_config_path
 from utils.file_handler.toml import * 
 
-# TODO : move to api package?
-# but keep some of the features
+
+# ================================================
+
+MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15MB per image
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
+
+def validate_content_type(ct: Optional[str]) -> bool:
+    if not ct:
+        return False
+    # strip parameters like `; charset=...`
+    return ct.split(";", 1)[0].lower() in ALLOWED_CONTENT_TYPES
+
+async def load_image_from_upload(f: UploadFile) -> Image.Image:
+    data = await f.read()
+    await f.close()
+    if not data:
+        raise ValueError("empty file")
+    if len(data) > MAX_IMAGE_BYTES:
+        raise ValueError("file too large")
+    try:
+        im = Image.open(io.BytesIO(data)).convert("RGB")
+        im.load()
+        return im
+    except Exception as exc:
+        raise ValueError(f"invalid image: {exc}") from exc
+
+async def load_image_from_url(url: str, client: httpx.AsyncClient) -> Image.Image:
+    # Basic scheme check
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise ValueError("unsupported URL scheme")
+
+    async with client.stream("GET", url) as resp:
+        if resp.status_code != 200:
+            raise ValueError(f"http status {resp.status_code}")
+
+        ct = resp.headers.get("content-type")
+        if not validate_content_type(ct):
+            raise ValueError(f"unsupported content-type: {ct}")
+
+        # Optional content-length precheck
+        cl = resp.headers.get("content-length")
+        if cl and int(cl) > MAX_IMAGE_BYTES:
+            raise ValueError("content-length exceeds limit")
+
+        # Read up to MAX_IMAGE_BYTES + 1 to detect overflow
+        buf = bytearray()
+        async for chunk in resp.aiter_bytes():
+            buf.extend(chunk)
+            if len(buf) > MAX_IMAGE_BYTES:
+                raise ValueError("downloaded image exceeds limit")
+
+    try:
+        im = Image.open(io.BytesIO(buf)).convert("RGB")
+        im.load()
+        return im
+    except Exception as exc:
+        raise ValueError(f"invalid image: {exc}") from exc
+
 
 def identify(instances: list, model_name: str, pl: PLS, version: int) -> tuple[list[str], list[float]]:
     '''

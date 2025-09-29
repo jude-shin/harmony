@@ -1,5 +1,4 @@
 import os
-import io
 import asyncio
 import logging
 from typing import List, Optional
@@ -12,71 +11,17 @@ from PIL import Image
 from processing.image_processing import get_tensor_from_image
 from utils.product_lines import string_to_product_line
 from utils.data_conversion import label_to_id
-from utils.tfs_models import identify
 from utils.file_handler.dir import get_config_path
 from utils.file_handler.toml import * 
+
+from serving_api.tfs_models import identify
+from serving_api.tfs_models import load_image_from_upload
+from serving_api.tfs_models import load_image_from_url
 
 # ---------------------------------------------------------------------------
 # Logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-# ---------------------------------------------------------------------------
-# Limits and validation
-MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15MB per image
-ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
-
-def _validate_content_type(ct: Optional[str]) -> bool:
-    if not ct:
-        return False
-    # strip parameters like `; charset=...`
-    return ct.split(";", 1)[0].lower() in ALLOWED_CONTENT_TYPES
-
-async def _load_image_from_upload(f: UploadFile) -> Image.Image:
-    data = await f.read()
-    await f.close()
-    if not data:
-        raise ValueError("empty file")
-    if len(data) > MAX_IMAGE_BYTES:
-        raise ValueError("file too large")
-    try:
-        im = Image.open(io.BytesIO(data)).convert("RGB")
-        im.load()
-        return im
-    except Exception as exc:
-        raise ValueError(f"invalid image: {exc}") from exc
-
-async def _load_image_from_url(url: str, client: httpx.AsyncClient) -> Image.Image:
-    # Basic scheme check
-    if not (url.startswith("http://") or url.startswith("https://")):
-        raise ValueError("unsupported URL scheme")
-
-    async with client.stream("GET", url) as resp:
-        if resp.status_code != 200:
-            raise ValueError(f"http status {resp.status_code}")
-
-        ct = resp.headers.get("content-type")
-        if not _validate_content_type(ct):
-            raise ValueError(f"unsupported content-type: {ct}")
-
-        # Optional content-length precheck
-        cl = resp.headers.get("content-length")
-        if cl and int(cl) > MAX_IMAGE_BYTES:
-            raise ValueError("content-length exceeds limit")
-
-        # Read up to MAX_IMAGE_BYTES + 1 to detect overflow
-        buf = bytearray()
-        async for chunk in resp.aiter_bytes():
-            buf.extend(chunk)
-            if len(buf) > MAX_IMAGE_BYTES:
-                raise ValueError("downloaded image exceeds limit")
-
-    try:
-        im = Image.open(io.BytesIO(buf)).convert("RGB")
-        im.load()
-        return im
-    except Exception as exc:
-        raise ValueError(f"invalid image: {exc}") from exc
 
 # ---------------------------------------------------------------------------
 app = FastAPI(title="Harmony ML API", version="1.0.0")
@@ -105,14 +50,14 @@ async def predict(
 
     # file tasks
     for f in images or []:
-        tasks.append(_load_image_from_upload(f))
+        tasks.append(load_image_from_upload(f))
 
     # url tasks
     async with httpx.AsyncClient(
             timeout=httpx.Timeout(connect=5.0, read=20.0, write=5.0, pool=5.0)
             ) as client:
         for u in image_urls or []:
-            tasks.append(_load_image_from_url(u, client))
+            tasks.append(load_image_from_url(u, client))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -149,5 +94,5 @@ async def predict(
 
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    uvicorn.run("src.api.server:app", host="0.0.0.0", port=int(os.getenv("SERVING_API_PORT", "8000")), reload=True)
+    uvicorn.run("src.serving_api.server:app", host="0.0.0.0", port=int(os.getenv("SERVING_API_PORT", "8000")), reload=True)
 
