@@ -13,6 +13,7 @@ COPY src/serving_api src/serving_api
 COPY src/utils src/utils
 COPY src/processing src/processing
 
-EXPOSE ${SERVING_API_PORT}
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.serving_api.server:app", "--workers", "1", "--bind", "0.0.0.0:5000", "--timeout", "120"]
+CMD ["fastapi", "run", "src/serving_api/main.py", "--proxy-headers", "--port", "${SERVING_API_PORT}"]
 
+# EXPOSE ${SERVING_API_PORT}
+# CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.serving_api.server:app", "--workers", "1", "--bind", "0.0.0.0:5000", "--timeout", "120"]

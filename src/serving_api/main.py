@@ -92,7 +92,19 @@ async def predict(
             # threshold is currently unused in this handler; left as part of API for downstream logic
             }
 
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    uvicorn.run("src.serving_api.server:app", host="0.0.0.0", port=int(os.getenv("SERVING_API_PORT", "8000")), reload=True)
+
+from typing import Union
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: Union[str, None] = None):
+    return {"item_id": item_id, "q": q}
 
