@@ -10,7 +10,7 @@ from PIL import Image
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.pickle import load_ids
-from utils.file_handler.toml import
+from utils.file_handler.toml import load_model_config
 
 MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15MB per image
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
