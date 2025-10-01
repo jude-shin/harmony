@@ -3,95 +3,19 @@ import os
 import io
 import requests
 import numpy as np
-import asyncio
 import httpx
 
-from typing import List, Optional
-from fastapi import FastAPI, HTTPException, File, Form, UploadFile, APIRouter
+from fastapi import UploadFile
 from PIL import Image
 
 from utils.product_lines import PRODUCTLINES as PLS
-from utils.singleton import Singleton
 from utils.file_handler.pickle import load_ids
-from utils.file_handler.dir import get_saved_model_dir, get_config_path
-from utils.file_handler.toml import * 
-
-router = APIRouter(
-        prefix="/serving",
-        ) 
-
-
-@router.post("/predict")
-async def predict(
-        product_line_string: str = Form(..., description="productLine name (e.g., locrana, mtg)"),
-        images: Optional[List[UploadFile]] = File(None, description="image scans to be identified"),
-        image_urls: Optional[List[str]] = Form(None, description="http(s) URLs pointing to images"),
-        threshold: float = Form(..., description="confidence threshold deemed correct"),
-        version: int = Form(..., description="model version to use in the given product line"),
-        ):
-    # Require at least one source
-    if not images and not image_urls:
-        raise HTTPException(status_code=400, detail="provide at least one image file or image URL")
-
-    # TODO: sanitize inputs
-
-    pl = string_to_product_line(product_line_string)
-
-    # Load inputs concurrently
-    pil_images: List[Image.Image] = []
-    tasks = []
-
-    # file tasks
-    for f in images or []:
-        tasks.append(load_image_from_upload(f))
-
-    # url tasks
-    async with httpx.AsyncClient(
-            timeout=httpx.Timeout(connect=5.0, read=20.0, write=5.0, pool=5.0)
-            ) as client:
-        for u in image_urls or []:
-            tasks.append(load_image_from_url(u, client))
-
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    # Collect successes; log failures
-    for res in results:
-        if isinstance(res, Image.Image):
-            pil_images.append(res)
-        else:
-            logger.warning("skipping input: %s", res)
-
-    if not pil_images:
-        raise HTTPException(status_code=400, detail="no valid images provided")
-
-    # Model config
-    config = load_model_config(pl)
-    input_width = config["m0"]["img_width"]
-    input_height = config["m0"]["img_height"]
-
-    # Preprocess
-    instances = []
-    for pil_image in pil_images:
-        img_tensor = get_tensor_from_image(pil_image, input_width, input_height)
-        instances.append(img_tensor.numpy().tolist())
-
-    # Inference
-    predictions, confidences = identify(instances, "m0", pl, version)
-
-    # Response
-    return {
-            "predictions": [label_to_id(int(p), pl) if p is not None else None for p in predictions],
-            "confidences": confidences,
-            # threshold is currently unused in this handler; left as part of API for downstream logic
-            }
-
-# ================================================
-# ================================================
+from utils.file_handler.toml import
 
 MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15MB per image
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 
-def validate_content_type(ct: Optional[str]) -> bool:
+def _validate_content_type(ct: str | None) -> bool:
     if not ct:
         return False
     # strip parameters like `; charset=...`
@@ -121,7 +45,7 @@ async def load_image_from_url(url: str, client: httpx.AsyncClient) -> Image.Imag
             raise ValueError(f"http status {resp.status_code}")
 
         ct = resp.headers.get("content-type")
-        if not validate_content_type(ct):
+        if not _validate_content_type(ct):
             raise ValueError(f"unsupported content-type: {ct}")
 
         # Optional content-length precheck
@@ -177,7 +101,7 @@ def identify(instances: list, model_name: str, pl: PLS, version: int) -> tuple[l
 
     config = load_model_config(pl)
 
-    if config[model_name]['is_final']: 
+    if config[model_name]['is_final']:
         for i, p in enumerate(predictions):
             try:
                 p_np = np.array(p)
