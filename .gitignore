@@ -13,7 +13,8 @@ saved_models/**
 testing/
 
 **/__pycache__/
+pyrightconfig.json
 
 !augmentedimg.png
-
 .env
+
