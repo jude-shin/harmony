@@ -1,7 +1,7 @@
 requests
 gunicorn
 uvicorn
-fastapi
+fastapi[standard]
 python-multipart
 jsonify
 httpx
