@@ -4,7 +4,6 @@ import logging
 from typing import List, Optional
 
 import httpx
-import uvicorn
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from PIL import Image
 
@@ -14,9 +13,9 @@ from utils.data_conversion import label_to_id
 from utils.file_handler.dir import get_config_path
 from utils.file_handler.toml import * 
 
-from serving_api.tfs_models import identify
-from serving_api.tfs_models import load_image_from_upload
-from serving_api.tfs_models import load_image_from_url
+from harmony_api.tfs_models import identify
+from harmony_api.tfs_models import load_image_from_upload
+from harmony_api.tfs_models import load_image_from_url
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -26,9 +25,18 @@ logging.basicConfig(level=logging.INFO)
 # ---------------------------------------------------------------------------
 app = FastAPI(title="Harmony ML API", version="1.0.0")
 
+# ---------------------------------------------------------------------------
+###############
+### GENERAL ###
+###############
+
 @app.get("/ping", summary="testing")
 async def ping() -> dict[str, str]:
     return {"ping": "pong"}
+
+###############
+### SERVING ###
+###############
 
 @app.post("/predict")
 async def predict(
@@ -41,6 +49,8 @@ async def predict(
     # Require at least one source
     if not images and not image_urls:
         raise HTTPException(status_code=400, detail="provide at least one image file or image URL")
+
+    # TODO: sanitize inputs
 
     pl = string_to_product_line(product_line_string)
 

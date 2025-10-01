@@ -1,6 +1,5 @@
 requests
 gunicorn
-uvicorn
 fastapi[standard]
 python-multipart
 jsonify

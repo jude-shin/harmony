@@ -37,30 +37,24 @@ services:
     restart: no 
     container_name: training 
 
-  serving_api:
+  harmony-api:
     build: 
       context: .
-      dockerfile: docker/serving_api/Dockerfile
+      dockerfile: docker/harmony_api/Dockerfile
     environment:
       - PYTHONPATH=/harmony/src
       - PYTHONUNBUFFERED=1
-      - TF_FORCE_GPU_ALLOW_GROWTH=true
     env_file:
       - path: ./.env
     ports:
-      - "${SERVING_API_PORT}:${SERVING_API_PORT}"
+      - "${HARMONY_API_PORT}:${HARMONY_API_PORT}"
     volumes:
       - ./data/:/volumes/data/
       - ./keras_models/:/volumes/keras_models/
       - ./saved_models/:/volumes/saved_models/
       - ./config/:/volumes/config/
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
     restart: unless-stopped
-    container_name: serving_api
+    container_name: harmony-api
 
   tfs-lorcana:
     image: tensorflow/serving:latest-gpu

@@ -7,12 +7,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements requirements
-RUN pip install --no-cache-dir -r requirements/base.txt -r requirements/serving_api.txt -r requirements/tf.txt
+RUN pip install --no-cache-dir -r requirements/base.txt -r requirements/harmony_api.txt -r requirements/tf.txt
 
-COPY src/serving_api src/serving_api
+COPY src/harmony_api src/harmony_api
 COPY src/utils src/utils
 COPY src/processing src/processing
 
 # TODO: turn this form shell form to exec form
 # CMD ["fastapi", "run", "src/serving_api/main.py", "--proxy-headers", "--port", $SERVING_API_PORT]
-CMD fastapi run src/serving_api/main.py --proxy-headers --port $SERVING_API_PORT
+CMD fastapi run src/harmony_api/main.py --proxy-headers --port $HARMONY_API_PORT
