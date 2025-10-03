@@ -1,10 +1,15 @@
 import logging
 import asyncio
 import httpx
+
 import tensorflow as tf
+import numpy as np
 
 from fastapi import HTTPException, File, Form, UploadFile, APIRouter
 from PIL import Image
+from logging import Logger
+from tensorflow import Tensor
+from numpy.typing import NDArray
 
 from utils.product_lines import PRODUCTLINES as PLS, string_to_product_line
 from utils.file_handler.toml import load_model_config
@@ -13,9 +18,9 @@ from processing.image_processing import get_tensor_from_image
 
 from harmony_api.serving.services import load_image_from_upload, load_image_from_url, identify
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
-router = APIRouter(
+router: APIRouter = APIRouter(
     prefix="/serving",
 )
 
@@ -63,13 +68,21 @@ async def predict(
 
     # Model config
     config = load_model_config(pl)
-    input_width: int = config["m0"]["img_width"]
-    input_height: int = config["m0"]["img_height"]
+
+    # TODO: do not hardcode these
+    input_width: int | bool | str | list[str] = config.get('m0', 'img_width')
+    input_height: int | bool | str | list[str] = config.get('m0', 'img_height')
+    if type(input_width) is not int:
+        logger.error('img_width in m0 must be a defined integer')
+        raise HTTPException(status_code=500, detail='internal config error')
+    if type(input_height) is not int:
+        logger.error('img_width in m0 must be a defined integer')
+        raise HTTPException(status_code=500, detail='internal config error')
 
     # Preprocess
-    instances = []
+    instances: list[Tensor]= []
     for pil_image in pil_images:
-        img_tensor: tf.Tensor = get_tensor_from_image(pil_image, input_width, input_height)
+        img_tensor: Tensor = get_tensor_from_image(pil_image, input_width, input_height)
         instances.append(img_tensor.numpy().tolist())
 
     # Inference

@@ -6,7 +6,9 @@ import numpy as np
 import httpx
 
 from fastapi import UploadFile
-from PIL import Image
+from PIL import Image as img
+from PIL.Image import Image
+from httpx import AsyncClient
 
 from utils.product_lines import PRODUCTLINES as PLS
 from utils.file_handler.pickle import load_ids
@@ -21,7 +23,7 @@ def _validate_content_type(ct: str | None) -> bool:
     # strip parameters like `; charset=...`
     return ct.split(";", 1)[0].lower() in ALLOWED_CONTENT_TYPES
 
-async def load_image_from_upload(f: UploadFile) -> Image.Image:
+async def load_image_from_upload(f: UploadFile) -> Image:
     data = await f.read()
     await f.close()
     if not data:
@@ -29,13 +31,13 @@ async def load_image_from_upload(f: UploadFile) -> Image.Image:
     if len(data) > MAX_IMAGE_BYTES:
         raise ValueError("file too large")
     try:
-        im = Image.open(io.BytesIO(data)).convert("RGB")
-        im.load()
-        return im
+        i: Image = img.open(io.BytesIO(data)).convert("RGB")
+        i.load()
+        return i
     except Exception as exc:
         raise ValueError(f"invalid image: {exc}") from exc
 
-async def load_image_from_url(url: str, client: httpx.AsyncClient) -> Image.Image:
+async def load_image_from_url(url: str, client: AsyncClient) -> Image:
     # Basic scheme check
     if not (url.startswith("http://") or url.startswith("https://")):
         raise ValueError("unsupported URL scheme")
@@ -61,9 +63,9 @@ async def load_image_from_url(url: str, client: httpx.AsyncClient) -> Image.Imag
                 raise ValueError("downloaded image exceeds limit")
 
     try:
-        im = Image.open(io.BytesIO(buf)).convert("RGB")
-        im.load()
-        return im
+        i = img.open(io.BytesIO(buf)).convert("RGB")
+        i.load()
+        return i
     except Exception as exc:
         raise ValueError(f"invalid image: {exc}") from exc
 
